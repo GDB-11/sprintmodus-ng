@@ -1,0 +1,32 @@
+# Sprintmodus — shared infrastructure skeleton (Phase 0).
+# Backend services (eureka, gateway, auth, project, workitem) are added in Phase 13.
+# Database: MySQL only (MariaDB is not allowed on this project).
+name: sprintmodus
+
+services:
+  master-db:
+    image: mysql:9.7 # current LTS line
+    container_name: sprintmodus-master-db
+    restart: unless-stopped
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MASTER_DB_ROOT_PASSWORD:-password} # dev default; override via .env
+      MYSQL_DATABASE: master_db
+    ports:
+      - "3306:3306"
+    volumes:
+      - master-db-data:/var/lib/mysql
+    networks:
+      - sprintmodus-net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+networks:
+  sprintmodus-net:
+    name: sprintmodus-net
+
+volumes:
+  master-db-data:
