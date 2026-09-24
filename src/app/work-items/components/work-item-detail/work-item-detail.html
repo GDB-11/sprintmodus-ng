@@ -1,0 +1,211 @@
+<app-page [heading]="loadedItem()?.title ?? 'Work item'" backLink="/work-items" backLabel="Work items">
+  @if (item.isLoading() && !loadedItem()) {
+    <p role="status">Loading work item…</p>
+  } @else if (item.error() && !loadedItem()) {
+    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+      This work item could not be loaded. It may have been deleted.
+      <button type="button" class="underline" (click)="item.reload()">Try again</button>
+    </p>
+  } @else if (loadedItem(); as current) {
+    <p class="text-neutral-800 dark:text-neutral-300">
+      {{ current.displayKey }} · {{ typeLabels[current.type] }}
+    </p>
+
+    @if (editing()) {
+      <app-work-item-edit
+        [item]="current"
+        (saved)="onSaved($event)"
+        (cancelled)="editing.set(false)"
+      />
+    } @else {
+      <div class="flex flex-wrap items-end gap-4">
+        <div class="flex flex-col gap-1.5">
+          <span class="text-sm font-medium">Status</span>
+          <app-status-label [status]="current.status" />
+        </div>
+        <div class="flex flex-col gap-1.5">
+          @if (current.allowedStatuses.length > 0) {
+            <label for="change-status" class="text-sm font-medium">Move to</label>
+            <select
+              id="change-status"
+              [class]="selectClasses"
+              [disabled]="busy()"
+              (change)="changeStatus($event)"
+            >
+              <option value="" selected>Choose a status</option>
+              @for (status of current.allowedStatuses; track status.code) {
+                <option [value]="status.code">{{ status.displayName }}</option>
+              }
+            </select>
+          } @else {
+            <span class="text-sm font-medium">Move to</span>
+            <span class="py-2">No further statuses</span>
+          }
+        </div>
+        <div class="ml-auto flex gap-3">
+          <button
+            type="button"
+            [class]="secondaryButtonClasses"
+            (click)="editing.set(true)"
+          >
+            Edit
+          </button>
+          @if (!confirmingDelete()) {
+            <button
+              type="button"
+              [class]="secondaryButtonClasses"
+              (click)="confirmingDelete.set(true)"
+            >
+              Delete
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (confirmingDelete()) {
+        <div
+          role="alertdialog"
+          aria-labelledby="delete-question"
+          class="flex flex-wrap items-center gap-3 rounded-md bg-error-100 p-3 text-error-900"
+        >
+          <p id="delete-question" class="font-medium">Delete {{ current.displayKey }}?</p>
+          <button
+            type="button"
+            class="rounded-md bg-error-800 px-4 py-2 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error-900 disabled:opacity-60"
+            [disabled]="busy()"
+            (click)="delete(current)"
+          >
+            Yes, delete
+          </button>
+          <button
+            type="button"
+            class="rounded-md border border-error-900 px-4 py-2 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error-900"
+            (click)="confirmingDelete.set(false)"
+          >
+            Keep it
+          </button>
+        </div>
+      }
+
+      <dl class="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+        <div>
+          <dt class="text-sm font-medium">Priority</dt>
+          <dd>{{ priorityLabels[current.priority] }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium">Effort points</dt>
+          <dd>{{ current.effortPoints }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium">Estimated / remaining hours</dt>
+          <dd>{{ current.estimatedHours ?? '—' }} / {{ current.remainingHours ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium">Created</dt>
+          <dd>
+            {{ current.createdBy?.fullName ?? 'Unknown user' }},
+            {{ current.createdAt | date: 'medium' }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium">Assigned to</dt>
+          <dd>
+            @for (assignee of current.assignees; track assignee.assignmentCode; let last = $last) {
+              {{ assignee.fullName }} ({{ assignee.role }}){{ last ? '' : ', ' }}
+            } @empty {
+              Nobody
+            }
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium">Last updated</dt>
+          <dd>{{ current.updatedAt | date: 'medium' }}</dd>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <dt><label for="sprint" class="text-sm font-medium">Sprint</label></dt>
+          <dd>
+            <select
+              id="sprint"
+              [class]="selectClasses"
+              [disabled]="busy() || sprints.isLoading()"
+              (change)="moveToSprint($event, current)"
+            >
+              <option value="" [selected]="!current.sprintCode">Backlog (no sprint)</option>
+              @for (sprint of sprintChoices(); track sprint.sprintCode) {
+                <option [value]="sprint.sprintCode" [selected]="sprint.sprintCode === current.sprintCode">
+                  {{ sprint.name }}
+                </option>
+              }
+            </select>
+          </dd>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <dt><label for="parent" class="text-sm font-medium">Parent</label></dt>
+          <dd>
+            <select
+              id="parent"
+              [class]="selectClasses"
+              [disabled]="busy() || parents.isLoading()"
+              (change)="changeParent($event, current)"
+            >
+              <option value="" [selected]="!current.parentCode">No parent</option>
+              @for (candidate of parentChoices(); track candidate.workItemCode) {
+                <option
+                  [value]="candidate.workItemCode"
+                  [selected]="candidate.workItemCode === current.parentCode"
+                >
+                  {{ candidate.displayKey }} · {{ candidate.title }} ({{ typeLabels[candidate.type] }})
+                </option>
+              }
+            </select>
+          </dd>
+        </div>
+      </dl>
+
+      @if (current.description) {
+        <section aria-labelledby="description-heading">
+          <h2 id="description-heading" class="text-lg font-semibold">Description</h2>
+          <p class="whitespace-pre-wrap">{{ current.description }}</p>
+        </section>
+      }
+      @if (current.acceptanceCriteria) {
+        <section aria-labelledby="criteria-heading">
+          <h2 id="criteria-heading" class="text-lg font-semibold">Acceptance criteria</h2>
+          <p class="whitespace-pre-wrap">{{ current.acceptanceCriteria }}</p>
+        </section>
+      }
+
+      <section aria-labelledby="children-heading" class="flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-4">
+          <h2 id="children-heading" class="text-lg font-semibold">Children</h2>
+          <a
+            routerLink="/work-items/new"
+            [queryParams]="{ project: current.projectCode, parent: current.workItemCode }"
+            class="text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
+            >Add a child</a
+          >
+        </div>
+        @if (current.children.length === 0) {
+          <p>No children.</p>
+        } @else {
+          <ul class="flex flex-col gap-2">
+            @for (child of current.children; track child.workItemCode) {
+              <li class="flex flex-wrap items-center gap-3">
+                <a
+                  [routerLink]="['/work-items', child.workItemCode]"
+                  class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
+                  >{{ child.displayKey }}</a
+                >
+                <span>{{ child.title }}</span>
+                <span class="text-sm">({{ typeLabels[child.type] }})</span>
+                <app-status-label [status]="child.status" />
+              </li>
+            }
+          </ul>
+        }
+      </section>
+    }
+
+    <app-work-item-comments [workItemCode]="current.workItemCode" />
+  }
+</app-page>

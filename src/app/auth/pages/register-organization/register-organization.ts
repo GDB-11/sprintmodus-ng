@@ -12,8 +12,8 @@ import {
 } from '@angular/forms/signals';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { AuthCard } from '../../components/auth-card';
-import { TextField } from '../../components/text-field';
+import { AuthCard } from '../../components/auth-card/auth-card';
+import { TextField } from '../../../shared/ui/text-field/text-field';
 import {
   OrganizationCodeAvailability,
   RegisterOrganizationRequest,
@@ -50,68 +50,7 @@ function registrationErrorMessage(error: unknown): string {
 @Component({
   selector: 'app-register-organization',
   imports: [AuthCard, TextField, FormRoot, RouterLink],
-  template: `
-    <app-auth-card
-      heading="Register your organization"
-      subheading="Create the organization and its owner account."
-    >
-      <form [formRoot]="registerForm" class="flex flex-col gap-4">
-        @if (errorMessage(); as message) {
-          <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
-            {{ message }}
-          </p>
-        }
-        <app-text-field
-          [field]="registerForm.organizationName"
-          inputId="organizationName"
-          label="Organization name"
-          autocomplete="organization"
-        />
-        <app-text-field
-          [field]="registerForm.organizationCode"
-          inputId="organizationCode"
-          label="Organization code"
-          [hint]="codeHint()"
-        />
-        <app-text-field
-          [field]="registerForm.fullName"
-          inputId="fullName"
-          label="Your full name"
-          autocomplete="name"
-        />
-        <app-text-field
-          [field]="registerForm.email"
-          inputId="email"
-          label="Email"
-          type="email"
-          autocomplete="email"
-        />
-        <app-text-field
-          [field]="registerForm.password"
-          inputId="password"
-          label="Password"
-          type="password"
-          autocomplete="new-password"
-          hint="At least 8 characters."
-        />
-        <button
-          type="submit"
-          [disabled]="registerForm().submitting()"
-          class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
-        >
-          {{ registerForm().submitting() ? 'Creating organization…' : 'Create organization' }}
-        </button>
-      </form>
-      <p class="mt-6 text-sm">
-        Already registered?
-        <a
-          routerLink="/login"
-          class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
-          >Sign in</a
-        >
-      </p>
-    </app-auth-card>
-  `,
+  templateUrl: './register-organization.html',
 })
 export class RegisterOrganization {
   private readonly authService = inject(AuthService);

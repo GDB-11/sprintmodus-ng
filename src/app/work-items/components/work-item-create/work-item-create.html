@@ -1,0 +1,69 @@
+<app-page heading="New work item" backLink="/work-items" backLabel="Work items">
+  <form [formRoot]="createForm" class="flex max-w-2xl flex-col gap-4">
+    @if (errorMessage(); as message) {
+      <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+        {{ message }}
+      </p>
+    }
+    <app-select-field
+      [field]="createForm.projectCode"
+      inputId="projectCode"
+      label="Project"
+      [options]="projectOptions()"
+    />
+    <app-select-field
+      [field]="createForm.type"
+      inputId="type"
+      label="Type"
+      [options]="typeOptions"
+      hint="Epics hold features, features hold backlog items and bugs, and those hold tasks. Other combinations are allowed, with a warning."
+    />
+    <app-text-field [field]="createForm.title" inputId="title" label="Title" />
+    <app-textarea-field
+      [field]="createForm.description"
+      inputId="description"
+      label="Description"
+    />
+    <app-textarea-field
+      [field]="createForm.acceptanceCriteria"
+      inputId="acceptanceCriteria"
+      label="Acceptance criteria"
+      [rows]="3"
+    />
+    <app-select-field
+      [field]="createForm.priority"
+      inputId="priority"
+      label="Priority"
+      [options]="priorityOptions"
+    />
+    <app-select-field
+      [field]="createForm.parentCode"
+      inputId="parentCode"
+      label="Parent"
+      [options]="parentOptions()"
+    />
+    <div class="grid gap-4 sm:grid-cols-2">
+      <app-text-field
+        [field]="createForm.effortPoints"
+        inputId="effortPoints"
+        label="Effort points"
+        hint="Optional."
+      />
+      <app-text-field
+        [field]="createForm.estimatedHours"
+        inputId="estimatedHours"
+        label="Estimated hours"
+        hint="Optional."
+      />
+    </div>
+    <div>
+      <button
+        type="submit"
+        [disabled]="createForm().submitting() || !createForm.projectCode().value()"
+        class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
+      >
+        {{ createForm().submitting() ? 'Creating…' : 'Create work item' }}
+      </button>
+    </div>
+  </form>
+</app-page>

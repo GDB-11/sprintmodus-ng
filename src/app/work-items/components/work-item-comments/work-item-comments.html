@@ -1,0 +1,51 @@
+<section aria-labelledby="comments-heading" class="flex flex-col gap-4">
+  <h2 id="comments-heading" class="text-lg font-semibold">Comments</h2>
+
+  @if (comments.isLoading()) {
+    <p role="status">Loading comments…</p>
+  } @else if (comments.error()) {
+    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+      Could not load the comments.
+      <button type="button" class="underline" (click)="comments.reload()">Try again</button>
+    </p>
+  } @else if (loadedComments().length === 0) {
+    <p>No comments yet.</p>
+  } @else {
+    <ul class="flex flex-col gap-3">
+      @for (comment of loadedComments(); track comment.commentCode) {
+        <li class="rounded-md bg-light-surface-secondary p-3 dark:bg-dark-surface-secondary">
+          <p class="text-sm">
+            <span class="font-semibold">{{ comment.author?.fullName ?? 'Unknown user' }}</span>
+            <span class="text-neutral-800 dark:text-neutral-300">
+              · <time [attr.datetime]="comment.createdAt">{{ comment.createdAt | date: 'medium' }}</time>
+            </span>
+          </p>
+          <p class="mt-1 whitespace-pre-wrap">{{ comment.content }}</p>
+        </li>
+      }
+    </ul>
+  }
+
+  <form [formRoot]="commentForm" class="flex max-w-2xl flex-col gap-3">
+    @if (errorMessage(); as message) {
+      <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+        {{ message }}
+      </p>
+    }
+    <app-textarea-field
+      [field]="commentForm.content"
+      inputId="comment-content"
+      label="Add a comment"
+      [rows]="3"
+    />
+    <div>
+      <button
+        type="submit"
+        [disabled]="commentForm().submitting()"
+        class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
+      >
+        {{ commentForm().submitting() ? 'Posting…' : 'Post comment' }}
+      </button>
+    </div>
+  </form>
+</section>

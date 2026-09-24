@@ -1,0 +1,36 @@
+<div
+  role="region"
+  aria-label="Notifications"
+  aria-live="polite"
+  class="pointer-events-auto flex w-full max-w-xl flex-col gap-2"
+>
+  @for (notification of notifications(); track notification.id) {
+    <div
+      class="flex items-start gap-3 rounded-md border p-3 text-sm shadow-md"
+      [class.border-success-800]="notification.kind === 'success'"
+      [class.bg-success-100]="notification.kind === 'success'"
+      [class.text-success-900]="notification.kind === 'success'"
+      [class.border-info-800]="notification.kind === 'info'"
+      [class.bg-info-100]="notification.kind === 'info'"
+      [class.text-info-900]="notification.kind === 'info'"
+      [class.border-warning-800]="notification.kind === 'warning'"
+      [class.bg-warning-100]="notification.kind === 'warning'"
+      [class.text-warning-900]="notification.kind === 'warning'"
+      [class.border-error-800]="notification.kind === 'error'"
+      [class.bg-error-100]="notification.kind === 'error'"
+      [class.text-error-900]="notification.kind === 'error'"
+    >
+      <p class="flex-1">
+        <span class="font-semibold">{{ labels[notification.kind] }}:</span>
+        {{ notification.message }}
+      </p>
+      <button
+        type="button"
+        (click)="dismiss(notification.id)"
+        class="rounded-sm px-2 font-medium underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+      >
+        Dismiss<span class="sr-only"> {{ labels[notification.kind].toLowerCase() }} message</span>
+      </button>
+    </div>
+  }
+</div>

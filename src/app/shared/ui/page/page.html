@@ -1,0 +1,13 @@
+<main class="min-h-screen bg-light-bg p-4 text-neutral-900 sm:p-6 dark:bg-dark-bg dark:text-neutral-100">
+  <div class="mx-auto flex max-w-5xl flex-col gap-4">
+    @if (backLink(); as link) {
+      <a
+        [routerLink]="link"
+        class="w-fit text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
+        >← {{ backLabel() }}</a
+      >
+    }
+    <h1 class="text-2xl font-semibold">{{ heading() }}</h1>
+    <ng-content />
+  </div>
+</main>

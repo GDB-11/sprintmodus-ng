@@ -20,6 +20,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadComponent: () => import('./dashboard/dashboard').then((m) => m.Dashboard),
   },
+  {
+    path: 'work-items',
+    canActivate: [authGuard],
+    loadChildren: () => import('./work-items/work-items.routes').then((m) => m.WORK_ITEM_ROUTES),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];

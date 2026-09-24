@@ -1,0 +1,129 @@
+<app-page heading="Work items" backLink="/dashboard" backLabel="Dashboard">
+  @if (projects.isLoading()) {
+    <p role="status">Loading projects…</p>
+  } @else if (projects.error()) {
+    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+      Could not load your projects.
+      <button type="button" class="underline" (click)="projects.reload()">Try again</button>
+    </p>
+  } @else if (!selectedProject()) {
+    <p>You have no projects yet. Create a project first, then add work items to it.</p>
+  } @else {
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label for="project" class="text-sm font-medium">Project</label>
+        <select id="project" [class]="selectClasses" (change)="selectProject($event)">
+          @for (project of loadedProjects(); track project.projectCode) {
+            <option
+              [value]="project.projectCode"
+              [selected]="project.projectCode === selectedProject()?.projectCode"
+            >
+              {{ project.name }} ({{ project.key }})
+            </option>
+          }
+        </select>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label for="type" class="text-sm font-medium">Type</label>
+        <select id="type" [class]="selectClasses" (change)="selectType($event)">
+          <option value="" [selected]="!type()">All types</option>
+          @for (option of itemTypes; track option) {
+            <option [value]="option" [selected]="option === type()">
+              {{ typeLabels[option] }}
+            </option>
+          }
+        </select>
+      </div>
+      <a
+        routerLink="/work-items/new"
+        [queryParams]="{ project: selectedProject()?.projectCode }"
+        class="ml-auto rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+        >New work item</a
+      >
+    </div>
+
+    @if (items.isLoading()) {
+      <p role="status">Loading work items…</p>
+    } @else if (items.error()) {
+      <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+        Could not load the work items.
+        <button type="button" class="underline" (click)="items.reload()">Try again</button>
+      </p>
+    } @else if (loadedItems(); as result) {
+      @if (result.items.length === 0) {
+        <p>
+          @if (type()) {
+            No {{ typeLabels[type()!] }} items in this project.
+          } @else {
+            This project has no work items yet.
+          }
+        </p>
+      } @else {
+        <div
+          role="region"
+          aria-label="Work items table"
+          tabindex="0"
+          class="overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+        >
+          <table class="w-full min-w-160 text-left text-sm">
+            <caption class="sr-only">
+              Work items of {{ selectedProject()?.name }}
+            </caption>
+            <thead>
+              <tr class="border-b border-neutral-700 dark:border-neutral-400">
+                <th scope="col" class="p-2">Key</th>
+                <th scope="col" class="p-2">Title</th>
+                <th scope="col" class="p-2">Type</th>
+                <th scope="col" class="p-2">Status</th>
+                <th scope="col" class="p-2">Priority</th>
+                <th scope="col" class="p-2 text-right">Points</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of result.items; track item.workItemCode) {
+                <tr class="border-b border-neutral-300 dark:border-neutral-700">
+                  <td class="p-2 whitespace-nowrap">
+                    <a
+                      [routerLink]="['/work-items', item.workItemCode]"
+                      class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
+                      >{{ item.displayKey }}</a
+                    >
+                  </td>
+                  <td class="p-2">{{ item.title }}</td>
+                  <td class="p-2">{{ typeLabels[item.type] }}</td>
+                  <td class="p-2"><app-status-label [status]="item.status" /></td>
+                  <td class="p-2">{{ priorityLabels[item.priority] }}</td>
+                  <td class="p-2 text-right">{{ item.effortPoints }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <nav aria-label="Pagination" class="flex items-center justify-between gap-4 text-sm">
+          <p role="status">
+            Showing {{ firstShown() }}–{{ lastShown() }} of {{ result.total }}
+          </p>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              [disabled]="page() === 0"
+              (click)="goToPage(page() - 1)"
+              class="rounded-md border border-neutral-700 px-3 py-1.5 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
+            >
+              Previous
+            </button>
+            <button
+              type="button"
+              [disabled]="page() + 1 >= totalPages()"
+              (click)="goToPage(page() + 1)"
+              class="rounded-md border border-neutral-700 px-3 py-1.5 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
+            >
+              Next
+            </button>
+          </div>
+        </nav>
+      }
+    }
+  }
+</app-page>
