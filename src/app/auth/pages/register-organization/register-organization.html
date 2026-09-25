@@ -1,6 +1,6 @@
 <app-auth-card
-  heading="Register your organization"
-  subheading="Create the organization and its owner account."
+  heading="Registra tu organización"
+  subheading="Crea la organización y la cuenta de su propietario."
 >
   <form [formRoot]="registerForm" class="flex flex-col gap-4">
     @if (errorMessage(); as message) {
@@ -11,50 +11,50 @@
     <app-text-field
       [field]="registerForm.organizationName"
       inputId="organizationName"
-      label="Organization name"
+      label="Nombre de la organización"
       autocomplete="organization"
     />
     <app-text-field
       [field]="registerForm.organizationCode"
       inputId="organizationCode"
-      label="Organization code"
+      label="Código de organización"
       [hint]="codeHint()"
     />
     <app-text-field
       [field]="registerForm.fullName"
       inputId="fullName"
-      label="Your full name"
+      label="Tu nombre completo"
       autocomplete="name"
     />
     <app-text-field
       [field]="registerForm.email"
       inputId="email"
-      label="Email"
+      label="Correo electrónico"
       type="email"
       autocomplete="email"
     />
     <app-text-field
       [field]="registerForm.password"
       inputId="password"
-      label="Password"
+      label="Contraseña"
       type="password"
       autocomplete="new-password"
-      hint="At least 8 characters."
+      hint="Al menos 8 caracteres."
     />
     <button
       type="submit"
       [disabled]="registerForm().submitting()"
       class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
     >
-      {{ registerForm().submitting() ? 'Creating organization…' : 'Create organization' }}
+      {{ registerForm().submitting() ? 'Creando organización…' : 'Crear organización' }}
     </button>
   </form>
   <p class="mt-6 text-sm">
-    Already registered?
+    ¿Ya tienes cuenta?
     <a
       routerLink="/login"
       class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
-      >Sign in</a
+      >Iniciar sesión</a
     >
   </p>
 </app-auth-card>

@@ -68,8 +68,13 @@ const PAIRS: [foreground: string, background: string, minimum: number, use: stri
   ['success-900', 'success-100', TEXT, 'success notification'],
   ['info-900', 'info-100', TEXT, 'info notification'],
   ['warning-900', 'warning-100', TEXT, 'warning notification'],
+  ['neutral-900', 'neutral-200', TEXT, 'low priority chip'],
+  ['info-700', 'light-bg', GRAPHIC, 'burndown ideal line'],
+  ['error-700', 'light-bg', GRAPHIC, 'burndown real line'],
   ['neutral-700', 'light-bg', GRAPHIC, 'borders, initial status icon'],
   ['neutral-700', 'light-surface-tertiary', GRAPHIC, 'input borders'],
+  ['secondary-900', 'light-surface-secondary', TEXT, 'links on cards'],
+  ['neutral-700', 'light-surface-secondary', GRAPHIC, 'card borders'],
   ['info-800', 'light-bg', GRAPHIC, 'in-progress status icon'],
   ['success-800', 'light-bg', GRAPHIC, 'done status icon'],
   ['light-bg', 'success-800', GRAPHIC, 'done status check mark'],
@@ -78,6 +83,8 @@ const PAIRS: [foreground: string, background: string, minimum: number, use: stri
   ['success-800', 'success-100', GRAPHIC, 'success notification border'],
   ['info-800', 'info-100', GRAPHIC, 'info notification border'],
   ['warning-800', 'warning-100', GRAPHIC, 'warning notification border'],
+  ['warning-800', 'light-bg', GRAPHIC, 'live connection indicator, connecting'],
+  ['error-800', 'light-bg', GRAPHIC, 'live connection indicator, offline'],
   // dark mode
   ['neutral-100', 'dark-bg', TEXT, 'body text and inputs'],
   ['neutral-300', 'dark-bg', TEXT, 'hints'],
@@ -92,6 +99,10 @@ const PAIRS: [foreground: string, background: string, minimum: number, use: stri
   ['success-300', 'dark-bg', GRAPHIC, 'done status icon'],
   ['dark-bg', 'success-300', GRAPHIC, 'done status check mark'],
   ['secondary-400', 'dark-bg', GRAPHIC, 'focus outline'],
+  ['warning-300', 'dark-bg', GRAPHIC, 'live connection indicator, connecting'],
+  ['error-300', 'dark-bg', GRAPHIC, 'live connection indicator, offline'],
+  ['info-600', 'dark-bg', GRAPHIC, 'burndown ideal line'],
+  ['error-500', 'dark-bg', GRAPHIC, 'burndown real line'],
 ];
 
 describe('theme colour pairs (WCAG AA)', () => {

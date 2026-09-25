@@ -1,0 +1,121 @@
+<section aria-labelledby="links-heading" class="flex flex-col gap-3">
+  <div class="flex items-center justify-between gap-4">
+    <h2 id="links-heading" class="text-lg font-semibold">Relaciones</h2>
+    @if (!adding()) {
+      <button
+        type="button"
+        (click)="startAdding()"
+        class="text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
+      >
+        Agregar relación
+      </button>
+    }
+  </div>
+
+  @if (errorMessage(); as message) {
+    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+      {{ message }}
+    </p>
+  }
+
+  @if (links().length === 0) {
+    <p>Sin relaciones.</p>
+  } @else {
+    <ul class="flex flex-col gap-2">
+      @for (link of links(); track link.linkCode) {
+        <li class="flex flex-wrap items-center gap-3">
+          <span class="text-sm font-medium">{{ linkTypeLabels[link.type] }}</span>
+          <a
+            [routerLink]="['/work-items', link.item.workItemCode]"
+            class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
+            >{{ link.item.displayKey }}</a
+          >
+          <span>{{ link.item.title }}</span>
+          <app-status-label [status]="link.item.status" />
+          <button
+            type="button"
+            [disabled]="busy()"
+            (click)="remove(link.linkCode)"
+            class="ml-auto text-sm font-medium text-error-800 underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60 dark:text-error-300"
+          >
+            Quitar<span class="sr-only"> relación con {{ link.item.displayKey }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+
+  @if (adding()) {
+    <div class="flex flex-col gap-3 rounded-md bg-light-surface-secondary p-3 dark:bg-dark-surface-secondary">
+      <div class="flex flex-col gap-1.5">
+        <label for="link-type" class="text-sm font-medium">Tipo de relación</label>
+        <select id="link-type" [class]="selectClasses" (change)="onType($event)">
+          @for (option of linkTypes; track option) {
+            <option [value]="option" [selected]="option === type()">{{ linkTypeLabels[option] }}</option>
+          }
+        </select>
+      </div>
+
+      @if (picked(); as target) {
+        <p class="text-sm">
+          {{ target.displayKey }} · {{ target.title }}
+          <button
+            type="button"
+            (click)="changePick()"
+            class="ml-2 font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
+          >
+            Cambiar
+          </button>
+        </p>
+      } @else {
+        <div class="flex flex-col gap-1.5">
+          <label for="link-search" class="text-sm font-medium">Buscar elemento de trabajo</label>
+          <input
+            id="link-search"
+            type="text"
+            [value]="query()"
+            (input)="onQuery($event)"
+            placeholder="Escribe al menos 2 caracteres…"
+            class="rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-2 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400"
+          />
+        </div>
+        @if (candidates.isLoading()) {
+          <p role="status">Buscando…</p>
+        } @else if (candidateOptions().length > 0) {
+          <ul class="flex max-h-48 flex-col gap-1 overflow-y-auto">
+            @for (candidate of candidateOptions(); track candidate.workItemCode) {
+              <li>
+                <button
+                  type="button"
+                  (click)="pick(candidate)"
+                  class="w-full rounded-md px-2 py-1 text-left text-sm hover:bg-light-surface-tertiary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:hover:bg-dark-bg dark:focus-visible:outline-secondary-400"
+                >
+                  {{ candidate.displayKey }} · {{ candidate.title }}
+                </button>
+              </li>
+            }
+          </ul>
+        }
+      }
+
+      <div class="flex gap-3">
+        <button
+          type="button"
+          [disabled]="!picked() || busy()"
+          (click)="add()"
+          class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
+        >
+          {{ busy() ? 'Vinculando…' : 'Vincular' }}
+        </button>
+        <button
+          type="button"
+          [disabled]="busy()"
+          (click)="cancel()"
+          class="rounded-md border border-neutral-700 px-4 py-2.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  }
+</section>

@@ -1,0 +1,165 @@
+<app-page heading="Sprints" backLink="/dashboard" backLabel="Panel">
+  @if (projects.status() === 'loading') {
+    <p role="status">Cargando proyectos…</p>
+  } @else if (projects.error()) {
+    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+      No se pudieron cargar tus proyectos.
+      <button type="button" class="underline" (click)="projects.reload()">Reintentar</button>
+    </p>
+  } @else if (!selectedProject()) {
+    <p>Aún no tienes proyectos. Crea un proyecto primero y luego planifica sus sprints.</p>
+  } @else {
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label for="project" class="text-sm font-medium">Proyecto</label>
+        <select id="project" [class]="selectClasses" (change)="selectProject($event)">
+          @for (project of loadedProjects(); track project.projectCode) {
+            <option [value]="project.projectCode" [selected]="project.projectCode === selectedProject()?.projectCode">
+              {{ project.name }} ({{ project.key }})
+            </option>
+          }
+        </select>
+      </div>
+      <a
+        routerLink="/board"
+        [queryParams]="{ project: selectedProject()?.projectCode }"
+        class="ml-auto text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
+        >Ver el tablero</a
+      >
+    </div>
+
+    <section aria-labelledby="sprints-heading" class="flex flex-col gap-3">
+      <h2 id="sprints-heading" class="text-lg font-semibold">Sprints del proyecto</h2>
+      @if (!canAdminister()) {
+        <p id="plan-hint" class="text-sm text-neutral-800 dark:text-neutral-300">
+          Solo los propietarios y administradores inician y cierran sprints.
+        </p>
+      }
+      @if (sprints.status() === 'loading') {
+        <p role="status">Cargando sprints…</p>
+      } @else if (sprints.error()) {
+        <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+          No se pudieron cargar los sprints.
+          <button type="button" class="underline" (click)="sprints.reload()">Reintentar</button>
+        </p>
+      } @else if (loadedSprints().length === 0) {
+        <p>Este proyecto aún no tiene sprints.</p>
+      } @else {
+        <div
+          role="region"
+          aria-label="Tabla de sprints"
+          tabindex="0"
+          class="overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+        >
+          <table class="w-full min-w-160 text-left text-sm">
+            <caption class="sr-only">
+              Sprints de {{ selectedProject()?.name }}
+            </caption>
+            <thead>
+              <tr class="border-b border-neutral-700 dark:border-neutral-400">
+                <th scope="col" class="p-2">Sprint</th>
+                <th scope="col" class="p-2">Estado</th>
+                <th scope="col" class="p-2">Fechas</th>
+                <th scope="col" class="p-2 text-right">Planificados</th>
+                <th scope="col" class="p-2 text-right">Completados</th>
+                <th scope="col" class="p-2">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (sprint of loadedSprints(); track sprint.sprintCode) {
+                <tr class="border-b border-neutral-300 align-top dark:border-neutral-700">
+                  <td class="p-2 font-medium">{{ sprint.name }}</td>
+                  <td class="p-2">{{ statusLabels[sprint.status] }}</td>
+                  <td class="p-2 whitespace-nowrap">
+                    {{ sprint.startDate | date: 'mediumDate' }} – {{ sprint.endDate | date: 'mediumDate' }}
+                    <span class="block text-neutral-800 dark:text-neutral-300">{{ sprint.configuredDays }} días</span>
+                  </td>
+                  <td class="p-2 text-right">{{ sprint.plannedVelocity }}</td>
+                  <td class="p-2 text-right">{{ sprint.velocity }}</td>
+                  <td class="p-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                      @if (sprint.status !== 'PLANNED') {
+                        <a
+                          [routerLink]="['/sprints', sprint.sprintCode, 'burndown']"
+                          class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
+                          >Ver burndown</a
+                        >
+                      }
+                      @if (sprint.status === 'PLANNED') {
+                        <button
+                          type="button"
+                          [class]="secondaryButtonClasses"
+                          [disabled]="!canAdminister() || busy() || hasActiveSprint()"
+                          [attr.aria-describedby]="canAdminister() ? null : 'plan-hint'"
+                          [attr.title]="canAdminister() && hasActiveSprint() ? 'Cierra primero el sprint activo: un proyecto tiene uno a la vez.' : null"
+                          (click)="start(sprint)"
+                        >
+                          Iniciar<span class="sr-only"> {{ sprint.name }}</span>
+                        </button>
+                      }
+                      @if (sprint.status === 'ACTIVE') {
+                        <button
+                          type="button"
+                          [class]="secondaryButtonClasses"
+                          [disabled]="!canAdminister() || busy()"
+                          [attr.aria-describedby]="canAdminister() ? null : 'plan-hint'"
+                          (click)="confirmingClose.set(sprint.sprintCode)"
+                        >
+                          Cerrar<span class="sr-only"> {{ sprint.name }}</span>
+                        </button>
+                      }
+                    </div>
+                    @if (confirmingClose() === sprint.sprintCode) {
+                      <div
+                        role="alertdialog"
+                        [attr.aria-labelledby]="'close-question-' + sprint.sprintCode"
+                        class="mt-2 flex flex-col gap-2 rounded-md bg-error-100 p-3 text-error-900"
+                      >
+                        <p [id]="'close-question-' + sprint.sprintCode" class="font-medium">¿Cerrar {{ sprint.name }}?</p>
+                        <p>Se fijan su velocidad y su burndown: no vuelven a cambiar.</p>
+                        <div class="flex gap-2">
+                          <button
+                            type="button"
+                            (click)="close(sprint)"
+                            class="rounded-md bg-error-800 px-3 py-1.5 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+                          >
+                            Sí, cerrar
+                          </button>
+                          <button
+                            type="button"
+                            (click)="confirmingClose.set(null)"
+                            class="rounded-md border border-error-800 px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </section>
+
+    <app-sprint-create [projectCode]="selectedProject()!.projectCode" (created)="onCreated()" />
+
+    <section aria-labelledby="velocity-heading" class="flex flex-col gap-3">
+      <h2 id="velocity-heading" class="text-lg font-semibold">Velocidad</h2>
+      @if (history.status() === 'loading') {
+        <p role="status">Cargando la velocidad…</p>
+      } @else if (history.error()) {
+        <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+          No se pudo cargar la velocidad.
+          <button type="button" class="underline" (click)="history.reload()">Reintentar</button>
+        </p>
+      } @else if (loadedHistory(); as velocity) {
+        <app-velocity-history [history]="velocity" />
+      }
+    </section>
+
+    <app-sprint-settings />
+  }
+</app-page>

@@ -10,5 +10,5 @@ import { RouterLink } from '@angular/router';
 export class Page {
   readonly heading = input.required<string>();
   readonly backLink = input<string | readonly unknown[]>();
-  readonly backLabel = input('Back');
+  readonly backLabel = input('Volver');
 }

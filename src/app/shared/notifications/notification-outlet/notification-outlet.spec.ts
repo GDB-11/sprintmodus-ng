@@ -12,20 +12,20 @@ describe('NotificationOutlet', () => {
 
     expect(root.querySelector('[aria-live="polite"]')).not.toBeNull();
 
-    service.warning('EPIC is not a recommended parent for TASK.');
-    service.success('Changes saved.');
+    service.warning('EPIC no es un elemento superior recomendado para TASK.');
+    service.success('Cambios guardados.');
     service.error('Nope.');
     service.info('FYI.');
     fixture.detectChanges();
 
-    expect(root.textContent).toContain('Warning: EPIC is not a recommended parent for TASK.');
-    expect(root.textContent).toContain('Done: Changes saved.');
+    expect(root.textContent).toContain('Aviso: EPIC no es un elemento superior recomendado para TASK.');
+    expect(root.textContent).toContain('Listo: Cambios guardados.');
     await expectNoAxeViolations(root);
 
     root.querySelector<HTMLButtonElement>('button')!.click();
     fixture.detectChanges();
 
-    expect(root.textContent).not.toContain('EPIC is not a recommended parent');
+    expect(root.textContent).not.toContain('EPIC no es un elemento superior recomendado');
     expect(service.notifications()).toHaveLength(3);
   });
 });

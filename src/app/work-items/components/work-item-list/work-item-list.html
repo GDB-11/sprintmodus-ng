@@ -1,17 +1,18 @@
-<app-page heading="Work items" backLink="/dashboard" backLabel="Dashboard">
+<app-page heading="Elementos de trabajo" backLink="/dashboard" backLabel="Panel">
   @if (projects.isLoading()) {
-    <p role="status">Loading projects…</p>
+    <p role="status">Cargando proyectos…</p>
   } @else if (projects.error()) {
     <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
-      Could not load your projects.
-      <button type="button" class="underline" (click)="projects.reload()">Try again</button>
+      No se pudieron cargar tus proyectos.
+      <button type="button" class="underline" (click)="projects.reload()">Reintentar</button>
     </p>
   } @else if (!selectedProject()) {
-    <p>You have no projects yet. Create a project first, then add work items to it.</p>
+    <p>Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo.</p>
   } @else {
+    <app-board-connection [projectCode]="selectedProject()!.projectCode" />
     <div class="flex flex-wrap items-end gap-4">
       <div class="flex flex-col gap-1.5">
-        <label for="project" class="text-sm font-medium">Project</label>
+        <label for="project" class="text-sm font-medium">Proyecto</label>
         <select id="project" [class]="selectClasses" (change)="selectProject($event)">
           @for (project of loadedProjects(); track project.projectCode) {
             <option
@@ -24,9 +25,9 @@
         </select>
       </div>
       <div class="flex flex-col gap-1.5">
-        <label for="type" class="text-sm font-medium">Type</label>
+        <label for="type" class="text-sm font-medium">Tipo</label>
         <select id="type" [class]="selectClasses" (change)="selectType($event)">
-          <option value="" [selected]="!type()">All types</option>
+          <option value="" [selected]="!type()">Todos los tipos</option>
           @for (option of itemTypes; track option) {
             <option [value]="option" [selected]="option === type()">
               {{ typeLabels[option] }}
@@ -34,49 +35,76 @@
           }
         </select>
       </div>
+      <form (submit)="search($event)" class="flex flex-col gap-1.5">
+        <label for="search" class="text-sm font-medium">Buscar</label>
+        <div class="flex gap-2">
+          <input
+            id="search"
+            type="search"
+            [value]="queryDraft()"
+            (input)="onQueryDraft($event)"
+            placeholder="Título o descripción…"
+            [class]="selectClasses"
+          />
+          <button
+            type="submit"
+            class="rounded-md border border-neutral-700 px-3 py-2 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
+          >
+            Buscar
+          </button>
+        </div>
+      </form>
+      <a
+        routerLink="/board"
+        [queryParams]="{ project: selectedProject()?.projectCode, type: type() ?? undefined }"
+        class="ml-auto text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
+        >Ver como tablero</a
+      >
       <a
         routerLink="/work-items/new"
         [queryParams]="{ project: selectedProject()?.projectCode }"
-        class="ml-auto rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
-        >New work item</a
+        class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+        >Nuevo elemento de trabajo</a
       >
     </div>
 
     @if (items.isLoading()) {
-      <p role="status">Loading work items…</p>
+      <p role="status">Cargando elementos de trabajo…</p>
     } @else if (items.error()) {
       <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
-        Could not load the work items.
-        <button type="button" class="underline" (click)="items.reload()">Try again</button>
+        No se pudieron cargar los elementos de trabajo.
+        <button type="button" class="underline" (click)="items.reload()">Reintentar</button>
       </p>
     } @else if (loadedItems(); as result) {
       @if (result.items.length === 0) {
         <p>
-          @if (type()) {
-            No {{ typeLabels[type()!] }} items in this project.
+          @if (query()) {
+            Sin resultados para "{{ query() }}".
+          } @else if (type()) {
+            Sin elementos de tipo {{ typeLabels[type()!] }} en este proyecto.
           } @else {
-            This project has no work items yet.
+            Este proyecto aún no tiene elementos de trabajo.
           }
         </p>
       } @else {
         <div
           role="region"
-          aria-label="Work items table"
+          aria-label="Tabla de elementos de trabajo"
           tabindex="0"
           class="overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
         >
           <table class="w-full min-w-160 text-left text-sm">
             <caption class="sr-only">
-              Work items of {{ selectedProject()?.name }}
+              Elementos de trabajo de {{ selectedProject()?.name }}
             </caption>
             <thead>
               <tr class="border-b border-neutral-700 dark:border-neutral-400">
-                <th scope="col" class="p-2">Key</th>
-                <th scope="col" class="p-2">Title</th>
-                <th scope="col" class="p-2">Type</th>
-                <th scope="col" class="p-2">Status</th>
-                <th scope="col" class="p-2">Priority</th>
-                <th scope="col" class="p-2 text-right">Points</th>
+                <th scope="col" class="p-2">Clave</th>
+                <th scope="col" class="p-2">Título</th>
+                <th scope="col" class="p-2">Tipo</th>
+                <th scope="col" class="p-2">Estado</th>
+                <th scope="col" class="p-2">Prioridad</th>
+                <th scope="col" class="p-2 text-right">Puntos</th>
               </tr>
             </thead>
             <tbody>
@@ -100,9 +128,9 @@
           </table>
         </div>
 
-        <nav aria-label="Pagination" class="flex items-center justify-between gap-4 text-sm">
+        <nav aria-label="Paginación" class="flex items-center justify-between gap-4 text-sm">
           <p role="status">
-            Showing {{ firstShown() }}–{{ lastShown() }} of {{ result.total }}
+            Mostrando {{ firstShown() }}–{{ lastShown() }} de {{ result.total }}
           </p>
           <div class="flex gap-2">
             <button
@@ -111,7 +139,7 @@
               (click)="goToPage(page() - 1)"
               class="rounded-md border border-neutral-700 px-3 py-1.5 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
             >
-              Previous
+              Anterior
             </button>
             <button
               type="button"
@@ -119,7 +147,7 @@
               (click)="goToPage(page() + 1)"
               class="rounded-md border border-neutral-700 px-3 py-1.5 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
             >
-              Next
+              Siguiente
             </button>
           </div>
         </nav>

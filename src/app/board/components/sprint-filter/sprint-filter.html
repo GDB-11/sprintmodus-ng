@@ -1,0 +1,48 @@
+<div class="flex flex-wrap items-end gap-x-6 gap-y-3">
+  @for (group of groups(); track group.id) {
+    <div role="group" [attr.aria-labelledby]="'sprints-' + group.id" class="flex flex-col gap-1.5">
+      <span [id]="'sprints-' + group.id" class="text-sm font-medium">{{ group.label }}</span>
+      <div class="flex flex-wrap gap-2">
+        @for (sprint of group.sprints; track sprint.sprintCode) {
+          <button
+            type="button"
+            [class]="classes(sprint.sprintCode)"
+            [attr.aria-pressed]="selected() === sprint.sprintCode"
+            (click)="selected.set(sprint.sprintCode)"
+          >
+            {{ sprint.name }} · {{ statusLabels[sprint.status] }}
+            <span class="sr-only">, del {{ sprint.startDate | date: 'mediumDate' }} al {{ sprint.endDate | date: 'mediumDate' }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  }
+  <div role="group" aria-labelledby="sprints-other" class="flex flex-col gap-1.5">
+    <span id="sprints-other" class="text-sm font-medium">Otras vistas</span>
+    <div class="flex flex-wrap gap-2">
+      <button type="button" [class]="classes(backlog)" [attr.aria-pressed]="selected() === backlog" (click)="selected.set(backlog)">
+        Backlog (sin sprint)
+      </button>
+      <button type="button" [class]="classes(allSprints)" [attr.aria-pressed]="selected() === allSprints" (click)="selected.set(allSprints)">
+        Todos
+      </button>
+    </div>
+  </div>
+  @if (others().length > 0) {
+    <div class="flex flex-col gap-1.5">
+      <label for="other-sprints" class="text-sm font-medium">Otros sprints</label>
+      <select
+        id="other-sprints"
+        (change)="chooseOther($event)"
+        class="rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-1.5 text-sm text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400"
+      >
+        <option value="" [selected]="!otherSelected()">Elegir…</option>
+        @for (sprint of others(); track sprint.sprintCode) {
+          <option [value]="sprint.sprintCode" [selected]="selected() === sprint.sprintCode">
+            {{ sprint.name }} · {{ statusLabels[sprint.status] }}
+          </option>
+        }
+      </select>
+    </div>
+  }
+</div>

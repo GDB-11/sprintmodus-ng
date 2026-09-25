@@ -1,0 +1,221 @@
+<app-page heading="Configuración de flujo de trabajo" backLink="/dashboard" backLabel="Panel">
+  <div class="flex max-w-xs flex-col gap-1.5">
+    <label for="item-type" class="text-sm font-medium">Tipo de elemento de trabajo</label>
+    <select id="item-type" [class]="selectClasses" (change)="selectType($event)">
+      @for (option of itemTypes; track option) {
+        <option [value]="option" [selected]="option === itemType()">{{ typeLabels[option] }}</option>
+      }
+    </select>
+  </div>
+
+  @if (workflow.isLoading() && !workflow.hasValue()) {
+    <p role="status">Cargando flujo de trabajo…</p>
+  } @else if (workflow.error() && !workflow.hasValue()) {
+    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+      No se pudo cargar el flujo de trabajo.
+      <button type="button" class="underline" (click)="workflow.reload()">Reintentar</button>
+    </p>
+  } @else {
+    @if (errorMessage(); as message) {
+      <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+        {{ message }}
+      </p>
+    }
+
+    <section aria-labelledby="statuses-heading" class="flex flex-col gap-3">
+      <div class="flex items-center justify-between gap-4">
+        <h2 id="statuses-heading" class="text-lg font-semibold">Estados</h2>
+        <button
+          type="button"
+          (click)="addStatus()"
+          class="text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
+        >
+          Agregar estado
+        </button>
+      </div>
+      <div
+        role="region"
+        aria-label="Tabla de estados"
+        tabindex="0"
+        class="overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+      >
+        <table class="w-full min-w-160 text-left text-sm">
+          <caption class="sr-only">
+            Estados de {{ typeLabels[itemType()] }}
+          </caption>
+          <thead>
+            <tr class="border-b border-neutral-700 dark:border-neutral-400">
+              <th scope="col" class="p-2">Código</th>
+              <th scope="col" class="p-2">Nombre para mostrar</th>
+              <th scope="col" class="p-2">Orden</th>
+              <th scope="col" class="p-2">Final</th>
+              <th scope="col" class="p-2"><span class="sr-only">Quitar</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (status of statuses(); track $index) {
+              <tr class="border-b border-neutral-300 dark:border-neutral-700">
+                <td class="p-2">
+                  <input
+                    [value]="status.code"
+                    (input)="onStatusCode($index, $event)"
+                    [attr.aria-label]="'Código, fila ' + ($index + 1)"
+                    class="w-32"
+                    [class]="cellInputClasses"
+                  />
+                </td>
+                <td class="p-2">
+                  <input
+                    [value]="status.displayName"
+                    (input)="onStatusName($index, $event)"
+                    [attr.aria-label]="'Nombre para mostrar, fila ' + ($index + 1)"
+                    class="w-48"
+                    [class]="cellInputClasses"
+                  />
+                </td>
+                <td class="p-2">
+                  <input
+                    type="number"
+                    min="1"
+                    [value]="status.order"
+                    (input)="onStatusOrder($index, $event)"
+                    [attr.aria-label]="'Orden, fila ' + ($index + 1)"
+                    class="w-20"
+                    [class]="cellInputClasses"
+                  />
+                </td>
+                <td class="p-2">
+                  <input
+                    type="checkbox"
+                    [checked]="status.isTerminal"
+                    (change)="onStatusTerminal($index, $event)"
+                    [attr.aria-label]="'Final, fila ' + ($index + 1)"
+                  />
+                </td>
+                <td class="p-2">
+                  <button
+                    type="button"
+                    (click)="removeStatus($index)"
+                    class="text-sm font-medium text-error-800 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-error-300"
+                  >
+                    Quitar<span class="sr-only"> estado, fila {{ $index + 1 }}</span>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="5" class="p-2">Aún no hay estados.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section aria-labelledby="transitions-heading" class="flex flex-col gap-3">
+      <div class="flex items-center justify-between gap-4">
+        <h2 id="transitions-heading" class="text-lg font-semibold">Transiciones</h2>
+        <button
+          type="button"
+          (click)="addTransition()"
+          [disabled]="statuses().length === 0"
+          class="text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60 dark:text-secondary-400"
+        >
+          Agregar transición
+        </button>
+      </div>
+      <div
+        role="region"
+        aria-label="Tabla de transiciones"
+        tabindex="0"
+        class="overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+      >
+        <table class="w-full min-w-160 text-left text-sm">
+          <caption class="sr-only">
+            Transiciones de {{ typeLabels[itemType()] }}
+          </caption>
+          <thead>
+            <tr class="border-b border-neutral-700 dark:border-neutral-400">
+              <th scope="col" class="p-2">De</th>
+              <th scope="col" class="p-2">A</th>
+              <th scope="col" class="p-2">Permite retroceder</th>
+              <th scope="col" class="p-2"><span class="sr-only">Quitar</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (transition of transitions(); track $index) {
+              <tr class="border-b border-neutral-300 dark:border-neutral-700">
+                <td class="p-2">
+                  <select
+                    [class]="selectClasses"
+                    (change)="onTransitionFrom($index, $event)"
+                    [attr.aria-label]="'De, fila ' + ($index + 1)"
+                  >
+                    @for (status of statuses(); track status.code) {
+                      <option [value]="status.code" [selected]="status.code === transition.from">
+                        {{ status.code }}
+                      </option>
+                    }
+                  </select>
+                </td>
+                <td class="p-2">
+                  <select
+                    [class]="selectClasses"
+                    (change)="onTransitionTo($index, $event)"
+                    [attr.aria-label]="'A, fila ' + ($index + 1)"
+                  >
+                    @for (status of statuses(); track status.code) {
+                      <option [value]="status.code" [selected]="status.code === transition.to">
+                        {{ status.code }}
+                      </option>
+                    }
+                  </select>
+                </td>
+                <td class="p-2">
+                  <input
+                    type="checkbox"
+                    [checked]="transition.allowedBackward"
+                    (change)="onTransitionBackward($index, $event)"
+                    [attr.aria-label]="'Permite retroceder, fila ' + ($index + 1)"
+                  />
+                </td>
+                <td class="p-2">
+                  <button
+                    type="button"
+                    (click)="removeTransition($index)"
+                    class="text-sm font-medium text-error-800 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-error-300"
+                  >
+                    Quitar<span class="sr-only"> transición, fila {{ $index + 1 }}</span>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="p-2">Aún no hay transiciones.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="flex gap-3">
+      <button
+        type="button"
+        [disabled]="saving()"
+        (click)="save()"
+        class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
+      >
+        {{ saving() ? 'Guardando…' : 'Guardar flujo de trabajo' }}
+      </button>
+      <button
+        type="button"
+        [disabled]="saving()"
+        (click)="discard()"
+        class="rounded-md border border-neutral-700 px-4 py-2.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
+      >
+        Descartar cambios
+      </button>
+    </div>
+  }
+</app-page>

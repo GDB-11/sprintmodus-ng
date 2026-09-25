@@ -71,9 +71,9 @@ describe('WorkItemCreate', () => {
 
     expect(control<HTMLSelectElement>('projectCode').value).toBe('p2');
     const types = [...control<HTMLSelectElement>('type').options].map((option) => option.textContent?.trim());
-    expect(types).toEqual(['Epic', 'Feature', 'Product backlog item', 'Bug', 'Task']);
+    expect(types).toEqual(['Épica', 'Característica', 'Elemento del backlog', 'Error', 'Tarea']);
     const parents = [...control<HTMLSelectElement>('parentCode').options].map((option) => option.textContent?.trim());
-    expect(parents).toEqual(['No parent', 'MOB-1000 · Checkout (Epic)']);
+    expect(parents).toEqual(['Sin elemento superior', 'MOB-1000 · Checkout (Épica)']);
   });
 
   it('creates the item and opens it', async () => {
@@ -119,7 +119,7 @@ describe('WorkItemCreate', () => {
     fixture.detectChanges();
 
     http.expectNone(`${API}/api/work-items`);
-    expect(alerts()).toContain('Enter a title.');
+    expect(alerts()).toContain('Ingresa un título.');
   });
 
   it('rejects effort points that are not whole numbers in range', async () => {
@@ -131,7 +131,7 @@ describe('WorkItemCreate', () => {
     fixture.detectChanges();
 
     http.expectNone(`${API}/api/work-items`);
-    expect(alerts()).toContain('Enter a whole number from 0 to 1000.');
+    expect(alerts()).toContain('Ingresa un número entero de 0 a 1000.');
   });
 
   it("shows the backend's reason when the item is refused", async () => {

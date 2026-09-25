@@ -1,6 +1,9 @@
-import { Component, computed, inject } from '@angular/core';
-import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, linkedSignal } from '@angular/core';
+import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { merge, auditTime } from 'rxjs';
+import { BoardConnection } from '../../../board/components/board-connection/board-connection';
+import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
 import { ProjectService } from '../../../projects/services/project.service';
 import { valueOf } from '../../../shared/resource-value';
 import { Page } from '../../../shared/ui/page/page';
@@ -14,14 +17,18 @@ import { WorkItemService } from '../../services/work-item.service';
 import { StatusLabel } from '../status-label/status-label';
 
 const PAGE_SIZE = 25;
+const RELOAD_DEBOUNCE_MS = 500;
 
 const SELECT_CLASSES =
   'rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-2 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400';
 
-/** The work items of one project, filtered by type and paged. The project, filter and page live in the URL. */
+/**
+ * The work items of one project, filtered by type and paged. The project, filter and page live in the URL. It follows the
+ * project's live board: when someone moves an item the list is reloaded, so it never shows a status that is no longer true.
+ */
 @Component({
   selector: 'app-work-item-list',
-  imports: [Page, RouterLink, StatusLabel],
+  imports: [Page, RouterLink, StatusLabel, BoardConnection],
   templateUrl: './work-item-list.html',
 })
 export class WorkItemList {
@@ -29,6 +36,7 @@ export class WorkItemList {
   private readonly router = inject(Router);
   private readonly workItems = inject(WorkItemService);
   private readonly projectService = inject(ProjectService);
+  private readonly board = inject(BoardWebSocketService);
 
   protected readonly selectClasses = SELECT_CLASSES;
   protected readonly itemTypes = ITEM_TYPES;
@@ -51,6 +59,11 @@ export class WorkItemList {
     return ITEM_TYPES.find((known) => known === type) ?? null;
   });
 
+  protected readonly query = computed(() => this.queryParams().get('q') ?? '');
+
+  /** The search box's own value: starts in sync with the URL, but the user may edit it before submitting. */
+  protected readonly queryDraft = linkedSignal(() => this.query());
+
   protected readonly page = computed(() => {
     const page = Number(this.queryParams().get('page'));
     return Number.isInteger(page) && page > 0 ? page : 0;
@@ -60,7 +73,7 @@ export class WorkItemList {
     params: () => {
       const project = this.selectedProject();
       return project
-        ? { projectCode: project.projectCode, type: this.type() ?? undefined, page: this.page() }
+        ? { projectCode: project.projectCode, type: this.type() ?? undefined, q: this.query() || undefined, page: this.page() }
         : undefined;
     },
     stream: ({ params }) => this.workItems.list({ ...params, size: PAGE_SIZE }),
@@ -77,12 +90,28 @@ export class WorkItemList {
     Math.min((this.page() + 1) * PAGE_SIZE, valueOf(this.items)?.total ?? 0),
   );
 
+  constructor() {
+    // A burst of changes (a card dragged across three columns) is one reload
+    merge(this.board.statusChanged$, this.board.itemMoved$, this.board.refresh$)
+      .pipe(auditTime(RELOAD_DEBOUNCE_MS), takeUntilDestroyed())
+      .subscribe(() => this.items.reload());
+  }
+
   protected selectProject(event: Event): void {
     this.navigate({ project: (event.target as HTMLSelectElement).value, type: null, page: null });
   }
 
   protected selectType(event: Event): void {
     this.navigate({ type: (event.target as HTMLSelectElement).value || null, page: null });
+  }
+
+  protected onQueryDraft(event: Event): void {
+    this.queryDraft.set((event.target as HTMLInputElement).value);
+  }
+
+  protected search(event: Event): void {
+    event.preventDefault();
+    this.navigate({ q: this.queryDraft().trim() || null, page: null });
   }
 
   protected goToPage(page: number): void {

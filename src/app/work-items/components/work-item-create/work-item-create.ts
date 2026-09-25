@@ -84,10 +84,10 @@ export class WorkItemCreate {
   protected readonly createForm = form(
     this.model,
     (path) => {
-      required(path.projectCode, { message: 'Choose the project.' });
-      required(path.title, { message: 'Enter a title.' });
-      notBlank(path.title, 'Enter a title.');
-      maxLength(path.title, 255, { message: 'Use at most 255 characters.' });
+      required(path.projectCode, { message: 'Elige el proyecto.' });
+      required(path.title, { message: 'Ingresa un título.' });
+      notBlank(path.title, 'Ingresa un título.');
+      maxLength(path.title, 255, { message: 'Usa como máximo 255 caracteres.' });
       optionalNumber(path.effortPoints, EFFORT_POINTS_RULE);
       optionalNumber(path.estimatedHours, HOURS_RULE);
     },
@@ -99,7 +99,7 @@ export class WorkItemCreate {
             const created = await firstValueFrom(this.workItems.create(this.toRequest()));
             await this.router.navigate(['/work-items', created.workItemCode]);
           } catch (error) {
-            this.errorMessage.set(apiErrorMessage(error, 'The work item could not be created.'));
+            this.errorMessage.set(apiErrorMessage(error, 'No se pudo crear el elemento de trabajo.'));
           }
           return undefined;
         },
@@ -124,7 +124,7 @@ export class WorkItemCreate {
   });
 
   protected readonly parentOptions = computed<SelectOption[]>(() => [
-    { value: '', label: 'No parent' },
+    { value: '', label: 'Sin elemento superior' },
     ...(valueOf(this.parentCandidates)?.items ?? []).map((item) => ({
       value: item.workItemCode,
       label: `${item.displayKey} · ${item.title} (${ITEM_TYPE_LABELS[item.type]})`,

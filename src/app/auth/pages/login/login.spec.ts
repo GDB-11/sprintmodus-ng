@@ -50,9 +50,9 @@ describe('Login', () => {
     expect(login).not.toHaveBeenCalled();
     const alerts = [...root().querySelectorAll('[role="alert"]')].map((el) => el.textContent?.trim());
     expect(alerts).toEqual([
-      'Enter your organization code.',
-      'Enter your email.',
-      'Enter your password.',
+      'Ingresa el código de tu organización.',
+      'Ingresa tu correo electrónico.',
+      'Ingresa tu contraseña.',
     ]);
     expect(root().querySelector('#email')?.getAttribute('aria-invalid')).toBe('true');
   });
@@ -76,7 +76,7 @@ describe('Login', () => {
     await submit();
 
     expect(root().querySelector('[role="alert"]')?.textContent).toContain(
-      'Invalid email, password or organization code.',
+      'Correo electrónico, contraseña o código de organización incorrectos.',
     );
     expect(navigateByUrl).not.toHaveBeenCalled();
   });
@@ -86,6 +86,6 @@ describe('Login', () => {
     await fillValid();
     await submit();
 
-    expect(root().querySelector('[role="alert"]')?.textContent).toContain('subscription');
+    expect(root().querySelector('[role="alert"]')?.textContent).toContain('suscripción');
   });
 });

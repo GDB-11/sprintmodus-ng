@@ -69,9 +69,9 @@ export class WorkItemEdit {
   protected readonly editForm = form(
     this.model,
     (path) => {
-      required(path.title, { message: 'Enter a title.' });
-      notBlank(path.title, 'Enter a title.');
-      maxLength(path.title, 255, { message: 'Use at most 255 characters.' });
+      required(path.title, { message: 'Ingresa un título.' });
+      notBlank(path.title, 'Ingresa un título.');
+      maxLength(path.title, 255, { message: 'Usa como máximo 255 caracteres.' });
       optionalNumber(path.effortPoints, EFFORT_POINTS_RULE);
       optionalNumber(path.estimatedHours, HOURS_RULE);
       optionalNumber(path.remainingHours, HOURS_RULE);
@@ -86,7 +86,7 @@ export class WorkItemEdit {
             );
             this.saved.emit(updated);
           } catch (error) {
-            this.errorMessage.set(apiErrorMessage(error, 'The changes could not be saved.'));
+            this.errorMessage.set(apiErrorMessage(error, 'No se pudieron guardar los cambios.'));
           }
           return undefined;
         },

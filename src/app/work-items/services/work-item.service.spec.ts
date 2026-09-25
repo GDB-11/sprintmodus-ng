@@ -103,6 +103,19 @@ describe('WorkItemService', () => {
     expect(messages()).toEqual([['warning', 'Velocity is stale.']]);
   });
 
+  it('creates and removes a link', () => {
+    service.createLink('item-1', 'item-2', 'BLOCKS').subscribe();
+    const create = http.expectOne(`${BASE}/item-1/links`);
+    expect(create.request.method).toBe('POST');
+    expect(create.request.body).toEqual({ targetCode: 'item-2', type: 'BLOCKS' });
+    create.flush({ linkCode: 'link-1', type: 'BLOCKS', item: {} });
+
+    service.removeLink('item-1', 'link-1').subscribe();
+    const remove = http.expectOne(`${BASE}/item-1/links/link-1`);
+    expect(remove.request.method).toBe('DELETE');
+    remove.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
   it('soft-deletes and reads the workflow of a type', () => {
     service.delete('item-1').subscribe();
     const removal = http.expectOne(`${BASE}/item-1`);
@@ -111,5 +124,38 @@ describe('WorkItemService', () => {
 
     service.workflow('TASK').subscribe();
     http.expectOne(`${environment.apiUrl}/api/status-workflows/TASK`).flush({ itemType: 'TASK', statuses: [], transitions: [] });
+  });
+
+  it('upserts a workflow with POST', () => {
+    const workflow = {
+      itemType: 'TASK' as const,
+      statuses: [{ code: 'NEW', displayName: 'New', order: 1, isTerminal: false }],
+      transitions: [],
+    };
+    service.upsertWorkflow(workflow).subscribe();
+
+    const request = http.expectOne(`${environment.apiUrl}/api/admin/status-workflows`);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(workflow);
+    request.flush(workflow);
+  });
+
+  it('reorders a card with PUT .../rank, before another card or last', () => {
+    service.reorder('item-1', 'item-2').subscribe();
+    const before = http.expectOne(`${BASE}/item-1/rank`);
+    expect(before.request.method).toBe('PUT');
+    expect(before.request.body).toEqual({ beforeCode: 'item-2' });
+    before.flush({});
+
+    service.reorder('item-1', null).subscribe();
+    http.expectOne(`${BASE}/item-1/rank`).flush({});
+  });
+
+  it('asks for the board order of a list', () => {
+    service.list({ projectCode: 'p1', sort: 'board' }).subscribe();
+
+    const request = http.expectOne((req) => req.url === BASE);
+    expect(request.request.params.get('sort')).toBe('board');
+    request.flush({ items: [], total: 0, page: 0, size: 50 });
   });
 });

@@ -25,6 +25,17 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadChildren: () => import('./work-items/work-items.routes').then((m) => m.WORK_ITEM_ROUTES),
   },
+  {
+    path: 'board',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./board/components/kanban-board/kanban-board').then((m) => m.KanbanBoard),
+  },
+  {
+    path: 'sprints',
+    canActivate: [authGuard],
+    loadChildren: () => import('./sprints/sprints.routes').then((m) => m.SPRINT_ROUTES),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];

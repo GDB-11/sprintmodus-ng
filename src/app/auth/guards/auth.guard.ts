@@ -16,3 +16,10 @@ export const guestGuard: CanActivateFn = () => {
   const router = inject(Router);
   return inject(AuthService).isAuthenticated() ? router.createUrlTree(['/dashboard']) : true;
 };
+
+/** Restricts administrative routes (e.g. workflow customization) to organization owners and admins. */
+export const adminGuard: CanActivateFn = () => {
+  const router = inject(Router);
+  const role = inject(AuthService).getCurrentUser()?.role;
+  return role === 'OWNER' || role === 'ADMIN' ? true : router.createUrlTree(['/work-items']);
+};

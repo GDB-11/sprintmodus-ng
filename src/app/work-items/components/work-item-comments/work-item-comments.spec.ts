@@ -1,6 +1,9 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { AuthService } from '../../../auth/services/auth.service';
+import { FakeBoard, provideFakeBoard } from '../../../board/board.testing';
+import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
 import { environment } from '../../../../environments/environment';
 import { WorkItemComments } from './work-item-comments';
 import { expectNoAxeViolations } from '../../../testing/axe';
@@ -18,13 +21,20 @@ const comment = (code: string, content: string) => ({
 describe('WorkItemComments', () => {
   let fixture: ComponentFixture<WorkItemComments>;
   let http: HttpTestingController;
+  let board: FakeBoard;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [WorkItemComments],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideFakeBoard(),
+        { provide: AuthService, useValue: { getCurrentUser: () => ({ id: 'u-me' }) } },
+      ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
+    board = TestBed.inject(BoardWebSocketService) as unknown as FakeBoard;
     fixture = TestBed.createComponent(WorkItemComments);
     fixture.componentRef.setInput('workItemCode', 'item-1');
     fixture.detectChanges();
@@ -63,7 +73,7 @@ describe('WorkItemComments', () => {
   it('says so when there are no comments', async () => {
     await load([]);
 
-    expect(root().textContent).toContain('No comments yet.');
+    expect(root().textContent).toContain('Aún no hay comentarios.');
   });
 
   it('posts a comment, appends it and clears the box', async () => {
@@ -91,7 +101,7 @@ describe('WorkItemComments', () => {
     fixture.detectChanges();
 
     http.expectNone(URL);
-    expect(root().querySelector('[role="alert"]')?.textContent).toContain('Write a comment first.');
+    expect(root().querySelector('[role="alert"]')?.textContent).toContain('Escribe un comentario primero.');
   });
 
   it('shows why a comment was refused and keeps the text', async () => {
@@ -120,5 +130,98 @@ describe('WorkItemComments', () => {
     await fixture.whenStable();
     fixture.detectChanges();
     await expectNoAxeViolations(root());
+  });
+
+  describe('live updates', () => {
+    const arrived = (code: string, content: string, workItemCode = 'item-1', userCode = 'u-luis') => ({
+      workItemCode,
+      comment: { ...comment(code, content), workItemCode, author: { userCode, fullName: 'Luis Lopez' } },
+    });
+    const items = () => [...root().querySelectorAll('li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim());
+    const status = () => root().querySelector('p[role="status"]:not(:empty)')?.textContent?.replace(/\s+/g, ' ').trim();
+
+    afterEach(() => vi.useRealTimers());
+
+    it("shows a comment somebody else posts as it arrives, and ignores other items' comments", async () => {
+      await load([comment('c1', 'First!')]);
+
+      board.commentAdded$.next(arrived('c2', 'From Luis'));
+      board.commentAdded$.next(arrived('c3', 'Elsewhere', 'item-2'));
+      fixture.detectChanges();
+
+      expect(items()).toHaveLength(2);
+      expect(items()[1]).toContain('From Luis');
+    });
+
+    it('does not list a comment twice when the one this user posted comes back as a broadcast', async () => {
+      await load([]);
+      await type('Mine');
+      submit();
+      (await vi.waitFor(() => http.expectOne(URL))).flush(comment('c9', 'Mine'));
+      await fixture.whenStable();
+
+      board.commentAdded$.next(arrived('c9', 'Mine', 'item-1', 'u-me'));
+      fixture.detectChanges();
+
+      expect(items()).toHaveLength(1);
+    });
+
+    it('reloads the comments when the board asks for it', async () => {
+      await load([comment('c1', 'First!')]);
+
+      board.refresh$.next();
+
+      (await vi.waitFor(() => http.expectOne(URL))).flush([comment('c1', 'First!'), comment('c2', 'Missed meanwhile')]);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(items()).toHaveLength(2);
+    });
+
+    it('says who is typing, for a few seconds, and not about this user', async () => {
+      await load([]);
+      vi.useFakeTimers();
+
+      board.userTyping$.next({ workItemCode: 'item-1', user: { userCode: 'u-luis', email: 'luis@acme.io' } });
+      board.userTyping$.next({ workItemCode: 'item-1', user: { userCode: 'u-me', email: 'me@acme.io' } });
+      board.userTyping$.next({ workItemCode: 'item-2', user: { userCode: 'u-ana', email: 'ana@acme.io' } });
+      fixture.detectChanges();
+      expect(status()).toBe('luis@acme.io está escribiendo…');
+
+      board.userTyping$.next({ workItemCode: 'item-1', user: { userCode: 'u-ana', email: 'ana@acme.io' } });
+      fixture.detectChanges();
+      expect(status()).toBe('luis@acme.io, ana@acme.io están escribiendo…');
+
+      vi.advanceTimersByTime(4000);
+      fixture.detectChanges();
+      expect(status()).toBeUndefined();
+    });
+
+    it('stops saying someone is typing once their comment arrives', async () => {
+      await load([]);
+      board.userTyping$.next({ workItemCode: 'item-1', user: { userCode: 'u-luis', email: 'luis@acme.io' } });
+      fixture.detectChanges();
+
+      board.commentAdded$.next(arrived('c2', 'Done typing'));
+      fixture.detectChanges();
+
+      expect(status()).toBeUndefined();
+    });
+
+    it('tells the board this user is typing, at most every couple of seconds', async () => {
+      await load([]);
+      vi.useFakeTimers();
+      const textarea = root().querySelector<HTMLTextAreaElement>('#comment-content')!;
+
+      for (let i = 0; i < 5; i++) {
+        textarea.value += 'a';
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      expect(board.notifyTyping).toHaveBeenCalledTimes(1);
+      expect(board.notifyTyping).toHaveBeenCalledWith('item-1');
+
+      vi.advanceTimersByTime(2100);
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(board.notifyTyping).toHaveBeenCalledTimes(2);
+    });
   });
 });

@@ -1,0 +1,186 @@
+<app-page heading="Tablero" backLink="/dashboard" backLabel="Panel">
+  @if (projects.status() === 'loading') {
+    <p role="status">Cargando proyectos…</p>
+  } @else if (projects.error()) {
+    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+      No se pudieron cargar tus proyectos.
+      <button type="button" class="underline" (click)="projects.reload()">Reintentar</button>
+    </p>
+  } @else if (!selectedProject()) {
+    <p>Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo.</p>
+  } @else {
+    <app-board-connection [projectCode]="selectedProject()!.projectCode" />
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label for="project" class="text-sm font-medium">Proyecto</label>
+        <select id="project" [class]="fieldClasses" (change)="selectProject($event)">
+          @for (project of loadedProjects(); track project.projectCode) {
+            <option
+              [value]="project.projectCode"
+              [selected]="project.projectCode === selectedProject()?.projectCode"
+            >
+              {{ project.name }} ({{ project.key }})
+            </option>
+          }
+        </select>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label for="type" class="text-sm font-medium">Tipo</label>
+        <select id="type" [class]="fieldClasses" (change)="selectType($event)">
+          @for (option of itemTypes; track option) {
+            <option [value]="option" [selected]="option === type()">{{ typeLabels[option] }}</option>
+          }
+        </select>
+      </div>
+      <a
+        routerLink="/sprints"
+        [queryParams]="{ project: selectedProject()?.projectCode }"
+        class="ml-auto text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
+        >Gestionar sprints</a
+      >
+      <a
+        routerLink="/work-items"
+        [queryParams]="{ project: selectedProject()?.projectCode, type: type() }"
+        class="text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
+        >Ver como lista</a
+      >
+    </div>
+
+    @if (loadedSprints().length > 0) {
+      <app-sprint-filter [sprints]="loadedSprints()" [selected]="selectedSprint()" (selectedChange)="selectSprint($event)" />
+    }
+
+    <div class="flex flex-wrap items-end gap-4">
+      <div class="flex flex-col gap-1.5">
+        <label for="priority" class="text-sm font-medium">Prioridad</label>
+        <select id="priority" [class]="fieldClasses" (change)="selectPriority($event)">
+          <option value="" [selected]="!priorityFilter()">Todas</option>
+          @for (option of priorities; track option) {
+            <option [value]="option" [selected]="option === priorityFilter()">{{ priorityLabels[option] }}</option>
+          }
+        </select>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label for="assignee" class="text-sm font-medium">Asignado a</label>
+        <select id="assignee" [class]="fieldClasses" (change)="selectAssignee($event)">
+          <option value="" [selected]="!assigneeFilter()">Todos</option>
+          <option [value]="unassigned" [selected]="assigneeFilter() === unassigned">Sin asignar</option>
+          @for (option of assigneeOptions(); track option.userCode) {
+            <option [value]="option.userCode" [selected]="option.userCode === assigneeFilter()">{{ option.fullName }}</option>
+          }
+        </select>
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label for="board-search" class="text-sm font-medium">Buscar en el tablero</label>
+        <input
+          id="board-search"
+          type="search"
+          [value]="search()"
+          (input)="onSearch($event)"
+          placeholder="Clave, título o persona…"
+          [class]="fieldClasses"
+        />
+      </div>
+      @if (filtering() || search()) {
+        <button
+          type="button"
+          (click)="clearFilters()"
+          class="rounded-md border border-neutral-700 px-3 py-2 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
+        >
+          Quitar filtros
+        </button>
+      }
+    </div>
+
+    <p class="text-sm text-neutral-800 dark:text-neutral-300">
+      Arrastra una tarjeta a otra columna, o usa la lista «Mover a…» de la tarjeta. Solo se ofrecen los cambios de estado
+      permitidos por el flujo de trabajo.
+      @if (canReorder()) {
+        Dentro de una columna las tarjetas se ordenan por prioridad; arrástralas o usa «Subir» y «Bajar» para cambiar su orden
+        dentro de su prioridad.
+      } @else {
+        Dentro de una columna las tarjetas se ordenan por prioridad y luego por el orden que fijan los administradores.
+      }
+    </p>
+    <p class="sr-only" role="status">{{ announcement() }}</p>
+
+    @if (loading()) {
+      <p role="status">Cargando el tablero…</p>
+    } @else if (failed()) {
+      <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+        No se pudo cargar el tablero.
+        <button type="button" class="underline" (click)="workflow.reload(); items.reload()">Reintentar</button>
+      </p>
+    } @else {
+      @if (notShownCount() > 0) {
+        <p role="status" class="rounded-md bg-warning-100 p-3 text-sm font-medium text-warning-900">
+          El tablero muestra los primeros {{ pageSize }} elementos; hay {{ notShownCount() }} más. Usa la lista para verlos.
+        </p>
+      }
+      <div
+        role="region"
+        aria-label="Tablero de estados"
+        tabindex="0"
+        class="overflow-x-auto rounded-md pb-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+      >
+        <div cdkDropListGroup class="flex items-start gap-3">
+          @for (column of columns(); track column.status.code) {
+            <section
+              [attr.aria-labelledby]="'column-' + column.status.code"
+              class="flex w-72 shrink-0 flex-col gap-2 rounded-md border p-2"
+              [class]="
+                isDropTarget(column)
+                  ? 'border-secondary-900 outline-2 outline-secondary-900 dark:border-secondary-400 dark:outline-secondary-400'
+                  : 'border-neutral-700 dark:border-neutral-400'
+              "
+            >
+              <h2 [id]="'column-' + column.status.code" class="flex items-center justify-between gap-2 text-sm font-semibold">
+                <app-status-label [status]="column.status" />
+                <span class="font-normal text-neutral-800 dark:text-neutral-300">
+                  {{ column.cards.length }} · {{ column.points }} pts
+                </span>
+              </h2>
+              <ul
+                cdkDropList
+                [cdkDropListData]="column.status.code"
+                [cdkDropListSortingDisabled]="!canReorder()"
+                [cdkDropListEnterPredicate]="canEnter"
+                (cdkDropListDropped)="onDrop($event)"
+                [attr.aria-label]="'Elementos en ' + column.status.displayName"
+                class="flex min-h-24 flex-col gap-2"
+              >
+                @for (card of column.cards; track card.workItemCode) {
+                  <li
+                    cdkDrag
+                    [cdkDragData]="card"
+                    [cdkDragDisabled]="isPending(card)"
+                    (cdkDragStarted)="dragged.set(card)"
+                    (cdkDragEnded)="dragged.set(null)"
+                  >
+                    <app-kanban-card
+                      [card]="card"
+                      [moves]="movesOf(card)"
+                      [pending]="isPending(card)"
+                      [sprintLabel]="sprintLabelOf(card)"
+                      [canReorder]="canReorder()"
+                      [canMoveUp]="canMoveUp(card)"
+                      [canMoveDown]="canMoveDown(card)"
+                      (moveTo)="moveTo(card, $event, true)"
+                      (reorder)="reorderStep(card, $event)"
+                    />
+                    <div
+                      *cdkDragPlaceholder
+                      class="min-h-16 rounded-md border-2 border-dashed border-neutral-700 dark:border-neutral-400"
+                    ></div>
+                  </li>
+                } @empty {
+                  <li class="p-2 text-sm text-neutral-800 dark:text-neutral-300">Sin elementos</li>
+                }
+              </ul>
+            </section>
+          }
+        </div>
+      </div>
+    }
+  }
+</app-page>

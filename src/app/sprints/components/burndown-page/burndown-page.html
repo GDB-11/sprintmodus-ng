@@ -1,0 +1,45 @@
+<app-page [heading]="heading()" backLink="/sprints" backLabel="Sprints">
+  @if (burndown.status() === 'loading') {
+    <p role="status">Cargando el burndown…</p>
+  } @else if (errorMessage(); as message) {
+    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+      {{ message }}
+      <button type="button" class="underline" (click)="burndown.reload()">Reintentar</button>
+    </p>
+  } @else if (loaded(); as sprint) {
+    <dl class="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div>
+        <dt class="text-sm font-medium">Estado</dt>
+        <dd>{{ statusLabels[sprint.status] }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium">Fechas</dt>
+        <dd>{{ sprint.startDate | date: 'mediumDate' }} – {{ sprint.endDate | date: 'mediumDate' }} ({{ sprint.days }} días)</dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium">Horas al empezar</dt>
+        <dd>{{ sprint.baselineHours | number: '1.0-2' }}</dd>
+      </div>
+      <div>
+        <dt class="text-sm font-medium">Horas pendientes</dt>
+        <dd>
+          @if (latest(); as point) {
+            {{ point.remainingHours | number: '1.0-2' }} (día {{ point.day }})
+          } @else {
+            Sin datos todavía
+          }
+        </dd>
+      </div>
+    </dl>
+    <app-burndown-chart [burndown]="sprint" />
+    <div>
+      <button
+        type="button"
+        (click)="burndown.reload()"
+        class="rounded-md border border-neutral-700 px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
+      >
+        Actualizar
+      </button>
+    </div>
+  }
+</app-page>

@@ -31,11 +31,13 @@ export function workItem(overrides: Partial<WorkItem> = {}): WorkItem {
     priority: 'MEDIUM',
     status: NEW_STATUS,
     effortPoints: 5,
+    childrenEffortPoints: 0,
     createdBy: { userCode: 'user-1', fullName: 'Olivia Owner' },
     createdAt: '2026-01-05T10:00:00Z',
     updatedAt: '2026-01-05T10:00:00Z',
     assignees: [],
     children: [],
+    links: [],
     allowedStatuses: [APPROVED_STATUS],
     warnings: [],
     ...overrides,
@@ -54,6 +56,8 @@ export function summary(overrides: Partial<WorkItemSummary> = {}): WorkItemSumma
     status: NEW_STATUS,
     effortPoints: 5,
     updatedAt: '2026-01-05T10:00:00Z',
+    childCount: 0,
+    assignees: [],
     ...overrides,
   };
 }

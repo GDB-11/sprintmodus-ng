@@ -1,4 +1,4 @@
-<app-page heading="New work item" backLink="/work-items" backLabel="Work items">
+<app-page heading="Nuevo elemento de trabajo" backLink="/work-items" backLabel="Elementos de trabajo">
   <form [formRoot]="createForm" class="flex max-w-2xl flex-col gap-4">
     @if (errorMessage(); as message) {
       <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
@@ -8,52 +8,52 @@
     <app-select-field
       [field]="createForm.projectCode"
       inputId="projectCode"
-      label="Project"
+      label="Proyecto"
       [options]="projectOptions()"
     />
     <app-select-field
       [field]="createForm.type"
       inputId="type"
-      label="Type"
+      label="Tipo"
       [options]="typeOptions"
-      hint="Epics hold features, features hold backlog items and bugs, and those hold tasks. Other combinations are allowed, with a warning."
+      hint="Las épicas contienen características, las características contienen elementos del backlog y errores, y estos contienen tareas. Otras combinaciones se permiten, con una advertencia."
     />
-    <app-text-field [field]="createForm.title" inputId="title" label="Title" />
+    <app-text-field [field]="createForm.title" inputId="title" label="Título" />
     <app-textarea-field
       [field]="createForm.description"
       inputId="description"
-      label="Description"
+      label="Descripción"
     />
     <app-textarea-field
       [field]="createForm.acceptanceCriteria"
       inputId="acceptanceCriteria"
-      label="Acceptance criteria"
+      label="Criterios de aceptación"
       [rows]="3"
     />
     <app-select-field
       [field]="createForm.priority"
       inputId="priority"
-      label="Priority"
+      label="Prioridad"
       [options]="priorityOptions"
     />
     <app-select-field
       [field]="createForm.parentCode"
       inputId="parentCode"
-      label="Parent"
+      label="Elemento superior"
       [options]="parentOptions()"
     />
     <div class="grid gap-4 sm:grid-cols-2">
       <app-text-field
         [field]="createForm.effortPoints"
         inputId="effortPoints"
-        label="Effort points"
-        hint="Optional."
+        label="Puntos de esfuerzo"
+        hint="Opcional."
       />
       <app-text-field
         [field]="createForm.estimatedHours"
         inputId="estimatedHours"
-        label="Estimated hours"
-        hint="Optional."
+        label="Horas estimadas"
+        hint="Opcional."
       />
     </div>
     <div>
@@ -62,7 +62,7 @@
         [disabled]="createForm().submitting() || !createForm.projectCode().value()"
         class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
       >
-        {{ createForm().submitting() ? 'Creating…' : 'Create work item' }}
+        {{ createForm().submitting() ? 'Creando…' : 'Crear elemento de trabajo' }}
       </button>
     </div>
   </form>

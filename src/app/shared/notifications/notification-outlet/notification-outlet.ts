@@ -12,9 +12,9 @@ export class NotificationOutlet {
 
   protected readonly notifications = this.service.notifications;
   protected readonly labels = {
-    success: 'Done',
-    info: 'Note',
-    warning: 'Warning',
+    success: 'Listo',
+    info: 'Nota',
+    warning: 'Aviso',
     error: 'Error',
   } as const;
 

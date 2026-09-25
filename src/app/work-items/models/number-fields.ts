@@ -33,12 +33,12 @@ export const EFFORT_POINTS_RULE: NumberRule = {
   min: 0,
   max: 1000,
   decimals: 0,
-  message: 'Enter a whole number from 0 to 1000.',
+  message: 'Ingresa un número entero de 0 a 1000.',
 };
 
 export const HOURS_RULE: NumberRule = {
   min: 0,
   max: 10000,
   decimals: 2,
-  message: 'Enter hours from 0 to 10000, with at most two decimals.',
+  message: 'Ingresa horas de 0 a 10000, con máximo dos decimales.',
 };

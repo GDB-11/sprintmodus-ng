@@ -1,15 +1,16 @@
-<app-page [heading]="loadedItem()?.title ?? 'Work item'" backLink="/work-items" backLabel="Work items">
+<app-page [heading]="loadedItem()?.title ?? 'Elemento de trabajo'" backLink="/work-items" backLabel="Elementos de trabajo">
   @if (item.isLoading() && !loadedItem()) {
-    <p role="status">Loading work item…</p>
+    <p role="status">Cargando elemento de trabajo…</p>
   } @else if (item.error() && !loadedItem()) {
     <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
-      This work item could not be loaded. It may have been deleted.
-      <button type="button" class="underline" (click)="item.reload()">Try again</button>
+      No se pudo cargar este elemento de trabajo. Puede que haya sido eliminado.
+      <button type="button" class="underline" (click)="item.reload()">Reintentar</button>
     </p>
   } @else if (loadedItem(); as current) {
     <p class="text-neutral-800 dark:text-neutral-300">
       {{ current.displayKey }} · {{ typeLabels[current.type] }}
     </p>
+    <app-board-connection [projectCode]="current.projectCode" />
 
     @if (editing()) {
       <app-work-item-edit
@@ -20,44 +21,47 @@
     } @else {
       <div class="flex flex-wrap items-end gap-4">
         <div class="flex flex-col gap-1.5">
-          <span class="text-sm font-medium">Status</span>
+          <span class="text-sm font-medium">Estado</span>
           <app-status-label [status]="current.status" />
         </div>
         <div class="flex flex-col gap-1.5">
           @if (current.allowedStatuses.length > 0) {
-            <label for="change-status" class="text-sm font-medium">Move to</label>
+            <label for="change-status" class="text-sm font-medium">Mover a</label>
             <select
               id="change-status"
               [class]="selectClasses"
               [disabled]="busy()"
               (change)="changeStatus($event)"
             >
-              <option value="" selected>Choose a status</option>
+              <option value="" selected>Elige un estado</option>
               @for (status of current.allowedStatuses; track status.code) {
                 <option [value]="status.code">{{ status.displayName }}</option>
               }
             </select>
           } @else {
-            <span class="text-sm font-medium">Move to</span>
-            <span class="py-2">No further statuses</span>
+            <span class="text-sm font-medium">Mover a</span>
+            <span class="py-2">Sin más estados</span>
           }
         </div>
-        <div class="ml-auto flex gap-3">
-          <button
-            type="button"
-            [class]="secondaryButtonClasses"
-            (click)="editing.set(true)"
-          >
-            Edit
-          </button>
-          @if (!confirmingDelete()) {
-            <button
-              type="button"
-              [class]="secondaryButtonClasses"
-              (click)="confirmingDelete.set(true)"
-            >
-              Delete
-            </button>
+        <div class="ml-auto flex flex-col items-end gap-1.5">
+          <div class="flex gap-3">
+            <button type="button" [class]="secondaryButtonClasses" (click)="editing.set(true)">Editar</button>
+            @if (!confirmingDelete()) {
+              <button
+                type="button"
+                [class]="secondaryButtonClasses"
+                [disabled]="!canDelete(current)"
+                [attr.aria-describedby]="canDelete(current) ? null : 'delete-hint'"
+                (click)="confirmingDelete.set(true)"
+              >
+                Eliminar
+              </button>
+            }
+          </div>
+          @if (!canDelete(current)) {
+            <p id="delete-hint" class="text-sm text-neutral-800 dark:text-neutral-300">
+              Solo quien lo creó, un propietario o un administrador puede eliminarlo.
+            </p>
           }
         </div>
       </div>
@@ -68,79 +72,96 @@
           aria-labelledby="delete-question"
           class="flex flex-wrap items-center gap-3 rounded-md bg-error-100 p-3 text-error-900"
         >
-          <p id="delete-question" class="font-medium">Delete {{ current.displayKey }}?</p>
+          <p id="delete-question" class="font-medium">¿Eliminar {{ current.displayKey }}?</p>
           <button
             type="button"
             class="rounded-md bg-error-800 px-4 py-2 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error-900 disabled:opacity-60"
             [disabled]="busy()"
             (click)="delete(current)"
           >
-            Yes, delete
+            Sí, eliminar
           </button>
           <button
             type="button"
             class="rounded-md border border-error-900 px-4 py-2 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-error-900"
             (click)="confirmingDelete.set(false)"
           >
-            Keep it
+            Conservar
           </button>
         </div>
       }
 
       <dl class="grid gap-x-8 gap-y-3 sm:grid-cols-2">
         <div>
-          <dt class="text-sm font-medium">Priority</dt>
+          <dt class="text-sm font-medium">Prioridad</dt>
           <dd>{{ priorityLabels[current.priority] }}</dd>
         </div>
         <div>
-          <dt class="text-sm font-medium">Effort points</dt>
-          <dd>{{ current.effortPoints }}</dd>
-        </div>
-        <div>
-          <dt class="text-sm font-medium">Estimated / remaining hours</dt>
-          <dd>{{ current.estimatedHours ?? '—' }} / {{ current.remainingHours ?? '—' }}</dd>
-        </div>
-        <div>
-          <dt class="text-sm font-medium">Created</dt>
+          <dt class="text-sm font-medium">Puntos de esfuerzo</dt>
           <dd>
-            {{ current.createdBy?.fullName ?? 'Unknown user' }},
-            {{ current.createdAt | date: 'medium' }}
-          </dd>
-        </div>
-        <div>
-          <dt class="text-sm font-medium">Assigned to</dt>
-          <dd>
-            @for (assignee of current.assignees; track assignee.assignmentCode; let last = $last) {
-              {{ assignee.fullName }} ({{ assignee.role }}){{ last ? '' : ', ' }}
-            } @empty {
-              Nobody
+            {{ current.effortPoints }}
+            @if (current.childrenEffortPoints > 0) {
+              <span class="text-neutral-800 dark:text-neutral-300">
+                (tareas secundarias: {{ current.childrenEffortPoints }})
+              </span>
             }
           </dd>
         </div>
         <div>
-          <dt class="text-sm font-medium">Last updated</dt>
+          <dt class="text-sm font-medium">Horas estimadas / restantes</dt>
+          <dd>{{ current.estimatedHours ?? '—' }} / {{ current.remainingHours ?? '—' }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium">Creado</dt>
+          <dd>
+            {{ current.createdBy?.fullName ?? 'Usuario desconocido' }},
+            {{ current.createdAt | date: 'medium' }}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium">Asignado a</dt>
+          <dd>
+            @for (assignee of current.assignees; track assignee.assignmentCode; let last = $last) {
+              {{ assignee.fullName }} ({{ roleLabels[assignee.role] }}){{ last ? '' : ', ' }}
+            } @empty {
+              Nadie
+            }
+          </dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium">Última actualización</dt>
           <dd>{{ current.updatedAt | date: 'medium' }}</dd>
         </div>
         <div class="flex flex-col gap-1.5">
-          <dt><label for="sprint" class="text-sm font-medium">Sprint</label></dt>
-          <dd>
-            <select
-              id="sprint"
-              [class]="selectClasses"
-              [disabled]="busy() || sprints.isLoading()"
-              (change)="moveToSprint($event, current)"
-            >
-              <option value="" [selected]="!current.sprintCode">Backlog (no sprint)</option>
-              @for (sprint of sprintChoices(); track sprint.sprintCode) {
-                <option [value]="sprint.sprintCode" [selected]="sprint.sprintCode === current.sprintCode">
-                  {{ sprint.name }}
-                </option>
-              }
-            </select>
-          </dd>
+          @if (canPlanSprints()) {
+            <dt><label for="sprint" class="text-sm font-medium">Sprint</label></dt>
+            <dd>
+              <select
+                id="sprint"
+                [class]="selectClasses"
+                [disabled]="busy() || sprints.isLoading()"
+                (change)="moveToSprint($event, current)"
+              >
+                <option value="" [selected]="!current.sprintCode">Backlog (sin sprint)</option>
+                @for (sprint of sprintChoices(); track sprint.sprintCode) {
+                  <option [value]="sprint.sprintCode" [selected]="sprint.sprintCode === current.sprintCode">
+                    {{ sprint.name }}
+                  </option>
+                }
+              </select>
+            </dd>
+          } @else {
+            <dt class="text-sm font-medium">Sprint</dt>
+            <dd class="flex flex-col gap-1.5">
+              <span>{{ sprintName() }}</span>
+              <span class="text-sm text-neutral-800 dark:text-neutral-300">
+                Solo los propietarios y administradores planifican los sprints.
+              </span>
+            </dd>
+          }
         </div>
         <div class="flex flex-col gap-1.5">
-          <dt><label for="parent" class="text-sm font-medium">Parent</label></dt>
+          <dt><label for="parent" class="text-sm font-medium">Elemento superior</label></dt>
           <dd>
             <select
               id="parent"
@@ -148,7 +169,7 @@
               [disabled]="busy() || parents.isLoading()"
               (change)="changeParent($event, current)"
             >
-              <option value="" [selected]="!current.parentCode">No parent</option>
+              <option value="" [selected]="!current.parentCode">Sin elemento superior</option>
               @for (candidate of parentChoices(); track candidate.workItemCode) {
                 <option
                   [value]="candidate.workItemCode"
@@ -164,29 +185,29 @@
 
       @if (current.description) {
         <section aria-labelledby="description-heading">
-          <h2 id="description-heading" class="text-lg font-semibold">Description</h2>
+          <h2 id="description-heading" class="text-lg font-semibold">Descripción</h2>
           <p class="whitespace-pre-wrap">{{ current.description }}</p>
         </section>
       }
       @if (current.acceptanceCriteria) {
         <section aria-labelledby="criteria-heading">
-          <h2 id="criteria-heading" class="text-lg font-semibold">Acceptance criteria</h2>
+          <h2 id="criteria-heading" class="text-lg font-semibold">Criterios de aceptación</h2>
           <p class="whitespace-pre-wrap">{{ current.acceptanceCriteria }}</p>
         </section>
       }
 
       <section aria-labelledby="children-heading" class="flex flex-col gap-2">
         <div class="flex items-center justify-between gap-4">
-          <h2 id="children-heading" class="text-lg font-semibold">Children</h2>
+          <h2 id="children-heading" class="text-lg font-semibold">Secundarios</h2>
           <a
             routerLink="/work-items/new"
             [queryParams]="{ project: current.projectCode, parent: current.workItemCode }"
             class="text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
-            >Add a child</a
+            >Agregar un secundario</a
           >
         </div>
         @if (current.children.length === 0) {
-          <p>No children.</p>
+          <p>Sin elementos secundarios.</p>
         } @else {
           <ul class="flex flex-col gap-2">
             @for (child of current.children; track child.workItemCode) {
@@ -204,6 +225,8 @@
           </ul>
         }
       </section>
+
+      <app-work-item-links [workItemCode]="current.workItemCode" [links]="current.links" (changed)="item.reload()" />
     }
 
     <app-work-item-comments [workItemCode]="current.workItemCode" />

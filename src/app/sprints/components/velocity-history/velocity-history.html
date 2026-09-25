@@ -1,0 +1,44 @@
+@if (history().sprints.length === 0) {
+  <p>Aún no hay sprints cerrados: la velocidad aparece cuando se cierra el primero.</p>
+} @else {
+  <p>
+    Velocidad promedio de los últimos {{ history().sprints.length }}
+    {{ history().sprints.length === 1 ? 'sprint cerrado' : 'sprints cerrados' }}:
+    <strong>{{ history().averageVelocity | number: '1.0-1' }} puntos</strong>.
+  </p>
+  <div class="overflow-x-auto">
+    <table class="w-full min-w-120 text-left text-sm">
+      <caption class="sr-only">
+        Puntos planificados y completados en los últimos sprints cerrados
+      </caption>
+      <thead>
+        <tr class="border-b border-neutral-700 dark:border-neutral-400">
+          <th scope="col" class="p-2">Sprint</th>
+          <th scope="col" class="p-2">Cerró el</th>
+          <th scope="col" class="p-2 text-right">Planificados</th>
+          <th scope="col" class="p-2 text-right">Completados</th>
+          <th scope="col" class="w-40 p-2"><span class="sr-only">Comparación</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (sprint of history().sprints; track sprint.sprintCode) {
+          <tr class="border-b border-neutral-300 dark:border-neutral-700">
+            <td class="p-2">{{ sprint.name }}</td>
+            <td class="p-2">{{ sprint.endDate | date: 'mediumDate' }}</td>
+            <td class="p-2 text-right">{{ sprint.plannedVelocity }}</td>
+            <td class="p-2 text-right">{{ sprint.velocity }}</td>
+            <td class="p-2" aria-hidden="true">
+              <div class="flex flex-col gap-1">
+                <div class="h-1.5 rounded-sm bg-neutral-700 dark:bg-neutral-400" [style.width.%]="percent(sprint.plannedVelocity)"></div>
+                <div class="h-1.5 rounded-sm bg-secondary-900 dark:bg-secondary-400" [style.width.%]="percent(sprint.velocity)"></div>
+              </div>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  <p class="text-sm text-neutral-800 dark:text-neutral-300">
+    En las barras, la gris son los puntos planificados y la de color los completados.
+  </p>
+}

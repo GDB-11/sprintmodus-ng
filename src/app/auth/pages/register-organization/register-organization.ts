@@ -24,27 +24,27 @@ import {
 } from '../../models/organization-code';
 import { AuthService } from '../../services/auth.service';
 
-const CODE_TAKEN_MESSAGE = 'This organization code is already taken.';
+const CODE_TAKEN_MESSAGE = 'Este código de organización ya está en uso.';
 const CODE_FORMAT_MESSAGE =
-  'Use 3 to 30 letters, digits or hyphens, without a hyphen at the start or end.';
+  'Usa de 3 a 30 letras, dígitos o guiones, sin un guion al inicio o al final.';
 
 /** What to tell the user for each reason the availability check can give. */
 const UNAVAILABLE_MESSAGES: Record<NonNullable<OrganizationCodeAvailability['reason']>, string> = {
   ORGANIZATION_CODE_TAKEN: CODE_TAKEN_MESSAGE,
-  ORGANIZATION_CODE_RESERVED: 'This organization code is reserved. Choose another one.',
+  ORGANIZATION_CODE_RESERVED: 'Este código de organización está reservado. Elige otro.',
   INVALID_ORGANIZATION_CODE: CODE_FORMAT_MESSAGE,
 };
 
 function registrationErrorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
     if (error.status === 0) {
-      return 'Cannot reach the server. Check your connection and try again.';
+      return 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.';
     }
     if (error.status === 400) {
-      return 'Some of the details were rejected. Review the form and try again.';
+      return 'Algunos datos no fueron aceptados. Revisa el formulario e inténtalo de nuevo.';
     }
   }
-  return 'Something went wrong. Please try again.';
+  return 'Ocurrió un error. Inténtalo de nuevo.';
 }
 
 @Component({
@@ -69,14 +69,14 @@ export class RegisterOrganization {
   protected readonly registerForm = form(
     this.model,
     (path) => {
-      required(path.organizationName, { message: 'Enter the organization name.' });
-      required(path.fullName, { message: 'Enter your full name.' });
-      required(path.email, { message: 'Enter your email.' });
-      email(path.email, { message: 'Enter a valid email address.' });
-      required(path.password, { message: 'Choose a password.' });
-      minLength(path.password, 8, { message: 'Use at least 8 characters.' });
+      required(path.organizationName, { message: 'Ingresa el nombre de la organización.' });
+      required(path.fullName, { message: 'Ingresa tu nombre completo.' });
+      required(path.email, { message: 'Ingresa tu correo electrónico.' });
+      email(path.email, { message: 'Ingresa un correo electrónico válido.' });
+      required(path.password, { message: 'Elige una contraseña.' });
+      minLength(path.password, 8, { message: 'Usa al menos 8 caracteres.' });
 
-      required(path.organizationCode, { message: 'Choose an organization code.' });
+      required(path.organizationCode, { message: 'Elige un código de organización.' });
       validate(path.organizationCode, ({ value }) =>
         ORGANIZATION_CODE_PATTERN.test(normalizeOrganizationCode(value()))
           ? null
@@ -130,11 +130,11 @@ export class RegisterOrganization {
   protected readonly codeHint = computed(() => {
     const code = this.registerForm.organizationCode();
     if (code.pending()) {
-      return 'Checking availability…';
+      return 'Verificando disponibilidad…';
     }
     const normalized = normalizeOrganizationCode(code.value());
     return normalized
-      ? `Members sign in with: ${normalized}`
-      : 'Short and easy to remember, for example acme. Letters are shown in lowercase.';
+      ? `Los miembros inician sesión con: ${normalized}`
+      : 'Corto y fácil de recordar, por ejemplo acme. Las letras se muestran en minúsculas.';
   });
 }

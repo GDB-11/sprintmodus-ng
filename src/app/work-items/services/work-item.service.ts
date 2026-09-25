@@ -4,8 +4,11 @@ import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import {
+  AssignmentRole,
   CreateWorkItemRequest,
   ItemType,
+  Link,
+  LinkType,
   UpdateWorkItemRequest,
   WorkItem,
   WorkItemPage,
@@ -15,7 +18,7 @@ import {
 export interface Workflow {
   itemType: ItemType;
   statuses: { code: string; displayName: string; order: number; isTerminal: boolean }[];
-  transitions: { from: string; to: string; allowedBackward: boolean }[];
+  transitions: { from: string; to: string; allowedBackward: boolean; requiredRole?: AssignmentRole | null }[];
 }
 
 /**
@@ -74,6 +77,14 @@ export class WorkItemService {
       .pipe(tap((item) => this.surfaceWarnings(item)));
   }
 
+  /**
+   * Puts the item right before `beforeCode` among the cards of its column that share its priority, or last when `null`.
+   * Owners and admins only. The other cards of the group are renumbered by the server.
+   */
+  reorder(workItemCode: string, beforeCode: string | null): Observable<WorkItem> {
+    return this.http.put<WorkItem>(`${this.baseUrl}/${workItemCode}/rank`, { beforeCode });
+  }
+
   /** Moves the item to a sprint, or back to the backlog when `sprintCode` is `null`. */
   moveToSprint(workItemCode: string, sprintCode: string | null): Observable<WorkItem> {
     const url = `${this.baseUrl}/${workItemCode}/sprint`;
@@ -84,9 +95,23 @@ export class WorkItemService {
     return request.pipe(tap((item) => this.surfaceWarnings(item)));
   }
 
+  /** Links the item to another one (possibly in another project). The target's warnings, if any, are not part of this. */
+  createLink(workItemCode: string, targetCode: string, type: LinkType): Observable<Link> {
+    return this.http.post<Link>(`${this.baseUrl}/${workItemCode}/links`, { targetCode, type });
+  }
+
+  removeLink(workItemCode: string, linkCode: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${workItemCode}/links/${linkCode}`);
+  }
+
   /** The workflow of an item type: its statuses in order and the transitions between them. */
   workflow(itemType: ItemType): Observable<Workflow> {
     return this.http.get<Workflow>(`${environment.apiUrl}/api/status-workflows/${itemType}`);
+  }
+
+  /** Replaces the whole workflow of `workflow.itemType`. Owners and admins only; the backend rejects anyone else. */
+  upsertWorkflow(workflow: Workflow): Observable<Workflow> {
+    return this.http.post<Workflow>(`${environment.apiUrl}/api/admin/status-workflows`, workflow);
   }
 
   private surfaceWarnings(item: WorkItem): void {

@@ -82,7 +82,7 @@ describe('RegisterOrganization', () => {
     await fill('organizationCode', '-bad-');
 
     expect(alerts()).toContain(
-      'Use 3 to 30 letters, digits or hyphens, without a hyphen at the start or end.',
+      'Usa de 3 a 30 letras, dígitos o guiones, sin un guion al inicio o al final.',
     );
     http.expectNone((req) => req.url.includes('organization-code-available'));
   });
@@ -90,14 +90,14 @@ describe('RegisterOrganization', () => {
   it('accepts uppercase input and previews the lowercase code', async () => {
     await fillCode('ACME');
 
-    expect(root().textContent).toContain('Members sign in with: acme');
+    expect(root().textContent).toContain('Los miembros inician sesión con: acme');
     expect(alerts()).toEqual([]);
   });
 
   it('requires a password of at least 8 characters', async () => {
     await fill('password', 'short');
 
-    expect(alerts()).toContain('Use at least 8 characters.');
+    expect(alerts()).toContain('Usa al menos 8 caracteres.');
   });
 
   it('registers and sends the user to sign in with the code prefilled', async () => {
@@ -112,13 +112,13 @@ describe('RegisterOrganization', () => {
   it('flags a code the availability check reports as taken', async () => {
     await fillCode('acme', false);
 
-    expect(alerts()).toContain('This organization code is already taken.');
+    expect(alerts()).toContain('Este código de organización ya está en uso.');
   });
 
   it('tells the user when the availability check reports a reserved code', async () => {
     await fillCode('billing-team', false, 'ORGANIZATION_CODE_RESERVED');
 
-    expect(alerts()).toContain('This organization code is reserved. Choose another one.');
+    expect(alerts()).toContain('Este código de organización está reservado. Elige otro.');
   });
 
   it('shows a 409 as an error on the organization code field', async () => {
@@ -126,7 +126,7 @@ describe('RegisterOrganization', () => {
     await fillValid();
     await submit();
 
-    expect(alerts()).toContain('This organization code is already taken.');
+    expect(alerts()).toContain('Este código de organización ya está en uso.');
     expect(navigate).not.toHaveBeenCalled();
   });
 });

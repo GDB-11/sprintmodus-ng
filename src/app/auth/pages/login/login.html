@@ -1,4 +1,4 @@
-<app-auth-card heading="Sign in" subheading="Use your email and your organization code.">
+<app-auth-card heading="Iniciar sesión" subheading="Usa tu correo electrónico y el código de tu organización.">
   <form [formRoot]="loginForm" class="flex flex-col gap-4">
     @if (errorMessage(); as message) {
       <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
@@ -8,20 +8,20 @@
     <app-text-field
       [field]="loginForm.organizationCode"
       inputId="organizationCode"
-      label="Organization code"
-      hint="The short code your organization chose, for example acme."
+      label="Código de organización"
+      hint="El código corto que eligió tu organización, por ejemplo acme."
     />
     <app-text-field
       [field]="loginForm.email"
       inputId="email"
-      label="Email"
+      label="Correo electrónico"
       type="email"
       autocomplete="username"
     />
     <app-text-field
       [field]="loginForm.password"
       inputId="password"
-      label="Password"
+      label="Contraseña"
       type="password"
       autocomplete="current-password"
     />
@@ -30,15 +30,15 @@
       [disabled]="loginForm().submitting()"
       class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
     >
-      {{ loginForm().submitting() ? 'Signing in…' : 'Sign in' }}
+      {{ loginForm().submitting() ? 'Iniciando sesión…' : 'Iniciar sesión' }}
     </button>
   </form>
   <p class="mt-6 text-sm">
-    New to Sprintmodus?
+    ¿Eres nuevo en Sprintmodus?
     <a
       routerLink="/register"
       class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
-      >Register your organization</a
+      >Registra tu organización</a
     >
   </p>
 </app-auth-card>

@@ -1,0 +1,100 @@
+<figure #inkProbe class="flex flex-col gap-3 text-neutral-800 dark:text-neutral-300">
+  <ul class="flex flex-wrap gap-x-6 gap-y-1 text-sm" aria-label="Leyenda del gráfico">
+    <li class="flex items-center gap-2">
+      <svg #idealKey aria-hidden="true" viewBox="0 0 24 4" class="h-1 w-6 text-info-700 dark:text-info-600">
+        <line x1="0" y1="2" x2="24" y2="2" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4" />
+      </svg>
+      {{ labels.ideal }}: el ritmo recto desde el total inicial hasta cero
+    </li>
+    <li class="flex items-center gap-2">
+      <svg #actualKey aria-hidden="true" viewBox="0 0 24 8" class="h-2 w-6 text-error-700 dark:text-error-500">
+        <line x1="0" y1="4" x2="24" y2="4" stroke="currentColor" stroke-width="2" />
+        <circle cx="12" cy="4" r="3" fill="currentColor" />
+      </svg>
+      {{ labels.actual }}: horas pendientes al final de cada día
+    </li>
+    @if (projected()) {
+      <li class="flex items-center gap-2">
+        <svg #projectionKey aria-hidden="true" viewBox="0 0 24 4" class="h-1 w-6 text-neutral-800 dark:text-neutral-300">
+          <line x1="0" y1="2" x2="24" y2="2" stroke="currentColor" stroke-width="2" stroke-dasharray="2 4" />
+        </svg>
+        {{ labels.projection }}: hacia dónde lleva el ritmo actual
+      </li>
+    }
+  </ul>
+
+  <div class="relative h-80 w-full">
+    <canvas #canvas role="img" [attr.aria-label]="summary()"></canvas>
+  </div>
+
+  <p class="text-sm" [class.font-medium]="projection().kind === 'projected'">
+    @switch (projection().kind) {
+      @case ('no-data') {
+        Aún no hay días registrados: el gráfico se llena a medida que avanza el sprint.
+      }
+      @case ('done') {
+        No quedan horas pendientes.
+      }
+      @case ('no-progress') {
+        Las horas pendientes todavía no bajaron, así que no se puede proyectar el final.
+      }
+      @case ('closed') {
+        El sprint se cerró con {{ latest()?.remainingHours ?? 0 | number: '1.0-2' }} horas pendientes.
+      }
+      @default {
+        @if (projected(); as projection) {
+          Al ritmo actual ({{ projection.hoursPerDay | number: '1.0-1' }} h por día) las horas se agotarían el día
+          {{ projection.finishDay }} ({{ projection.finishDate | date: 'mediumDate' }}),
+          @if (projection.withinSprint) {
+            dentro del sprint.
+          } @else {
+            {{ projection.daysLate }} {{ projection.daysLate === 1 ? 'día' : 'días' }} después de su fin.
+          }
+        }
+      }
+    }
+  </p>
+
+  <details class="text-sm">
+    <summary
+      class="w-fit cursor-pointer rounded-sm font-medium text-secondary-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
+    >
+      Ver los datos en una tabla
+    </summary>
+    <div class="mt-2 overflow-x-auto">
+      <table class="w-full min-w-96 text-left">
+        <caption class="sr-only">
+          Horas pendientes por día de {{ burndown().sprintName }}, reales e ideales
+        </caption>
+        <thead>
+          <tr class="border-b border-neutral-700 dark:border-neutral-400">
+            <th scope="col" class="p-2">Día</th>
+            <th scope="col" class="p-2">Fecha</th>
+            <th scope="col" class="p-2 text-right">Ideal (h)</th>
+            <th scope="col" class="p-2 text-right">Real (h)</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (point of burndown().points; track point.day) {
+            <tr class="border-b border-neutral-300 dark:border-neutral-700">
+              <td class="p-2">{{ point.day === 0 ? 'Inicio' : point.day }}</td>
+              <td class="p-2">{{ point.date | date: 'mediumDate' }}</td>
+              <td class="p-2 text-right">{{ point.idealRemainingHours | number: '1.0-2' }}</td>
+              <td class="p-2 text-right">
+                {{ point.remainingHours != null ? (point.remainingHours | number: '1.0-2') : '—' }}
+                @if (point.remainingHours == null) {
+                  <span class="sr-only">sin dato todavía</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </details>
+
+  <div aria-hidden="true" class="hidden">
+    <span #gridProbe class="border-t border-neutral-300 dark:border-neutral-700"></span>
+    <span #surfaceProbe class="bg-light-bg dark:bg-dark-bg"></span>
+  </div>
+</figure>

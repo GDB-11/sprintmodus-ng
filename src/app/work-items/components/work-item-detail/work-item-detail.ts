@@ -1,18 +1,24 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
-import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { map, Observable } from 'rxjs';
+import { filter, map, merge, Observable } from 'rxjs';
+import { AuthService } from '../../../auth/services/auth.service';
+import { Permissions } from '../../../auth/services/permissions.service';
+import { BoardConnection } from '../../../board/components/board-connection/board-connection';
+import { ItemMovedEvent, StatusChangedEvent } from '../../../board/models/board.models';
+import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
 import { ProjectService } from '../../../projects/services/project.service';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { valueOf } from '../../../shared/resource-value';
 import { Page } from '../../../shared/ui/page/page';
-import { ITEM_TYPE_LABELS, PRIORITY_LABELS, WorkItem } from '../../models/work-item.models';
+import { ASSIGNMENT_ROLE_LABELS, ITEM_TYPE_LABELS, PRIORITY_LABELS, WorkItem } from '../../models/work-item.models';
 import { WorkItemService } from '../../services/work-item.service';
 import { StatusLabel } from '../status-label/status-label';
 import { WorkItemComments } from '../work-item-comments/work-item-comments';
 import { WorkItemEdit } from '../work-item-edit/work-item-edit';
+import { WorkItemLinks } from '../work-item-links/work-item-links';
 
 const SELECT_CLASSES =
   'rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-2 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400';
@@ -21,11 +27,13 @@ const SECONDARY_BUTTON_CLASSES =
 
 /**
  * One work item: its fields, the controls that change its status (only legal transitions are offered), sprint and parent,
- * its children, and its comments. Every change goes to the backend; the item shown is always the backend's answer.
+ * its children, and its comments. Every change goes to the backend; the item shown is always the backend's answer. While the
+ * page is open it follows the project's live board: when someone else changes this item's status it is reloaded (after the
+ * current edit, if one is in progress, so nobody loses what they were typing).
  */
 @Component({
   selector: 'app-work-item-detail',
-  imports: [Page, RouterLink, DatePipe, StatusLabel, WorkItemEdit, WorkItemComments],
+  imports: [Page, RouterLink, DatePipe, StatusLabel, WorkItemEdit, WorkItemLinks, WorkItemComments, BoardConnection],
   templateUrl: './work-item-detail.html',
 })
 export class WorkItemDetail {
@@ -34,11 +42,15 @@ export class WorkItemDetail {
   private readonly workItems = inject(WorkItemService);
   private readonly projectService = inject(ProjectService);
   private readonly notifications = inject(NotificationService);
+  private readonly board = inject(BoardWebSocketService);
+  private readonly auth = inject(AuthService);
+  private readonly permissions = inject(Permissions);
 
   protected readonly selectClasses = SELECT_CLASSES;
   protected readonly secondaryButtonClasses = SECONDARY_BUTTON_CLASSES;
   protected readonly typeLabels = ITEM_TYPE_LABELS;
   protected readonly priorityLabels = PRIORITY_LABELS;
+  protected readonly roleLabels = ASSIGNMENT_ROLE_LABELS;
 
   protected readonly editing = signal(false);
   protected readonly confirmingDelete = signal(false);
@@ -70,6 +82,22 @@ export class WorkItemDetail {
     stream: ({ params }) => this.workItems.list({ projectCode: params, size: 200 }),
   });
 
+  /** Planning work into sprints is for owners and admins; everyone else sees the sprint but cannot change it. */
+  protected readonly canPlanSprints = this.permissions.canAdminister;
+
+  /** Where the item is, in words, for those who cannot change it. */
+  protected readonly sprintName = computed(() => {
+    const code = this.loadedItem()?.sprintCode;
+    if (!code) {
+      return 'Backlog (sin sprint)';
+    }
+    return (valueOf(this.sprints) ?? []).find((sprint) => sprint.sprintCode === code)?.name ?? 'Sprint';
+  });
+
+  protected canDelete(item: WorkItem): boolean {
+    return this.permissions.canDelete(item);
+  }
+
   /** Sprints the item can be put in: the ones still open, plus the one it is in now. */
   protected readonly sprintChoices = computed(() => {
     const currentSprint = this.loadedItem()?.sprintCode;
@@ -83,6 +111,25 @@ export class WorkItemDetail {
     const self = this.loadedItem()?.workItemCode;
     return (valueOf(this.parents)?.items ?? []).filter((candidate) => candidate.workItemCode !== self);
   });
+
+  /** Set when the item changed elsewhere while it was being edited; it is reloaded as soon as the edit ends. */
+  private changedWhileEditing = false;
+
+  constructor() {
+    merge(this.board.statusChanged$, this.board.itemMoved$)
+      .pipe(
+        filter((event) => event.workItemCode === this.code()),
+        takeUntilDestroyed(),
+      )
+      .subscribe((event) => this.onRemoteStatusChange(event));
+    this.board.refresh$.pipe(takeUntilDestroyed()).subscribe(() => this.refreshFromServer());
+    effect(() => {
+      if (!this.editing() && this.changedWhileEditing) {
+        this.changedWhileEditing = false;
+        untracked(() => this.item.reload());
+      }
+    });
+  }
 
   protected changeStatus(event: Event): void {
     const select = event.target as HTMLSelectElement;
@@ -112,22 +159,44 @@ export class WorkItemDetail {
   protected onSaved(item: WorkItem): void {
     this.item.set(item);
     this.editing.set(false);
-    this.notifications.success('Changes saved.');
+    this.notifications.success('Cambios guardados.');
   }
 
   protected delete(item: WorkItem): void {
     this.busy.set(true);
     this.workItems.delete(item.workItemCode).subscribe({
       next: () => {
-        this.notifications.success(`${item.displayKey} was deleted.`);
+        this.notifications.success(`${item.displayKey} se eliminó.`);
         void this.router.navigate(['/work-items'], { queryParams: { project: item.projectCode } });
       },
       error: (error: unknown) => {
         this.busy.set(false);
         this.confirmingDelete.set(false);
-        this.notifications.error(apiErrorMessage(error, 'The work item could not be deleted.'));
+        this.notifications.error(apiErrorMessage(error, 'No se pudo eliminar el elemento de trabajo.'));
       },
     });
+  }
+
+  private onRemoteStatusChange(event: StatusChangedEvent | ItemMovedEvent): void {
+    if (this.loadedItem()?.status.code === event.status.code) {
+      return; // already showing it: this is the echo of a change made on this page
+    }
+    const by = 'fromStatus' in event ? event.movedBy : event.changedBy;
+    const who = by && by.userCode !== this.auth.getCurrentUser()?.id ? by.fullName : 'Alguien';
+    this.notifications.info(
+      this.editing()
+        ? `${who} cambió el estado de ${event.displayKey} a ${event.status.displayName}. Lo verás al terminar de editar.`
+        : `${who} cambió el estado de ${event.displayKey} a ${event.status.displayName}.`,
+    );
+    this.refreshFromServer();
+  }
+
+  private refreshFromServer(): void {
+    if (this.editing()) {
+      this.changedWhileEditing = true;
+    } else {
+      this.item.reload();
+    }
   }
 
   /** Applies a change; on failure explains why and reloads, because someone else may have changed the item first. */
@@ -141,7 +210,7 @@ export class WorkItemDetail {
       error: (error: unknown) => {
         this.busy.set(false);
         onFailure?.();
-        this.notifications.error(apiErrorMessage(error, 'The change could not be made.'));
+        this.notifications.error(apiErrorMessage(error, 'No se pudo realizar el cambio.'));
         this.item.reload();
       },
     });

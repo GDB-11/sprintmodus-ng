@@ -3,6 +3,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { FakeBoard, provideFakeBoard } from '../../../board/board.testing';
+import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
 import { summary } from '../../work-items.testing';
 import { WorkItemList } from './work-item-list';
 import { expectNoAxeViolations } from '../../../testing/axe';
@@ -16,14 +18,21 @@ describe('WorkItemList', () => {
   let fixture: ComponentFixture<WorkItemList>;
   let http: HttpTestingController;
   let router: Router;
+  let board: FakeBoard;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [WorkItemList],
-      providers: [provideRouter([{ path: 'work-items', component: WorkItemList }]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([{ path: 'work-items', component: WorkItemList }]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        provideFakeBoard(),
+      ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
     router = TestBed.inject(Router);
+    board = TestBed.inject(BoardWebSocketService) as unknown as FakeBoard;
   });
 
   afterEach(() => http.verify());
@@ -64,9 +73,9 @@ describe('WorkItemList', () => {
     expect(rows).toHaveLength(2);
     expect(rows[0]).toContain('WAR-1000');
     expect(rows[0]).toContain('Pay by card');
-    expect(rows[1]).toContain('Bug');
+    expect(rows[1]).toContain('Error');
     expect(root().querySelector('a[href="/work-items/item-1"]')?.textContent).toContain('WAR-1000');
-    expect(root().textContent).toContain('Showing 1–2 of 2');
+    expect(root().textContent).toContain('Mostrando 1–2 de 2');
   });
 
   it('follows the project and type in the URL', async () => {
@@ -78,7 +87,28 @@ describe('WorkItemList', () => {
     request.flush({ items: [], total: 0, page: 0, size: 25 });
     await settle();
 
-    expect(root().textContent).toContain('No Bug items in this project.');
+    expect(root().textContent).toContain('Sin elementos de tipo Error en este proyecto.');
+  });
+
+  it('searches by typing and submitting, and resets the page', async () => {
+    await open('/work-items?page=2');
+    (await nextItemsRequest()).flush({ items: [summary()], total: 100, page: 2, size: 25 });
+    await settle();
+
+    const search = root().querySelector<HTMLInputElement>('#search')!;
+    search.value = 'checkout';
+    search.dispatchEvent(new Event('input'));
+    root().querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+
+    const request = await nextItemsRequest();
+    const params = router.parseUrl(router.url).queryParams;
+    expect(params['q']).toBe('checkout');
+    expect(params['page']).toBeUndefined();
+    expect(request.request.params.get('q')).toBe('checkout');
+    request.flush({ items: [], total: 0, page: 0, size: 25 });
+    await settle();
+
+    expect(root().textContent).toContain('Sin resultados para "checkout".');
   });
 
   it('asks for the next page and disables Previous on the first', async () => {
@@ -88,7 +118,7 @@ describe('WorkItemList', () => {
 
     const [previous, next] = [...root().querySelectorAll<HTMLButtonElement>('nav button')];
     expect(previous.disabled).toBe(true);
-    expect(root().textContent).toContain('Showing 1–25 of 60');
+    expect(root().textContent).toContain('Mostrando 1–25 de 60');
 
     next.click();
 
@@ -102,7 +132,7 @@ describe('WorkItemList', () => {
     await open('/work-items', []);
     await settle();
 
-    expect(root().textContent).toContain('You have no projects yet');
+    expect(root().textContent).toContain('Aún no tienes proyectos');
     expect(root().querySelector('table')).toBeNull();
   });
 
@@ -111,7 +141,7 @@ describe('WorkItemList', () => {
     (await nextItemsRequest()).flush(null, { status: 500, statusText: 'Server Error' });
     await settle();
 
-    expect(root().querySelector('[role="alert"]')?.textContent).toContain('Could not load the work items.');
+    expect(root().querySelector('[role="alert"]')?.textContent).toContain('No se pudieron cargar los elementos de trabajo.');
     root().querySelector<HTMLButtonElement>('[role="alert"] button')!.click();
     fixture.detectChanges();
 
@@ -131,5 +161,49 @@ describe('WorkItemList', () => {
     await settle();
 
     await expectNoAxeViolations(root());
+  });
+
+  describe('live updates', () => {
+    const PAGE = { items: [summary()], total: 1, page: 0, size: 25 };
+    const move = { workItemCode: 'item-1', displayKey: 'WAR-1000', status: { code: 'DONE', displayName: 'Done', isInitial: false, isTerminal: true }, allowedStatuses: [], fromStatus: 'NEW', updatedAt: 'now' };
+
+    async function openList(): Promise<void> {
+      await open('/work-items?project=p2');
+      (await nextItemsRequest()).flush(PAGE);
+      await settle();
+    }
+
+    afterEach(() => vi.useRealTimers());
+
+    it('follows the live board of the project it lists, and follows the project when it changes', async () => {
+      await openList();
+
+      expect(board.connect).toHaveBeenCalledWith('p2');
+      expect(root().querySelector('app-board-connection')?.textContent).toContain('Conectado en vivo');
+    });
+
+    it('reloads the list when an item is moved, once for a burst of changes', async () => {
+      await openList();
+      vi.useFakeTimers();
+
+      board.itemMoved$.next(move);
+      board.statusChanged$.next({ ...move, changedBy: undefined } as never);
+      board.itemMoved$.next(move);
+      vi.advanceTimersByTime(600);
+
+      const request = http.expectOne((req) => req.url === `${environment.apiUrl}/api/work-items`);
+      expect(request.request.params.get('projectCode')).toBe('p2');
+      request.flush({ ...PAGE, items: [summary({ status: move.status })] });
+    });
+
+    it('reloads when the board asks for it: the connection is down, or has just come back', async () => {
+      await openList();
+      vi.useFakeTimers();
+
+      board.refresh$.next();
+      vi.advanceTimersByTime(600);
+
+      http.expectOne((req) => req.url === `${environment.apiUrl}/api/work-items`).flush(PAGE);
+    });
   });
 });

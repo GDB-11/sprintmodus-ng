@@ -4,39 +4,39 @@
       {{ message }}
     </p>
   }
-  <app-text-field [field]="editForm.title" inputId="edit-title" label="Title" />
+  <app-text-field [field]="editForm.title" inputId="edit-title" label="Título" />
   <app-textarea-field
     [field]="editForm.description"
     inputId="edit-description"
-    label="Description"
+    label="Descripción"
   />
   <app-textarea-field
     [field]="editForm.acceptanceCriteria"
     inputId="edit-acceptanceCriteria"
-    label="Acceptance criteria"
+    label="Criterios de aceptación"
     [rows]="3"
   />
   <app-select-field
     [field]="editForm.priority"
     inputId="edit-priority"
-    label="Priority"
+    label="Prioridad"
     [options]="priorityOptions"
   />
   <div class="grid gap-4 sm:grid-cols-3">
     <app-text-field
       [field]="editForm.effortPoints"
       inputId="edit-effortPoints"
-      label="Effort points"
+      label="Puntos de esfuerzo"
     />
     <app-text-field
       [field]="editForm.estimatedHours"
       inputId="edit-estimatedHours"
-      label="Estimated hours"
+      label="Horas estimadas"
     />
     <app-text-field
       [field]="editForm.remainingHours"
       inputId="edit-remainingHours"
-      label="Remaining hours"
+      label="Horas restantes"
     />
   </div>
   <div class="flex gap-3">
@@ -45,14 +45,14 @@
       [disabled]="editForm().submitting()"
       class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
     >
-      {{ editForm().submitting() ? 'Saving…' : 'Save changes' }}
+      {{ editForm().submitting() ? 'Guardando…' : 'Guardar cambios' }}
     </button>
     <button
       type="button"
       (click)="cancelled.emit()"
       class="rounded-md border border-neutral-700 px-4 py-2.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
     >
-      Cancel
+      Cancelar
     </button>
   </div>
 </form>

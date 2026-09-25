@@ -18,11 +18,11 @@ describe('apiErrorMessage', () => {
   });
 
   it('explains an unreachable server and an unavailable dependency', () => {
-    expect(apiErrorMessage(new HttpErrorResponse({ status: 0 }))).toContain('Cannot reach the server');
-    expect(apiErrorMessage(new HttpErrorResponse({ status: 503 }))).toContain('temporarily unavailable');
+    expect(apiErrorMessage(new HttpErrorResponse({ status: 0 }))).toContain('No se pudo conectar');
+    expect(apiErrorMessage(new HttpErrorResponse({ status: 503 }))).toContain('no está disponible');
   });
 
   it('falls back for anything that is not an HTTP error', () => {
-    expect(apiErrorMessage(new Error('boom'))).toBe('Something went wrong. Please try again.');
+    expect(apiErrorMessage(new Error('boom'))).toBe('Ocurrió un error. Inténtalo de nuevo.');
   });
 });

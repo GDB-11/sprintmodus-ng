@@ -1,0 +1,9 @@
+<div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-800 dark:text-neutral-300">
+  <p role="status" class="flex items-center gap-1.5">
+    <span aria-hidden="true" class="size-2.5 shrink-0 rounded-full" [class]="dotClasses()"></span>
+    {{ label() }}
+  </p>
+  @if (usersOnline()) {
+    <p>En línea: {{ usersOnline() }}</p>
+  }
+</div>

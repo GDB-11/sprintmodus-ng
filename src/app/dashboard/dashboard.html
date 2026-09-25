@@ -1,26 +1,43 @@
 <main class="min-h-screen bg-light-bg p-6 text-neutral-900 dark:bg-dark-bg dark:text-neutral-100">
   <div class="mx-auto flex max-w-3xl flex-col gap-4">
-    <h1 class="text-2xl font-semibold">Dashboard</h1>
+    <h1 class="text-2xl font-semibold">Panel</h1>
     @if (tenant(); as tenant) {
       <p>
-        Signed in as {{ authService.getCurrentUser()?.fullName }} in
-        <strong>{{ tenant.organizationName }}</strong> ({{ tenant.organizationCode }}) on the
-        {{ tenant.plan }} plan: up to {{ tenant.maxProjects }} projects and
-        {{ tenant.maxUsers }} users.
+        Sesión iniciada como {{ authService.getCurrentUser()?.fullName }} en
+        <strong>{{ tenant.organizationName }}</strong> ({{ tenant.organizationCode }}) en el plan
+        {{ planLabels[tenant.plan] }}: hasta {{ tenant.maxProjects }} proyectos y
+        {{ tenant.maxUsers }} usuarios.
       </p>
     }
     <div class="flex flex-wrap gap-3">
       <a
         routerLink="/work-items"
         class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
-        >Work items</a
+        >Elementos de trabajo</a
       >
+      <a
+        routerLink="/board"
+        class="rounded-md border border-neutral-700 px-4 py-2.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
+        >Tablero</a
+      >
+      <a
+        routerLink="/sprints"
+        class="rounded-md border border-neutral-700 px-4 py-2.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
+        >Sprints</a
+      >
+      @if (canAdminister()) {
+        <a
+          routerLink="/work-items/admin/workflows"
+          class="rounded-md border border-neutral-700 px-4 py-2.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
+          >Configuración de flujo de trabajo</a
+        >
+      }
       <button
         type="button"
         (click)="authService.logout()"
         class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
       >
-        Sign out
+        Cerrar sesión
       </button>
     </div>
   </div>

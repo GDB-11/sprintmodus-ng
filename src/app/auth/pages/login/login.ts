@@ -14,14 +14,14 @@ function loginErrorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
     switch (error.status) {
       case 0:
-        return 'Cannot reach the server. Check your connection and try again.';
+        return 'No se pudo conectar con el servidor. Revisa tu conexión e inténtalo de nuevo.';
       case 401:
-        return 'Invalid email, password or organization code.';
+        return 'Correo electrónico, contraseña o código de organización incorrectos.';
       case 402:
-        return "This organization's subscription is inactive or has expired. Contact your organization's owner.";
+        return 'La suscripción de tu organización está inactiva o venció. Contacta al propietario de tu organización.';
     }
   }
-  return 'Something went wrong. Please try again.';
+  return 'Ocurrió un error. Inténtalo de nuevo.';
 }
 
 /** Only follow same-app paths, so `returnUrl` cannot redirect to another site. */
@@ -50,10 +50,10 @@ export class Login {
   protected readonly loginForm = form(
     this.model,
     (path) => {
-      required(path.organizationCode, { message: 'Enter your organization code.' });
-      required(path.email, { message: 'Enter your email.' });
-      email(path.email, { message: 'Enter a valid email address.' });
-      required(path.password, { message: 'Enter your password.' });
+      required(path.organizationCode, { message: 'Ingresa el código de tu organización.' });
+      required(path.email, { message: 'Ingresa tu correo electrónico.' });
+      email(path.email, { message: 'Ingresa un correo electrónico válido.' });
+      required(path.password, { message: 'Ingresa tu contraseña.' });
     },
     {
       submission: {

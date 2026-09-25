@@ -1,0 +1,48 @@
+<section aria-labelledby="create-heading" class="flex max-w-2xl flex-col gap-3">
+  <h2 id="create-heading" class="text-lg font-semibold">Nuevo sprint</h2>
+  @if (canAdminister()) {
+    <form [formRoot]="sprintForm" class="flex flex-col gap-4">
+      @if (errorMessage(); as message) {
+        <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">{{ message }}</p>
+      }
+      <app-text-field [field]="sprintForm.name" inputId="sprint-name" label="Nombre" />
+      <div class="grid gap-4 sm:grid-cols-2">
+        <app-text-field
+          [field]="sprintForm.startDate"
+          inputId="sprint-start"
+          label="Fecha de inicio"
+          type="date"
+          hint="Opcional. Si la dejas vacía empieza el próximo día de inicio configurado. Dura lo que dice la configuración."
+        />
+        <app-text-field
+          [field]="sprintForm.plannedVelocity"
+          inputId="sprint-planned"
+          label="Puntos planificados"
+          hint="Opcional."
+        />
+      </div>
+      <div>
+        <button
+          type="submit"
+          class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
+        >
+          Crear sprint
+        </button>
+      </div>
+    </form>
+  } @else {
+    <p id="create-hint" class="text-sm text-neutral-800 dark:text-neutral-300">
+      Solo los propietarios y administradores planifican los sprints.
+    </p>
+    <div>
+      <button
+        type="button"
+        disabled
+        aria-describedby="create-hint"
+        class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 disabled:opacity-60"
+      >
+        Crear sprint
+      </button>
+    </div>
+  }
+</section>

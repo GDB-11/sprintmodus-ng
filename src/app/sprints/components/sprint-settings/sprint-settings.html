@@ -1,0 +1,74 @@
+<section aria-labelledby="settings-heading" class="flex max-w-2xl flex-col gap-3">
+  <h2 id="settings-heading" class="text-lg font-semibold">Configuración de sprints</h2>
+  @if (config.status() === 'loading') {
+    <p role="status">Cargando la configuración…</p>
+  } @else if (config.error()) {
+    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+      No se pudo cargar la configuración.
+      <button type="button" class="underline" (click)="config.reload()">Reintentar</button>
+    </p>
+  } @else if (loaded(); as current) {
+    @if (canAdminister()) {
+      <form [formRoot]="settingsForm" class="flex flex-col gap-4">
+        @if (errorMessage(); as message) {
+          <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">{{ message }}</p>
+        }
+        <div class="grid gap-4 sm:grid-cols-2">
+          <app-text-field
+            [field]="settingsForm.defaultSprintDays"
+            inputId="sprint-days"
+            label="Duración de un sprint (días)"
+            type="number"
+            hint="De 1 a 90. Vale para los sprints que se creen después; los que ya existen conservan su duración."
+          />
+          <app-select-field
+            [field]="settingsForm.sprintStartDay"
+            inputId="sprint-start-day"
+            label="Día de inicio"
+            [options]="dayOptions"
+            hint="El día de la semana en que empieza un sprint cuando no se elige una fecha."
+          />
+        </div>
+        <label class="flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            [formField]="settingsForm.velocityTrackingEnabled"
+            class="mt-0.5 size-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+          />
+          <span>
+            <span class="font-medium">Registrar la velocidad</span>
+            <span class="block text-neutral-800 dark:text-neutral-300">
+              Guarda los puntos completados de cada sprint para calcular la velocidad promedio.
+            </span>
+          </span>
+        </label>
+        <div>
+          <button
+            type="submit"
+            class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
+          >
+            Guardar configuración
+          </button>
+        </div>
+      </form>
+    } @else {
+      <dl class="grid gap-4 sm:grid-cols-3">
+        <div>
+          <dt class="text-sm font-medium">Duración de un sprint</dt>
+          <dd>{{ current.defaultSprintDays }} días</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium">Día de inicio</dt>
+          <dd>{{ dayLabels[current.sprintStartDay] }}</dd>
+        </div>
+        <div>
+          <dt class="text-sm font-medium">Registro de velocidad</dt>
+          <dd>{{ current.velocityTrackingEnabled ? 'Activado' : 'Desactivado' }}</dd>
+        </div>
+      </dl>
+      <p class="text-sm text-neutral-800 dark:text-neutral-300">
+        Solo los propietarios y administradores cambian esta configuración.
+      </p>
+    }
+  }
+</section>
