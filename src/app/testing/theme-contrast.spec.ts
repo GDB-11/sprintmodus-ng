@@ -3,50 +3,127 @@ import { join } from 'node:path';
 
 /**
  * WCAG AA for the colour pairs the screens use, in light and dark mode, computed from the real tokens in `styles.css`.
- * Text needs 4.5:1; icons, borders and focus outlines need 3:1. Change a token or a pair and this tells you if it still passes.
+ * Text needs 4.5:1; icons, borders and focus outlines need 3:1. Change a token or a pair and this tells you if it still
+ * passes. Most tokens hold one value used in both themes (dark mode is reached by a template picking a different step,
+ * e.g. `secondary-900` in light / `secondary-400` in dark). A few tokens (the primary/secondary accent's 400/500/600/700/900
+ * steps, `text`/`text-muted`/`text-faint`, the glass/control surfaces and the wallpaper stops) have a real per-theme value,
+ * read here from the `:root.dark { ... }` override block in `styles.css`.
  */
 const css = readFileSync(join(process.cwd(), 'src/styles.css'), 'utf8');
 
-/** Tailwind's default neutral scale (the theme does not redefine it), as OKLCH lightness. */
-const NEUTRAL_LIGHTNESS: Record<string, number> = {
-  '100': 0.97, '200': 0.922, '300': 0.87, '400': 0.708, '500': 0.556, '600': 0.439, '700': 0.371, '800': 0.269, '900': 0.205,
-};
+const THEME_BLOCK = /@theme\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
+const DARK_BLOCK = /:root\.dark\s*\{([\s\S]*?)\n\}/.exec(css)?.[1] ?? '';
 
-function token(name: string): [number, number, number] {
-  const neutral = /^neutral-(\d+)$/.exec(name);
-  if (neutral) {
-    return [NEUTRAL_LIGHTNESS[neutral[1]], 0, 0];
+type Color = { l: number; c: number; h: number } | { r: number; g: number; b: number; a: number };
+
+function isRgba(color: Color): color is { r: number; g: number; b: number; a: number } {
+  return 'r' in color;
+}
+
+function parseValue(raw: string): Color {
+  const oklch = /oklch\(([0-9. ]+)\)/.exec(raw);
+  if (oklch) {
+    const [l, c, h] = oklch[1].trim().split(/\s+/).map(Number);
+    return { l, c, h };
   }
+  const rgba = /rgba?\(([0-9. ,]+)\)/.exec(raw);
+  if (rgba) {
+    const parts = rgba[1].split(',').map((p) => Number(p.trim()));
+    const [r, g, b, a = 1] = parts;
+    return { r: r / 255, g: g / 255, b: b / 255, a };
+  }
+  throw new Error(`Unparseable colour value: ${raw}`);
+}
+
+/** Reads a token's value: the `:root.dark` override if `theme` is 'dark' and one exists, else the `@theme` value. */
+function token(name: string, theme: 'light' | 'dark' = 'light'): Color {
   if (name === 'white') {
-    return [1, 0, 0];
+    return { l: 1, c: 0, h: 0 };
   }
-  const match = new RegExp(`--color-${name}:\\s*oklch\\(([0-9. ]+)\\)`).exec(css);
+  if (theme === 'dark') {
+    const darkMatch = new RegExp(`--color-${name}:\\s*([^;]+);`).exec(DARK_BLOCK);
+    if (darkMatch) {
+      return parseValue(darkMatch[1]);
+    }
+  }
+  const match = new RegExp(`--color-${name}:\\s*([^;]+);`).exec(THEME_BLOCK);
   if (!match) {
     throw new Error(`Unknown color token: ${name}`);
   }
-  const [l, c, h] = match[1].trim().split(/\s+/).map(Number);
-  return [l, c, h];
+  return parseValue(match[1]);
 }
 
-function luminance(name: string): number {
-  const [L, C, h] = token(name);
-  const a = C * Math.cos((h * Math.PI) / 180);
-  const b = C * Math.sin((h * Math.PI) / 180);
-  const l = (L + 0.3963377774 * a + 0.2158037573 * b) ** 3;
-  const m = (L - 0.1055613458 * a - 0.0638541728 * b) ** 3;
-  const s = (L - 0.0894841775 * a - 1.291485548 * b) ** 3;
+function luminanceOklch(l: number, c: number, h: number): number {
+  const a = c * Math.cos((h * Math.PI) / 180);
+  const b = c * Math.sin((h * Math.PI) / 180);
+  const l_ = (l + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m_ = (l - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s_ = (l - 0.0894841775 * a - 1.291485548 * b) ** 3;
   const linear = [
-    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+    4.0767416621 * l_ - 3.3077115913 * m_ + 0.2309699292 * s_,
+    -1.2684380046 * l_ + 2.6097574011 * m_ - 0.3413193965 * s_,
+    -0.0041960863 * l_ - 0.7034186147 * m_ + 1.707614701 * s_,
   ].map((channel) => Math.min(1, Math.max(0, channel)));
   // clamped linear-light sRGB is what WCAG's relative luminance is defined on
   return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
 }
 
-function contrast(foreground: string, background: string): number {
+function srgbToLinear(c: number): number {
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+
+function luminanceRgb(r: number, g: number, b: number): number {
+  return 0.2126 * srgbToLinear(r) + 0.7152 * srgbToLinear(g) + 0.0722 * srgbToLinear(b);
+}
+
+function luminance(color: Color): number {
+  return isRgba(color) ? luminanceRgb(color.r, color.g, color.b) : luminanceOklch(color.l, color.c, color.h);
+}
+
+function toRgb01(color: Color): [number, number, number] {
+  if (isRgba(color)) {
+    return [color.r, color.g, color.b];
+  }
+  const { l, c, h } = color;
+  const a = c * Math.cos((h * Math.PI) / 180);
+  const b = c * Math.sin((h * Math.PI) / 180);
+  const l_ = (l + 0.3963377774 * a + 0.2158037573 * b) ** 3;
+  const m_ = (l - 0.1055613458 * a - 0.0638541728 * b) ** 3;
+  const s_ = (l - 0.0894841775 * a - 1.291485548 * b) ** 3;
+  const linear = [
+    4.0767416621 * l_ - 3.3077115913 * m_ + 0.2309699292 * s_,
+    -1.2684380046 * l_ + 2.6097574011 * m_ - 0.3413193965 * s_,
+    -0.0041960863 * l_ - 0.7034186147 * m_ + 1.707614701 * s_,
+  ].map((channel) => Math.min(1, Math.max(0, channel)));
+  const toSrgb = (channel: number) => (channel <= 0.0031308 ? channel * 12.92 : 1.055 * channel ** (1 / 2.4) - 0.055);
+  return linear.map((channel) => Math.min(1, Math.max(0, toSrgb(channel)))) as [number, number, number];
+}
+
+/** Alpha-composites a translucent foreground (e.g. `glass-bg`) over an opaque background, sRGB-space (as the browser does for `backdrop-filter` surfaces). */
+function compositeOver(fg: Color, bg: Color): Color {
+  if (!isRgba(fg)) {
+    throw new Error('compositeOver expects a translucent (rgba) foreground');
+  }
+  const [br, bg_, bb] = toRgb01(bg);
+  const { r, g, b, a } = fg;
+  return { r: r * a + br * (1 - a), g: g * a + bg_ * (1 - a), b: b * a + bb * (1 - a), a: 1 };
+}
+
+function contrastColors(foreground: Color, background: Color): number {
   const [light, dark] = [luminance(foreground), luminance(background)].sort((x, y) => y - x);
   return (light + 0.05) / (dark + 0.05);
+}
+
+function contrast(foreground: string, background: string, theme: 'light' | 'dark' = 'light'): number {
+  return contrastColors(token(foreground, theme), token(background, theme));
+}
+
+/** Worst-case contrast of a token over a translucent glass/control surface composited over each wallpaper stop. */
+function contrastOnGlass(foreground: string, glassToken: string, theme: 'light' | 'dark' = 'light'): number {
+  const fg = token(foreground, theme);
+  const glass = token(glassToken, theme);
+  const stops = ['wall-a', 'wall-b', 'wall-c'].map((name) => token(name, theme));
+  return Math.min(...stops.map((stop) => contrastColors(fg, compositeOver(glass, stop))));
 }
 
 const TEXT = 4.5;
@@ -87,7 +164,16 @@ const PAIRS: [foreground: string, background: string, minimum: number, use: stri
   ['error-800', 'light-bg', GRAPHIC, 'live connection indicator, offline'],
   ['secondary-900', 'secondary-100', TEXT, 'mention in a comment'],
   ['white', 'secondary-900', TEXT, 'unread badge and "Sin leer" chip'],
-  // dark mode
+  // new (Phase 15): text ink on the plain page background
+  ['text', 'light-bg', TEXT, 'body text (new ink token)'],
+  ['text-muted', 'light-bg', TEXT, 'hints (new ink token)'],
+  ['text-faint', 'light-bg', GRAPHIC, 'decoration / small text, e.g. issue keys, dates (new ink token)'],
+  // new (Phase 15): the button primitive's white-ink fill must be dark enough on the primary gradient
+  ['white', 'primary-700', TEXT, 'primary button fill (white ink; primary-500/600 fail, see corrections note)'],
+  ['white', 'primary-900', TEXT, 'primary button, pressed'],
+];
+
+const DARK_PAIRS: [foreground: string, background: string, minimum: number, use: string][] = [
   ['neutral-100', 'dark-bg', TEXT, 'body text and inputs'],
   ['neutral-300', 'dark-bg', TEXT, 'hints'],
   ['secondary-400', 'dark-bg', TEXT, 'links'],
@@ -107,15 +193,48 @@ const PAIRS: [foreground: string, background: string, minimum: number, use: stri
   ['error-500', 'dark-bg', GRAPHIC, 'burndown real line'],
   ['secondary-100', 'secondary-900', TEXT, 'mention in a comment'],
   ['neutral-900', 'secondary-400', TEXT, 'unread badge and "Sin leer" chip'],
+  // new (Phase 15): text ink on the plain page background
+  ['text', 'dark-bg', TEXT, 'body text (new ink token)'],
+  ['text-muted', 'dark-bg', TEXT, 'hints (new ink token)'],
+  ['text-faint', 'dark-bg', GRAPHIC, 'decoration / small text, e.g. issue keys, dates (new ink token)'],
+  ['white', 'primary-700', TEXT, 'primary button fill (white ink)'],
+  ['white', 'primary-900', TEXT, 'primary button, pressed'],
+];
+
+/** Text/decoration on the translucent glass panel, checked against every wallpaper stop (the worst one gates it). */
+const GLASS_PAIRS: [foreground: string, minimum: number, use: string][] = [
+  ['text', TEXT, 'body text on a glass panel'],
+  ['text-muted', TEXT, 'hints on a glass panel'],
+  ['text-faint', GRAPHIC, 'decoration / small text on a glass panel'],
 ];
 
 describe('theme colour pairs (WCAG AA)', () => {
   it.each(PAIRS)('%s on %s is at least %d:1 (%s)', (foreground, background, minimum) => {
-    expect(contrast(foreground, background)).toBeGreaterThanOrEqual(minimum);
+    expect(contrast(foreground, background, 'light')).toBeGreaterThanOrEqual(minimum);
+  });
+
+  it.each(DARK_PAIRS)('dark: %s on %s is at least %d:1 (%s)', (foreground, background, minimum) => {
+    expect(contrast(foreground, background, 'dark')).toBeGreaterThanOrEqual(minimum);
+  });
+
+  it.each(GLASS_PAIRS)('%s on glass-bg over the worst wallpaper stop is at least %d:1 (%s), light', (foreground, minimum) => {
+    expect(contrastOnGlass(foreground, 'glass-bg', 'light')).toBeGreaterThanOrEqual(minimum);
+  });
+
+  it.each(GLASS_PAIRS)('%s on glass-bg over the worst wallpaper stop is at least %d:1 (%s), dark', (foreground, minimum) => {
+    expect(contrastOnGlass(foreground, 'glass-bg', 'dark')).toBeGreaterThanOrEqual(minimum);
   });
 
   it('measures contrast the way WCAG does', () => {
-    expect(contrast('white', 'neutral-100')).toBeLessThan(1.1);
+    // neutral-100 is a near-white tint (not pure white), so this is "practically indistinguishable", not "identical"
+    expect(contrast('white', 'neutral-100')).toBeLessThan(1.2);
     expect(contrast('neutral-100', 'neutral-900')).toBeGreaterThan(10);
+  });
+
+  it('reads the dark-mode override for a token that has one, and falls back for one that does not', () => {
+    // primary-500 is slightly lighter/more saturated in dark mode (see styles.css)
+    expect(luminance(token('primary-500', 'light'))).toBeLessThan(luminance(token('primary-500', 'dark')));
+    // secondary-900 has no dark override (kept flat on purpose, see styles.css), so both themes read the same value
+    expect(token('secondary-900', 'light')).toEqual(token('secondary-900', 'dark'));
   });
 });

@@ -1,0 +1,42 @@
+<svg
+  viewBox="0 0 24 24"
+  width="1em"
+  height="1em"
+  fill="none"
+  stroke="currentColor"
+  stroke-width="2"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  [attr.aria-hidden]="label() ? null : 'true'"
+  [attr.role]="label() ? 'img' : null"
+  [attr.aria-label]="label() ?? null"
+>
+  @for (shape of shapes(); track $index) {
+    @switch (shape.tag) {
+      @case ('path') {
+        <path [attr.d]="shape.d" />
+      }
+      @case ('circle') {
+        <circle [attr.cx]="shape.cx" [attr.cy]="shape.cy" [attr.r]="shape.r" />
+      }
+      @case ('line') {
+        <line [attr.x1]="shape.x1" [attr.y1]="shape.y1" [attr.x2]="shape.x2" [attr.y2]="shape.y2" />
+      }
+      @case ('rect') {
+        <rect
+          [attr.x]="shape.x"
+          [attr.y]="shape.y"
+          [attr.width]="shape.width"
+          [attr.height]="shape.height"
+          [attr.rx]="shape.rx ?? null"
+        />
+      }
+      @case ('polyline') {
+        <polyline [attr.points]="shape.points" />
+      }
+      @case ('polygon') {
+        <polygon [attr.points]="shape.points" />
+      }
+    }
+  }
+</svg>

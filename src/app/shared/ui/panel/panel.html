@@ -1,0 +1,10 @@
+<section class="glass relative flex flex-col gap-3 p-4">
+  <div class="glass-highlight"></div>
+  @if (heading()) {
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <h2 class="text-lg font-semibold text-text">{{ heading() }}</h2>
+      <ng-content select="[panelActions]" />
+    </div>
+  }
+  <ng-content />
+</section>

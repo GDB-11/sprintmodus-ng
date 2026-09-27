@@ -1,0 +1,123 @@
+<div class="wallpaper min-h-screen p-6">
+  <div class="mx-auto flex max-w-5xl flex-col gap-8">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <h1 class="text-2xl font-semibold text-text">Galería de componentes</h1>
+      <div role="group" aria-label="Tema" class="flex gap-1">
+        <button appButton variant="secondary" size="compact" type="button" (click)="theme.setTheme('claro')">Claro</button>
+        <button appButton variant="secondary" size="compact" type="button" (click)="theme.setTheme('oscuro')">Oscuro</button>
+        <button appButton variant="secondary" size="compact" type="button" (click)="theme.setTheme('sistema')">Sistema</button>
+      </div>
+    </div>
+
+    <app-panel heading="Logo">
+      <app-logo />
+      <app-logo [markOnly]="true" />
+    </app-panel>
+
+    <app-panel heading="Iconos">
+      <div class="grid grid-cols-6 gap-4 sm:grid-cols-10">
+        @for (name of iconNames; track name) {
+          <div class="flex flex-col items-center gap-1 text-text-muted">
+            <app-icon [name]="name" class="h-5 w-5" />
+            <span class="text-center text-xs break-all">{{ name }}</span>
+          </div>
+        }
+      </div>
+    </app-panel>
+
+    <app-panel heading="Button">
+      <div class="flex flex-wrap items-center gap-3">
+        @for (variant of buttonVariants; track variant) {
+          <button appButton [variant]="variant" type="button">{{ variant }}</button>
+          <button appButton [variant]="variant" size="compact" type="button">compact</button>
+          <button appButton [variant]="variant" size="icon" type="button"><app-icon name="plus" label="Añadir" /></button>
+        }
+        <button appButton variant="primary" type="button" disabled title="Requiere rol propietario o administrador">disabled</button>
+      </div>
+    </app-panel>
+
+    <app-panel heading="Chip">
+      <div class="flex flex-wrap gap-2">
+        @for (tone of chipTones; track tone) {
+          <app-chip [tone]="tone">{{ tone }}</app-chip>
+        }
+      </div>
+    </app-panel>
+
+    <app-panel heading="Badge, Avatar, AvatarGroup">
+      <div class="flex flex-wrap items-center gap-4">
+        <app-badge [count]="3" />
+        <app-badge [count]="150" />
+        <app-avatar name="Ana García" />
+        <app-avatar-group [names]="['Ana García', 'Beto Ruiz', 'Cora Díaz', 'Dan Soto', 'Eva Luz']" [max]="3" />
+      </div>
+    </app-panel>
+
+    <app-panel heading="Banner">
+      <div class="flex flex-col gap-2">
+        @for (kind of bannerKinds; track kind) {
+          <app-banner [kind]="kind">Mensaje de ejemplo para "{{ kind }}".</app-banner>
+        }
+      </div>
+    </app-panel>
+
+    <app-panel heading="Meter">
+      <app-meter label="Proyectos" [value]="4" [max]="10" />
+      <app-meter label="Usuarios" [value]="9" [max]="10" />
+    </app-panel>
+
+    <app-panel heading="SearchField">
+      <app-search-field label="Buscar" inputId="gallery-search" placeholder="Clave o título..." />
+    </app-panel>
+
+    <app-panel heading="FilterChip, SegmentedControl">
+      <div class="flex flex-col gap-3">
+        <button appFilterChip type="button" [pressed]="filterPressed()" (click)="filterPressed.set(!filterPressed())">
+          Prioridad: Alta
+        </button>
+        <app-segmented-control [options]="viewOptions" [value]="view()" (valueChange)="view.set($event)" groupLabel="Vista" />
+      </div>
+    </app-panel>
+
+    <app-panel heading="Disclosure">
+      <details appDisclosure summary="Historial">
+        <p class="text-sm text-text-muted">Contenido del historial.</p>
+      </details>
+    </app-panel>
+
+    <app-panel heading="DataTable">
+      <app-data-table caption="Sprints de ejemplo" [columns]="sprintColumns" [rows]="sprintRows" [trackBy]="sprintTrackBy" />
+    </app-panel>
+
+    <app-panel heading="EmptyState, ErrorState, Skeleton">
+      <div class="flex flex-col gap-4">
+        <app-empty-state icon="info" message="No hay elementos de trabajo todavía." />
+        <app-error-state message="No se pudo cargar la lista." />
+        <div class="flex flex-col gap-2">
+          <app-skeleton height="1.25rem" />
+          <app-skeleton height="1.25rem" width="70%" />
+        </div>
+      </div>
+    </app-panel>
+
+    <app-panel heading="ConfirmInline, DisabledReason">
+      <div class="flex flex-col gap-3">
+        <app-confirm-inline question="¿Eliminar TASK-1?" [busy]="confirmBusy()" />
+        <app-disabled-reason reason="Requiere rol propietario o administrador." />
+      </div>
+    </app-panel>
+
+    <app-panel heading="Campos (Signal Forms)">
+      <form [formRoot]="demoForm" class="flex flex-col gap-4">
+        <app-text-field [field]="demoForm.title" inputId="gallery-title" label="Título" hint="Nombre corto y claro." />
+        <app-textarea-field [field]="demoForm.description" inputId="gallery-description" label="Descripción" />
+        <app-select-field
+          [field]="demoForm.priority"
+          inputId="gallery-priority"
+          label="Prioridad"
+          [options]="priorityOptions"
+        />
+      </form>
+    </app-panel>
+  </div>
+</div>

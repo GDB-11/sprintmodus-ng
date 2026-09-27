@@ -1,0 +1,14 @@
+<div class="flex flex-col gap-2">
+  @if (backLink(); as link) {
+    <a
+      [routerLink]="link"
+      class="w-fit text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
+      >← {{ backLabel() }}</a
+    >
+  }
+  <div class="flex flex-wrap items-start justify-between gap-3">
+    <h1 class="text-2xl font-semibold text-text">{{ heading() }}</h1>
+    <ng-content select="[pageHeaderActions]" />
+  </div>
+  <ng-content />
+</div>

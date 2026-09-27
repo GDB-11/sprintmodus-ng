@@ -1,7 +1,17 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './auth/guards/auth.guard';
+import { environment } from '../environments/environment';
 
 export const routes: Routes = [
+  // dev-only component gallery: never registered in a production build
+  ...(environment.production
+    ? []
+    : [
+        {
+          path: 'design',
+          loadComponent: () => import('./design/design-gallery/design-gallery').then((m) => m.DesignGallery),
+        },
+      ]),
   {
     path: 'login',
     canActivate: [guestGuard],

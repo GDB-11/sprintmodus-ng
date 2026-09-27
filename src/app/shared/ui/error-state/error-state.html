@@ -1,0 +1,5 @@
+<div class="flex flex-col items-center gap-3 p-6 text-center" role="alert">
+  <app-icon name="triangle-alert" class="h-8 w-8 text-error-800 dark:text-error-300" />
+  <p class="text-sm text-text">{{ message() }}</p>
+  <button appButton variant="secondary" size="compact" type="button" (click)="retry.emit()">Reintentar</button>
+</div>

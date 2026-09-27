@@ -6,7 +6,7 @@
 >
   @for (notification of notifications(); track notification.id) {
     <div
-      class="flex items-start gap-3 rounded-md border p-3 text-sm shadow-md"
+      class="flex items-start gap-3 rounded-2xl border p-3 text-sm shadow-md"
       [class.border-success-800]="notification.kind === 'success'"
       [class.bg-success-100]="notification.kind === 'success'"
       [class.text-success-900]="notification.kind === 'success'"

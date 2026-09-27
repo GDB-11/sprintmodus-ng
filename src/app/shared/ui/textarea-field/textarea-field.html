@@ -7,10 +7,10 @@
     [attr.aria-required]="state().required()"
     [attr.aria-invalid]="showError()"
     [attr.aria-describedby]="describedBy()"
-    class="rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-2 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400"
+    class="rounded-[10px] border border-control-border bg-control-track px-3 py-2 text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
   ></textarea>
   @if (hint()) {
-    <p [id]="hintId()" class="text-sm text-neutral-800 dark:text-neutral-300">{{ hint() }}</p>
+    <p [id]="hintId()" class="text-sm text-text-muted">{{ hint() }}</p>
   }
   @if (showError()) {
     <p [id]="errorId()" role="alert" class="text-sm font-medium text-error-800 dark:text-error-300">

@@ -1,0 +1,23 @@
+<span class="inline-flex items-center gap-2">
+  <svg viewBox="0 0 34 34" width="34" height="34" aria-hidden="true" class="shrink-0">
+    <defs>
+      <linearGradient id="app-logo-gradient" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="var(--color-primary-500)" />
+        <stop offset="1" stop-color="var(--color-secondary-500)" />
+      </linearGradient>
+    </defs>
+    <rect width="34" height="34" rx="9" fill="url(#app-logo-gradient)" />
+    <path
+      d="M9 21 L14 15 L18 18 L25 10"
+      fill="none"
+      stroke="white"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <circle cx="25" cy="10" r="2" fill="white" />
+  </svg>
+  @if (!markOnly()) {
+    <span class="text-lg font-extrabold tracking-tight text-text">Sprintmodus</span>
+  }
+</span>

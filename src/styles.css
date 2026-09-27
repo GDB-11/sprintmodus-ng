@@ -5,117 +5,312 @@
 /* Dark mode variant using class-based detection */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Design System: Redesign Palette (Phase 15, landed 2026-09-27).
+ * Source of truth for colour values: the Claude Design mock (planning/redesign/sprintmodus-redesign.source.html,
+ * objects LIGHT/DARK), plus CLAUDE.md's token table. Wallpaper accent hue: 290 (violet).
+ * Token NAMES are unchanged from before the redesign; only their OKLCH values moved. Two tokens deviate from a
+ * literal transcription of the mock, both minimal-lightness-only corrections recorded in theme-contrast.spec.ts:
+ *   - primary button ink: white text needs the darker end of the primary gradient (>= primary-700), not primary-500/600
+ *     as the mock's button gradient top implies -- primary-500/600 fail 4.5:1 with white (see theme-contrast.spec.ts).
+ *   - light textFaint: darkened from the mock's oklch(0.56 0.01 232) to oklch(0.52 0.01 232) to clear 4.5:1 as text
+ *     (the mock uses it for issue keys/hints/dates/placeholders, which are real text, not pure decoration).
+ *   - secondary-900 keeps ONE value (the light-mode dark-teal one) instead of the mock's dark-mode override (a light
+ *     teal), because `mention-text` already does `bg-secondary-100 text-secondary-900 dark:bg-secondary-900
+ *     dark:text-secondary-100` -- an explicit dark: swap that needs secondary-900 to stay dark in both themes. Only
+ *     primary and secondary-500 get real per-theme values; nothing existing relies on those differently.
+ *
+ * | Token                                   | Light                        | Dark                          | Use |
+ * |------------------------------------------|------------------------------|--------------------------------|-----|
+ * | light-bg / dark-bg (page background)      | oklch(0.94 0.01 232)          | oklch(0.16 0.02 240)           | page background |
+ * | text / text-muted / text-faint            | 0.24/.015/232, 0.42/.012/232, 0.52/.01/232 | 0.95/.006/240, 0.74/.012/240, 0.58/.014/240 | body / hints / decoration-or-small-text |
+ * | glass-bg / glass-border                   | rgba(255,255,255,.52) / rgba(255,255,255,.65) | rgba(24,28,40,.55) / rgba(255,255,255,.09) | glass panel fill / edge |
+ * | control-track / control-border            | rgba(255,255,255,.55) / rgba(120,130,160,.25) | rgba(255,255,255,.06) / rgba(255,255,255,.12) | segmented control / input track |
+ * | wall-a / wall-b / wall-c (wallpaper)       | 0.80/.075/232, 0.88/.06/290, 0.93/.03/190 | 0.30/.06/232, 0.26/.05/290, 0.24/.035/190 | shell wallpaper gradient stops |
+ * | primary-400/500/600/700/900               | 0.74/.11, 0.64/.15, 0.56/.16, 0.48/.155, 0.32/.11 (h232) | 0.74/.12, 0.66/.15, 0.56/.155, 0.46/.145, 0.30/.10 (h232) | accent (blue), rest of 50-950 scale is theme-invariant |
+ * | secondary-500/900                         | 0.62/.10 (h190), 0.30/.07 (h190) | 0.64/.10 (h190), 0.78/.09 (h190) | teal accent; -900 flips light-in-dark for text/link use |
+ * | success/error/warning/info                | hues 142.5/25.3/71.5/253.2, unchanged from before the redesign | same values both themes (chip/banner pairs are theme-invariant, as today: bg-error-100/text-error-900 is not swapped in dark mode) |
+ * | neutral (tinted, replaces achromatic grey) | hue 236, chroma ~0.003-0.016, one flat scale | same values both themes (templates already pick a different step per theme, e.g. neutral-900 light body text / neutral-100 dark body text) |
+ * | tertiary / surface (derived, mock doesn't use them) | hue 290 (tertiary), hue 107.6 (surface) | same values both themes | reserved for future use |
+ */
+
 @theme {
-  /* Light Mode Base Colors */
-  --color-light-bg: oklch(0.991 0.001 107.6);
-  --color-light-surface-secondary: oklch(0.849 0.061 107.6);
-  --color-light-surface-tertiary: oklch(0.790 0.060 75.5);
+  /* Light Mode Base Colors (page background + card/input surfaces, re-themed to the aero-glass values) */
+  --color-light-bg: oklch(0.94 0.01 232);
+  --color-light-surface-secondary: oklch(0.97 0.008 232);
+  --color-light-surface-tertiary: oklch(0.985 0.005 232);
 
   /* Dark Mode Base Colors */
-  --color-dark-bg: oklch(0.186 0.004 106.8);
-  --color-dark-surface-secondary: oklch(0.236 0.005 67.6);
+  --color-dark-bg: oklch(0.16 0.02 240);
+  --color-dark-surface-secondary: oklch(0.22 0.02 240);
 
-  /* Primary Accent (Gold) - 11-weight scale */
-  --color-primary-50: oklch(0.98 0.03 78.6);
-  --color-primary-100: oklch(0.95 0.05 78.6);
-  --color-primary-200: oklch(0.92 0.07 78.6);
-  --color-primary-300: oklch(0.88 0.08 78.6);
-  --color-primary-400: oklch(0.84 0.093 78.6);
-  --color-primary-500: oklch(0.82 0.097 78.6);
-  --color-primary-600: oklch(0.76 0.10 78.6);
-  --color-primary-700: oklch(0.68 0.10 78.6);
-  --color-primary-800: oklch(0.58 0.10 78.6);
-  --color-primary-900: oklch(0.48 0.09 78.6);
-  --color-primary-950: oklch(0.38 0.07 78.6);
+  /* Text ink (new in Phase 15; base = light values, overridden under .dark below) */
+  --color-text: oklch(0.24 0.015 232);
+  --color-text-muted: oklch(0.42 0.012 232);
+  --color-text-faint: oklch(0.52 0.01 232);
 
-  /* Secondary Accent (Teal) - 11-weight scale */
-  --color-secondary-50: oklch(0.96 0.03 203.4);
-  --color-secondary-100: oklch(0.93 0.04 203.4);
-  --color-secondary-200: oklch(0.88 0.055 203.4);
-  --color-secondary-300: oklch(0.82 0.065 203.4);
-  --color-secondary-400: oklch(0.75 0.071 203.4);
-  --color-secondary-500: oklch(0.68 0.076 203.4);
-  --color-secondary-600: oklch(0.62 0.077 203.4);
-  --color-secondary-700: oklch(0.55 0.075 203.4);
-  --color-secondary-800: oklch(0.48 0.072 203.4);
-  --color-secondary-900: oklch(0.40 0.06 203.4);
-  --color-secondary-950: oklch(0.32 0.05 203.4);
+  /* Glass surface + control tokens (rgba, straight from the mock; overridden under .dark below) */
+  --color-glass-bg: rgba(255, 255, 255, 0.52);
+  --color-glass-border: rgba(255, 255, 255, 0.65);
+  --color-control-track: rgba(255, 255, 255, 0.55);
+  --color-control-border: rgba(120, 130, 160, 0.25);
 
-  /* Tertiary (Mauve) - 11-weight scale */
-  --color-tertiary-50: oklch(0.96 0.02 354.2);
-  --color-tertiary-100: oklch(0.92 0.03 354.2);
-  --color-tertiary-200: oklch(0.87 0.045 354.2);
-  --color-tertiary-300: oklch(0.80 0.055 354.2);
-  --color-tertiary-400: oklch(0.72 0.065 354.2);
-  --color-tertiary-500: oklch(0.65 0.070 354.2);
-  --color-tertiary-600: oklch(0.58 0.073 354.2);
-  --color-tertiary-700: oklch(0.52 0.074 354.2);
-  --color-tertiary-800: oklch(0.45 0.072 354.2);
-  --color-tertiary-900: oklch(0.36 0.06 354.2);
-  --color-tertiary-950: oklch(0.28 0.045 354.2);
+  /* Wallpaper gradient stops, accent hue 290 (violet); overridden under .dark below */
+  --color-wall-a: oklch(0.8 0.075 232);
+  --color-wall-b: oklch(0.88 0.06 290);
+  --color-wall-c: oklch(0.93 0.03 190);
 
-  /* Surface Neutral (Warm) - 11-weight scale */
+  /* Primary Accent (Blue, hue 232) - 11-weight scale. 400/500/600/700/900 get theme-specific overrides under .dark. */
+  --color-primary-50: oklch(0.97 0.025 232);
+  --color-primary-100: oklch(0.937 0.037 232);
+  --color-primary-200: oklch(0.871 0.061 232);
+  --color-primary-300: oklch(0.806 0.086 232);
+  --color-primary-400: oklch(0.74 0.11 232);
+  --color-primary-500: oklch(0.64 0.15 232);
+  --color-primary-600: oklch(0.56 0.16 232);
+  --color-primary-700: oklch(0.48 0.155 232);
+  --color-primary-800: oklch(0.4 0.133 232);
+  --color-primary-900: oklch(0.32 0.11 232);
+  --color-primary-950: oklch(0.22 0.075 232);
+
+  /* Secondary Accent (Teal, hue 190) - 11-weight scale. 500/900 get theme-specific overrides under .dark. */
+  --color-secondary-50: oklch(0.96 0.02 190);
+  --color-secondary-100: oklch(0.922 0.029 190);
+  --color-secondary-200: oklch(0.847 0.047 190);
+  --color-secondary-300: oklch(0.771 0.064 190);
+  --color-secondary-400: oklch(0.696 0.082 190);
+  --color-secondary-500: oklch(0.62 0.1 190);
+  --color-secondary-600: oklch(0.54 0.093 190);
+  --color-secondary-700: oklch(0.46 0.085 190);
+  --color-secondary-800: oklch(0.38 0.078 190);
+  --color-secondary-900: oklch(0.3 0.07 190);
+  --color-secondary-950: oklch(0.24 0.045 190);
+
+  /* Tertiary (derived, hue 290 -- the wallpaper accent; the mock does not define this scale) - 11-weight scale */
+  --color-tertiary-50: oklch(0.97 0.02 290);
+  --color-tertiary-100: oklch(0.93 0.035 290);
+  --color-tertiary-200: oklch(0.87 0.055 290);
+  --color-tertiary-300: oklch(0.8 0.07 290);
+  --color-tertiary-400: oklch(0.72 0.085 290);
+  --color-tertiary-500: oklch(0.64 0.1 290);
+  --color-tertiary-600: oklch(0.56 0.095 290);
+  --color-tertiary-700: oklch(0.48 0.09 290);
+  --color-tertiary-800: oklch(0.4 0.08 290);
+  --color-tertiary-900: oklch(0.32 0.065 290);
+  --color-tertiary-950: oklch(0.24 0.045 290);
+
+  /* Surface Neutral (derived, hue 107.6 kept from the pre-redesign warm neutral; the mock does not define this scale) */
   --color-surface-50: oklch(0.98 0.02 107.6);
   --color-surface-100: oklch(0.95 0.03 107.6);
-  --color-surface-200: oklch(0.92 0.045 107.6);
-  --color-surface-300: oklch(0.88 0.05 107.6);
-  --color-surface-400: oklch(0.84 0.056 107.6);
-  --color-surface-500: oklch(0.81 0.061 107.6);
-  --color-surface-600: oklch(0.76 0.062 107.6);
-  --color-surface-700: oklch(0.70 0.061 107.6);
-  --color-surface-800: oklch(0.63 0.059 107.6);
-  --color-surface-900: oklch(0.54 0.055 107.6);
-  --color-surface-950: oklch(0.44 0.045 107.6);
+  --color-surface-200: oklch(0.9 0.045 107.6);
+  --color-surface-300: oklch(0.84 0.05 107.6);
+  --color-surface-400: oklch(0.78 0.055 107.6);
+  --color-surface-500: oklch(0.72 0.055 107.6);
+  --color-surface-600: oklch(0.64 0.05 107.6);
+  --color-surface-700: oklch(0.56 0.045 107.6);
+  --color-surface-800: oklch(0.46 0.035 107.6);
+  --color-surface-900: oklch(0.36 0.025 107.6);
+  --color-surface-950: oklch(0.26 0.015 107.6);
 
-  /* Success (Green) - 11-weight scale */
+  /* Tinted Neutral (hue 236, replaces Tailwind's stock achromatic grey) - one flat scale, both themes */
+  --color-neutral-50: oklch(0.985 0.003 236);
+  --color-neutral-100: oklch(0.95 0.006 236);
+  --color-neutral-200: oklch(0.845 0.009 236);
+  --color-neutral-300: oklch(0.74 0.012 236);
+  --color-neutral-400: oklch(0.66 0.013 236);
+  --color-neutral-500: oklch(0.58 0.014 236);
+  --color-neutral-600: oklch(0.5 0.015 236);
+  --color-neutral-700: oklch(0.42 0.016 236);
+  --color-neutral-800: oklch(0.33 0.015 236);
+  --color-neutral-900: oklch(0.24 0.014 236);
+  --color-neutral-950: oklch(0.17 0.01 236);
+
+  /* Success (Green, hue 142.5) - 11-weight scale, unchanged from before the redesign */
   --color-success-50: oklch(0.97 0.08 142.5);
-  --color-success-100: oklch(0.94 0.12 142.5);
-  --color-success-200: oklch(0.90 0.145 142.5);
-  --color-success-300: oklch(0.85 0.160 142.5);
-  --color-success-400: oklch(0.80 0.167 142.5);
-  --color-success-500: oklch(0.73 0.170 142.5);
-  --color-success-600: oklch(0.68 0.168 142.5);
-  --color-success-700: oklch(0.60 0.155 142.5);
+  --color-success-100: oklch(0.943 0.09 142.5);
+  --color-success-200: oklch(0.89 0.11 142.5);
+  --color-success-300: oklch(0.837 0.13 142.5);
+  --color-success-400: oklch(0.783 0.15 142.5);
+  --color-success-500: oklch(0.73 0.17 142.5);
+  --color-success-600: oklch(0.657 0.158 142.5);
+  --color-success-700: oklch(0.583 0.147 142.5);
   --color-success-800: oklch(0.51 0.135 142.5);
-  --color-success-900: oklch(0.42 0.110 142.5);
+  --color-success-900: oklch(0.383 0.098 142.5);
   --color-success-950: oklch(0.32 0.08 142.5);
 
-  /* Error (Red) - 11-weight scale */
+  /* Error (Red, hue 25.3) - 11-weight scale, unchanged from before the redesign */
   --color-error-50: oklch(0.96 0.09 25.3);
-  --color-error-100: oklch(0.93 0.13 25.3);
-  --color-error-200: oklch(0.88 0.155 25.3);
-  --color-error-300: oklch(0.81 0.185 25.3);
-  --color-error-400: oklch(0.73 0.210 25.3);
-  --color-error-500: oklch(0.64 0.220 25.3);
-  --color-error-600: oklch(0.56 0.216 25.3);
-  --color-error-700: oklch(0.48 0.210 25.3);
-  --color-error-800: oklch(0.40 0.190 25.3);
-  --color-error-900: oklch(0.32 0.150 25.3);
+  --color-error-100: oklch(0.924 0.104 25.3);
+  --color-error-200: oklch(0.853 0.133 25.3);
+  --color-error-300: oklch(0.782 0.162 25.3);
+  --color-error-400: oklch(0.711 0.191 25.3);
+  --color-error-500: oklch(0.64 0.22 25.3);
+  --color-error-600: oklch(0.56 0.21 25.3);
+  --color-error-700: oklch(0.48 0.2 25.3);
+  --color-error-800: oklch(0.4 0.19 25.3);
+  --color-error-900: oklch(0.293 0.137 25.3);
   --color-error-950: oklch(0.24 0.11 25.3);
 
-  /* Warning (Yellow/Amber) - 11-weight scale */
+  /* Warning (Amber, hue 71.5) - 11-weight scale, unchanged from before the redesign */
   --color-warning-50: oklch(0.97 0.09 71.5);
-  --color-warning-100: oklch(0.94 0.13 71.5);
-  --color-warning-200: oklch(0.90 0.155 71.5);
-  --color-warning-300: oklch(0.85 0.170 71.5);
-  --color-warning-400: oklch(0.79 0.180 71.5);
+  --color-warning-100: oklch(0.942 0.101 71.5);
+  --color-warning-200: oklch(0.887 0.122 71.5);
+  --color-warning-300: oklch(0.831 0.144 71.5);
+  --color-warning-400: oklch(0.776 0.165 71.5);
   --color-warning-500: oklch(0.72 0.187 71.5);
-  --color-warning-600: oklch(0.67 0.187 71.5);
-  --color-warning-700: oklch(0.59 0.180 71.5);
-  --color-warning-800: oklch(0.50 0.160 71.5);
-  --color-warning-900: oklch(0.41 0.130 71.5);
+  --color-warning-600: oklch(0.647 0.178 71.5);
+  --color-warning-700: oklch(0.573 0.169 71.5);
+  --color-warning-800: oklch(0.5 0.16 71.5);
+  --color-warning-900: oklch(0.373 0.117 71.5);
   --color-warning-950: oklch(0.31 0.095 71.5);
 
-  /* Info (Blue) - 11-weight scale */
+  /* Info (Blue, hue 253.2) - 11-weight scale, unchanged from before the redesign */
   --color-info-50: oklch(0.97 0.075 253.2);
-  --color-info-100: oklch(0.94 0.11 253.2);
-  --color-info-200: oklch(0.89 0.135 253.2);
-  --color-info-300: oklch(0.83 0.155 253.2);
-  --color-info-400: oklch(0.76 0.161 253.2);
+  --color-info-100: oklch(0.938 0.085 253.2);
+  --color-info-200: oklch(0.873 0.104 253.2);
+  --color-info-300: oklch(0.809 0.123 253.2);
+  --color-info-400: oklch(0.744 0.143 253.2);
   --color-info-500: oklch(0.68 0.162 253.2);
-  --color-info-600: oklch(0.62 0.160 253.2);
-  --color-info-700: oklch(0.55 0.155 253.2);
+  --color-info-600: oklch(0.61 0.156 253.2);
+  --color-info-700: oklch(0.54 0.151 253.2);
   --color-info-800: oklch(0.47 0.145 253.2);
-  --color-info-900: oklch(0.39 0.120 253.2);
-  --color-info-950: oklch(0.30 0.090 253.2);
+  --color-info-900: oklch(0.357 0.108 253.2);
+  --color-info-950: oklch(0.3 0.09 253.2);
+
+  /* Type scale: 12/14/16/20/28px (xs/sm/base/xl already match Tailwind's defaults; only 2xl needs overriding). */
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 1.3;
+}
+
+/* Theme-specific overrides for the steps whose OKLCH value genuinely differs by theme (not just which step a
+   template picks) -- primary/secondary accent stops, text ink, glass/control surfaces and wallpaper stops. Every
+   other token above is theme-invariant, exactly as before the redesign. */
+:root.dark {
+  --color-text: oklch(0.95 0.006 240);
+  --color-text-muted: oklch(0.74 0.012 240);
+  --color-text-faint: oklch(0.58 0.014 240);
+
+  --color-glass-bg: rgba(24, 28, 40, 0.55);
+  --color-glass-border: rgba(255, 255, 255, 0.09);
+  --color-control-track: rgba(255, 255, 255, 0.06);
+  --color-control-border: rgba(255, 255, 255, 0.12);
+
+  --color-wall-a: oklch(0.3 0.06 232);
+  --color-wall-b: oklch(0.26 0.05 290);
+  --color-wall-c: oklch(0.24 0.035 190);
+
+  --color-primary-400: oklch(0.74 0.12 232);
+  --color-primary-500: oklch(0.66 0.15 232);
+  --color-primary-600: oklch(0.56 0.155 232);
+  --color-primary-700: oklch(0.46 0.145 232);
+  --color-primary-900: oklch(0.3 0.1 232);
+
+  --color-secondary-500: oklch(0.64 0.1 190);
+}
+
+/* Typography: Manrope, self-hosted (SIL OFL 1.1), variable font covering weights 400-800. One file, no font CDN,
+   so production stays same-origin. */
+@font-face {
+  font-family: 'Manrope';
+  src: url('/fonts/manrope-latin.woff2') format('woff2-variations');
+  font-weight: 400 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+body {
+  font-family: 'Manrope', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Surfaces and motion (Phase 15). Three pure-CSS recipes as Tailwind v4 @utility classes, per the working
+   agreement that a visual recipe lives in exactly one place. */
+@utility glass {
+  position: relative;
+  background: var(--color-glass-bg);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--color-glass-border);
+  border-radius: 16px;
+  box-shadow:
+    0 10px 24px -12px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+@utility glass-highlight {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  pointer-events: none;
+}
+
+@utility gloss {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), transparent 55%);
+    pointer-events: none;
+  }
+}
+
+@utility wallpaper {
+  background:
+    radial-gradient(120% 90% at 15% 0%, var(--color-wall-a), transparent 60%),
+    radial-gradient(100% 80% at 85% 15%, var(--color-wall-b), transparent 55%),
+    radial-gradient(120% 100% at 50% 100%, var(--color-wall-c), transparent 60%),
+    var(--color-light-bg);
+}
+:root.dark .wallpaper {
+  background:
+    radial-gradient(120% 90% at 15% 0%, var(--color-wall-a), transparent 60%),
+    radial-gradient(100% 80% at 85% 15%, var(--color-wall-b), transparent 55%),
+    radial-gradient(120% 100% at 50% 100%, var(--color-wall-c), transparent 60%),
+    var(--color-dark-bg);
+}
+
+/* Opaque fallback where backdrop-filter isn't supported, or the user asked for it to be turned off. */
+@supports not (backdrop-filter: blur(1px)) {
+  .glass {
+    background: var(--color-light-surface-secondary);
+  }
+  :root.dark .glass {
+    background: var(--color-dark-surface-secondary);
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--color-light-surface-secondary);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  :root.dark .glass {
+    background: var(--color-dark-surface-secondary);
+  }
+}
+@media (prefers-contrast: more) {
+  .glass {
+    background: var(--color-light-surface-secondary);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border-width: 2px;
+  }
+  :root.dark .glass {
+    background: var(--color-dark-surface-secondary);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

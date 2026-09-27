@@ -6,6 +6,20 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="preload" href="/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <script>
+    // Sets the theme class before first paint, so there is no flash of the wrong theme. ThemeService takes over
+    // reactively after bootstrap and keeps this in sync (see shared/theme/theme.service.ts).
+    (function () {
+      try {
+        var stored = localStorage.getItem('sprintmodus.theme');
+        var dark = stored === 'oscuro' || (stored !== 'claro' && matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+      } catch (e) {
+        /* localStorage/matchMedia unavailable: default to light, ThemeService will reconcile */
+      }
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

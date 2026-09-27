@@ -1,0 +1,11 @@
+<div
+  role="alertdialog"
+  [attr.aria-labelledby]="questionId"
+  class="flex flex-wrap items-center gap-3 rounded-md bg-error-100 p-3 text-error-900"
+>
+  <p [id]="questionId" class="font-medium">{{ question() }}</p>
+  <button appButton variant="destructive" size="compact" type="button" [disabled]="busy()" (click)="confirm.emit()">
+    {{ confirmLabel() }}
+  </button>
+  <button appButton variant="secondary" size="compact" type="button" (click)="cancel.emit()">{{ cancelLabel() }}</button>
+</div>

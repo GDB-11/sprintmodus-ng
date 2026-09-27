@@ -1,0 +1,20 @@
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin()"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  (overlayOutsideClick)="open.set(false)"
+  (detach)="open.set(false)"
+>
+  <div
+    cdkTrapFocus
+    cdkTrapFocusAutoCapture
+    role="dialog"
+    [attr.aria-label]="label()"
+    (keydown.escape)="open.set(false)"
+    class="glass flex max-w-sm flex-col gap-2 p-3"
+  >
+    <ng-content />
+  </div>
+</ng-template>
