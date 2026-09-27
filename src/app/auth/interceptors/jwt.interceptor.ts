@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../services/auth.service';
+import { isGatewayUrl } from './gateway-url';
 
 /** Endpoints that need no token; a 401 from them means bad credentials, not an expired session. */
 const PUBLIC_PATHS = [
@@ -12,7 +13,7 @@ const PUBLIC_PATHS = [
 ];
 
 export const jwtInterceptor: HttpInterceptorFn = (request, next) => {
-  const isGatewayRequest = request.url.startsWith(environment.apiUrl);
+  const isGatewayRequest = isGatewayUrl(request.url, environment.apiUrl);
   if (!isGatewayRequest) {
     return next(request);
   }

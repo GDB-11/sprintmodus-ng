@@ -36,6 +36,12 @@ export const routes: Routes = [
     canActivate: [authGuard],
     loadChildren: () => import('./sprints/sprints.routes').then((m) => m.SPRINT_ROUTES),
   },
+  {
+    path: 'notifications',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./notifications/components/notification-list/notification-list').then((m) => m.NotificationList),
+  },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];

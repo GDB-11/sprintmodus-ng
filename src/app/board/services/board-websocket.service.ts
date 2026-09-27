@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { DestroyRef, InjectionToken, Service, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { IMessage } from '@stomp/stompjs';
@@ -6,6 +7,7 @@ import { BehaviorSubject, EMPTY, Observable, Subject, Subscription, interval, sw
 import { environment } from '../../../environments/environment';
 import { AuthService } from '../../auth/services/auth.service';
 import { TenantContextService } from '../../tenant/services/tenant-context.service';
+import { websocketBase } from './websocket-base';
 import {
   BoardError,
   BoardMessage,
@@ -54,6 +56,7 @@ const JSON_HEADERS = { 'content-type': 'application/json' };
 @Service()
 export class BoardWebSocketService {
   private readonly auth = inject(AuthService);
+  private readonly page = inject(DOCUMENT).location;
   private readonly tenantContext = inject(TenantContextService);
   private readonly createTransport = inject(STOMP_TRANSPORT_FACTORY);
 
@@ -229,7 +232,7 @@ export class BoardWebSocketService {
 
   private url(board: { tenantId: string; projectCode: string }): string {
     const token = encodeURIComponent(this.auth.getToken() ?? '');
-    return `${environment.wsUrl}/ws/tenant/${board.tenantId}/project/${board.projectCode}/board?token=${token}`;
+    return `${websocketBase(environment.wsUrl, this.page)}/ws/tenant/${board.tenantId}/project/${board.projectCode}/board?token=${token}`;
   }
 
   private onConnectionState(state: RxStompState): void {

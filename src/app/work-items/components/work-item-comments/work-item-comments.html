@@ -20,7 +20,7 @@
               · <time [attr.datetime]="comment.createdAt">{{ comment.createdAt | date: 'medium' }}</time>
             </span>
           </p>
-          <p class="mt-1 whitespace-pre-wrap">{{ comment.content }}</p>
+          <p class="mt-1 whitespace-pre-wrap"><app-mention-text [content]="comment.content" /></p>
         </li>
       }
     </ul>
@@ -38,11 +38,13 @@
         {{ message }}
       </p>
     }
-    <app-textarea-field
+    <app-mention-field
       (input)="onTyping()"
       [field]="commentForm.content"
+      [(mentions)]="mentions"
       inputId="comment-content"
       label="Agregar un comentario"
+      hint="Escribe @ para mencionar a alguien: recibirá una notificación."
       [rows]="3"
     />
     <div>

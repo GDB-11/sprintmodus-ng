@@ -1,0 +1,7 @@
+@for (segment of segments(); track $index) {
+  @if (segment.kind === 'mention') {
+    <span class="rounded-sm bg-secondary-100 px-1 font-semibold text-secondary-900 dark:bg-secondary-900 dark:text-secondary-100">&#64;{{ segment.name }}</span>
+  } @else {
+    <span>{{ segment.text }}</span>
+  }
+}

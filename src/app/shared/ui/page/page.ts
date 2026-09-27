@@ -1,10 +1,11 @@
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { NotificationsBell } from '../../../notifications/components/notifications-bell/notifications-bell';
 
-/** Page shell of the signed-in area: heading, a way back and the page content. */
+/** Page shell of the signed-in area: heading, the notifications bell, a way back and the page content. */
 @Component({
   selector: 'app-page',
-  imports: [RouterLink],
+  imports: [NotificationsBell, RouterLink],
   templateUrl: './page.html',
 })
 export class Page {

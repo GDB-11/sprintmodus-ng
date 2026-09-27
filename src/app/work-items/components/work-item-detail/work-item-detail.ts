@@ -18,6 +18,7 @@ import { WorkItemService } from '../../services/work-item.service';
 import { StatusLabel } from '../status-label/status-label';
 import { WorkItemComments } from '../work-item-comments/work-item-comments';
 import { WorkItemEdit } from '../work-item-edit/work-item-edit';
+import { WorkItemHistory } from '../work-item-history/work-item-history';
 import { WorkItemLinks } from '../work-item-links/work-item-links';
 
 const SELECT_CLASSES =
@@ -33,7 +34,17 @@ const SECONDARY_BUTTON_CLASSES =
  */
 @Component({
   selector: 'app-work-item-detail',
-  imports: [Page, RouterLink, DatePipe, StatusLabel, WorkItemEdit, WorkItemLinks, WorkItemComments, BoardConnection],
+  imports: [
+    Page,
+    RouterLink,
+    DatePipe,
+    StatusLabel,
+    WorkItemEdit,
+    WorkItemLinks,
+    WorkItemComments,
+    WorkItemHistory,
+    BoardConnection,
+  ],
   templateUrl: './work-item-detail.html',
 })
 export class WorkItemDetail {
@@ -81,6 +92,14 @@ export class WorkItemDetail {
     params: () => this.projectCode(),
     stream: ({ params }) => this.workItems.list({ projectCode: params, size: 200 }),
   });
+
+  /** Changes whenever this page changes something about the item, so an open history is fetched again. */
+  protected readonly historyVersion = signal(0);
+
+  /** Sprint names by code, so the history can say where an item came from. */
+  protected readonly sprintNames = computed(() =>
+    Object.fromEntries((valueOf(this.sprints) ?? []).map((sprint) => [sprint.sprintCode, sprint.name])),
+  );
 
   /** Planning work into sprints is for owners and admins; everyone else sees the sprint but cannot change it. */
   protected readonly canPlanSprints = this.permissions.canAdminister;
@@ -156,8 +175,18 @@ export class WorkItemDetail {
     });
   }
 
+  protected onRelationsChanged(): void {
+    this.bumpHistory();
+    this.item.reload();
+  }
+
+  protected bumpHistory(): void {
+    this.historyVersion.update((version) => version + 1);
+  }
+
   protected onSaved(item: WorkItem): void {
     this.item.set(item);
+    this.bumpHistory();
     this.editing.set(false);
     this.notifications.success('Cambios guardados.');
   }
@@ -205,6 +234,7 @@ export class WorkItemDetail {
     change.subscribe({
       next: (updated) => {
         this.item.set(updated);
+        this.bumpHistory();
         this.busy.set(false);
       },
       error: (error: unknown) => {

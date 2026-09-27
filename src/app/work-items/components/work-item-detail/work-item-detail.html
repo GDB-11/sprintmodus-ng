@@ -226,9 +226,17 @@
         }
       </section>
 
-      <app-work-item-links [workItemCode]="current.workItemCode" [links]="current.links" (changed)="item.reload()" />
+      <app-work-item-links [workItemCode]="current.workItemCode" [links]="current.links" (changed)="onRelationsChanged()" />
     }
 
-    <app-work-item-comments [workItemCode]="current.workItemCode" />
+    <app-work-item-comments
+      [workItemCode]="current.workItemCode"
+      (posted)="bumpHistory()"
+    />
+    <app-work-item-history
+      [workItemCode]="current.workItemCode"
+      [version]="historyVersion()"
+      [sprintNames]="sprintNames()"
+    />
   }
 </app-page>

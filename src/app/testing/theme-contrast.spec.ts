@@ -85,6 +85,8 @@ const PAIRS: [foreground: string, background: string, minimum: number, use: stri
   ['warning-800', 'warning-100', GRAPHIC, 'warning notification border'],
   ['warning-800', 'light-bg', GRAPHIC, 'live connection indicator, connecting'],
   ['error-800', 'light-bg', GRAPHIC, 'live connection indicator, offline'],
+  ['secondary-900', 'secondary-100', TEXT, 'mention in a comment'],
+  ['white', 'secondary-900', TEXT, 'unread badge and "Sin leer" chip'],
   // dark mode
   ['neutral-100', 'dark-bg', TEXT, 'body text and inputs'],
   ['neutral-300', 'dark-bg', TEXT, 'hints'],
@@ -103,6 +105,8 @@ const PAIRS: [foreground: string, background: string, minimum: number, use: stri
   ['error-300', 'dark-bg', GRAPHIC, 'live connection indicator, offline'],
   ['info-600', 'dark-bg', GRAPHIC, 'burndown ideal line'],
   ['error-500', 'dark-bg', GRAPHIC, 'burndown real line'],
+  ['secondary-100', 'secondary-900', TEXT, 'mention in a comment'],
+  ['neutral-900', 'secondary-400', TEXT, 'unread badge and "Sin leer" chip'],
 ];
 
 describe('theme colour pairs (WCAG AA)', () => {

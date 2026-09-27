@@ -1,0 +1,98 @@
+# nginx is the ONE origin the browser talks to: it serves the Angular app and proxies /auth, /api and /ws to the api-gateway.
+# It does not replace the gateway (routing, Eureka lookup, JWT-protected routes and the /ws proxy stay there) and it adds no
+# CORS headers: the browser sees a single origin, so CORS never comes into play (the gateway still serves local development).
+#
+# Rendered by the image's entrypoint (envsubst) from these variables:
+#   GATEWAY_URL   where the gateway is, e.g. http://api-gateway:8090
+
+# WebSocket upgrades: "upgrade" for a handshake, "close" for anything else
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+
+# Behind a TLS-terminating balancer the scheme it saw wins; otherwise ours
+map $http_x_forwarded_proto $forwarded_proto {
+    default $http_x_forwarded_proto;
+    ''      $scheme;
+}
+
+# $uri, never $request_uri: the board WebSocket URL carries ?token=<JWT> and the query string must not reach a log
+log_format sprintmodus '$remote_addr [$time_local] "$request_method $uri $server_protocol" $status $body_bytes_sent';
+
+server {
+    listen 8080;
+    server_name _;
+
+    root /usr/share/nginx/html;
+    index index.html;
+
+    access_log /dev/stdout sprintmodus;
+    error_log /dev/stderr warn;
+
+    server_tokens off;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/css application/javascript application/json image/svg+xml text/plain;
+
+    # Container health check
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    # ---- API: straight to the gateway, never buffered or cached, with the original client in the forwarded headers.
+    # No URI on proxy_pass, so the request path goes through unchanged. Origin is passed untouched (workitem-service checks it),
+    # and Host keeps the port ($http_host, not $host) so the gateway can tell a same-origin request from a cross-origin one.
+    location ~ ^/(auth|api)/ {
+        proxy_pass ${GATEWAY_URL};
+        proxy_http_version 1.1;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_set_header X-Forwarded-Host $http_host;
+        proxy_buffering off;
+        proxy_cache off;
+        add_header Cache-Control "no-store" always;
+    }
+
+    # ---- Board WebSocket. Long timeouts, otherwise idle sockets are dropped and the client falls back to polling.
+    location /ws/ {
+        proxy_pass ${GATEWAY_URL};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $forwarded_proto;
+        proxy_set_header X-Forwarded-Host $http_host;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
+        proxy_cache off;
+        # nginx writes the full request line (with ?token=<JWT>) into error-level messages, so only critical ones are kept here
+        error_log /dev/stderr crit;
+    }
+
+    # ---- The app. Hashed assets never change, so they are cached for a year; the entry page is always revalidated.
+    location ~* \.(?:js|css|woff2?|ttf|svg|png|jpe?g|webp|ico)$ {
+        try_files $uri =404;
+        expires 1y;
+        add_header Cache-Control "public, immutable" always;
+        add_header X-Content-Type-Options "nosniff" always;
+    }
+
+    location / {
+        try_files $uri /index.html;
+        add_header Cache-Control "no-cache" always;
+        add_header X-Content-Type-Options "nosniff" always;
+        add_header X-Frame-Options "DENY" always;
+        add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    }
+}

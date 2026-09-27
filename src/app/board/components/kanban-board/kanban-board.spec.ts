@@ -630,7 +630,7 @@ describe('KanbanBoard', () => {
       fixture.detectChanges();
 
       expect(columns().Approved).toEqual(['WAR-1000', 'WAR-1001']);
-      expect(root().querySelector('[role="status"].sr-only')?.textContent).toContain('WAR-1000 movido a Approved.');
+      expect(root().querySelector('p[role="status"].sr-only')?.textContent).toContain('WAR-1000 movido a Approved.');
       expect(moveList('WAR-1000').getAttribute('aria-busy')).toBe('false');
     });
 
@@ -902,7 +902,7 @@ describe('KanbanBoard', () => {
       fixture.detectChanges();
 
       expect(columns()).toEqual({ New: [], Approved: ['WAR-1000', 'WAR-1001'], Done: ['WAR-1002'] });
-      expect(root().querySelector('[role="status"].sr-only')?.textContent).toContain('Luis Lopez movió WAR-1000 a Approved.');
+      expect(root().querySelector('p[role="status"].sr-only')?.textContent).toContain('Luis Lopez movió WAR-1000 a Approved.');
     });
 
     it('applies a status change made elsewhere, such as on the detail page', async () => {

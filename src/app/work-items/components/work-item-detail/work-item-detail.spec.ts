@@ -426,6 +426,61 @@ describe('WorkItemDetail', () => {
     });
   });
 
+  describe('history', () => {
+    const HISTORY_URL = `${ITEM_URL}/history`;
+    const toggle = () => root().querySelector<HTMLButtonElement>('button[aria-controls="history-content"]')!;
+
+    it('is offered closed, asks for nothing until opened, and follows a change made on the page while open', async () => {
+      await open();
+      expect(root().querySelector('#history-heading')?.textContent).toBe('Historial');
+      http.expectNone((r) => r.url === HISTORY_URL);
+
+      toggle().click();
+      fixture.detectChanges();
+      const first = await vi.waitFor(() => http.expectOne((r) => r.url === HISTORY_URL));
+      first.flush({ items: [{ changeType: 'CREATED', additionalData: {}, createdAt: '2026-09-25T10:00:00Z' }], total: 1, page: 0, size: 20 });
+      await settle();
+      expect(root().querySelectorAll('#history-content li')).toHaveLength(1);
+
+      await choose('change-status', 'APPROVED');
+      http.expectOne(`${ITEM_URL}/status`).flush(workItem({ status: APPROVED_STATUS, allowedStatuses: [NEW_STATUS] }));
+      const again = await vi.waitFor(() => http.expectOne((r) => r.url === HISTORY_URL));
+      again.flush({
+        items: [
+          {
+            changeType: 'STATE_CHANGED',
+            additionalData: { from: 'New', to: 'Approved' },
+            changedBy: { userCode: 'u1', fullName: 'Mia Member' },
+            createdAt: '2026-09-25T11:00:00Z',
+          },
+          { changeType: 'CREATED', additionalData: {}, createdAt: '2026-09-25T10:00:00Z' },
+        ],
+        total: 2,
+        page: 0,
+        size: 20,
+      });
+      await settle();
+
+      expect(root().querySelectorAll('#history-content li')).toHaveLength(2);
+      expect(root().querySelector('#history-content li')?.textContent).toContain('cambió el estado de «New» a «Approved»');
+    });
+
+    it('names the sprints an item moved between', async () => {
+      await open();
+      toggle().click();
+      fixture.detectChanges();
+      (await vi.waitFor(() => http.expectOne((r) => r.url === HISTORY_URL))).flush({
+        items: [{ changeType: 'SPRINT_CHANGED', oldValue: 's0', newValue: 's1', additionalData: { sprint: 'Sprint 1' }, createdAt: '2026-09-25T10:00:00Z' }],
+        total: 1,
+        page: 0,
+        size: 20,
+      });
+      await settle();
+
+      expect(root().querySelector('#history-content li')?.textContent).toContain('al sprint «Sprint 1» (antes en «Sprint 0»)');
+    });
+  });
+
   it('has no accessibility violations in view, edit and delete-confirmation states', async () => {
     await open(
       workItem({

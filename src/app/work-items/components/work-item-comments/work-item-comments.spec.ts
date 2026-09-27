@@ -121,6 +121,131 @@ describe('WorkItemComments', () => {
   });
 
 
+  describe('mentions', () => {
+    const ANA = '11111111-1111-4111-8111-111111111111';
+    const USERS = `${environment.apiUrl}/api/users`;
+    const textarea = () => root().querySelector<HTMLTextAreaElement>('#comment-content')!;
+
+    /** Types like a person would: text, caret at its end, the events a browser fires. */
+    function write(text: string): void {
+      const element = textarea();
+      element.focus();
+      element.value = text;
+      element.setSelectionRange(text.length, text.length);
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+      fixture.detectChanges();
+    }
+
+    async function pickAna(typed = '@an'): Promise<void> {
+      write(typed);
+      (await vi.waitFor(() => http.expectOne((r) => r.url === USERS))).flush([{ userCode: ANA, fullName: 'Ana Diaz' }]);
+      await fixture.whenStable();
+      fixture.detectChanges();
+      textarea().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+
+    it('shows the mentions of a comment as highlighted names and never the code', async () => {
+      await load([comment('c1', `Please look, @[Ana Diaz](${ANA})`)]);
+
+      const item = root().querySelector('li')!;
+      expect(item.textContent).toContain('Please look, @Ana Diaz');
+      expect(item.textContent).not.toContain(ANA);
+      expect(item.querySelector('span.rounded-sm')?.textContent).toBe('@Ana Diaz');
+    });
+
+    it('shows a mention in a comment that arrives live too', async () => {
+      await load([]);
+
+      board.commentAdded$.next({ workItemCode: 'item-1', comment: comment('c2', `Hi @[Ana Diaz](${ANA})`) });
+      fixture.detectChanges();
+
+      expect(root().querySelector('li')?.textContent).toContain('Hi @Ana Diaz');
+      expect(root().querySelector('li')?.textContent).not.toContain(ANA);
+    });
+
+    it('hints that @ mentions someone', async () => {
+      await load([]);
+
+      expect(root().textContent).toContain('Escribe @ para mencionar a alguien');
+    });
+
+    it('offers the people, keeps the text readable and sends the mention as a token', async () => {
+      await load([]);
+      await pickAna('Hola @an');
+
+      expect(textarea().value).toBe('Hola @Ana Diaz ');
+      expect(textarea().value).not.toContain(ANA);
+
+      write(`${textarea().value}mira esto`);
+      submit();
+      const request = await vi.waitFor(() => http.expectOne(URL));
+      expect(request.request.body).toEqual({ content: `Hola @[Ana Diaz](${ANA}) mira esto` });
+      request.flush(comment('c2', `Hola @[Ana Diaz](${ANA}) mira esto`));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(root().querySelector('li')?.textContent).toContain('Hola @Ana Diaz mira esto');
+      expect(textarea().value).toBe('');
+    });
+
+    it('sends a name that was edited after picking, or typed by hand, as plain text', async () => {
+      await load([]);
+      await pickAna('@an');
+      write('@Ana Dia y @Ana Diaz');
+      submit();
+
+      const request = await vi.waitFor(() => http.expectOne(URL));
+      // the second one is unambiguous (only Ana was picked under that name), the first was edited so it mentions nobody
+      expect(request.request.body).toEqual({ content: `@Ana Dia y @[Ana Diaz](${ANA})` });
+      request.flush(comment('c2', 'x'));
+    });
+
+    it('forgets whom it picked once the comment is posted', async () => {
+      await load([]);
+      await pickAna('@an');
+      submit();
+      (await vi.waitFor(() => http.expectOne(URL))).flush(comment('c2', 'x'));
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      write('@Ana Diaz otra vez');
+      submit();
+
+      const request = await vi.waitFor(() => http.expectOne(URL));
+      expect(request.request.body).toEqual({ content: '@Ana Diaz otra vez' });
+      request.flush(comment('c3', 'x'));
+    });
+
+    it('shows why a mention was refused, and keeps the text', async () => {
+      await load([]);
+      await pickAna('@an');
+      submit();
+
+      (await vi.waitFor(() => http.expectOne(URL))).flush(
+        { code: 'UNKNOWN_MENTION', message: 'The user @Ana Diaz does not exist or is no longer active.' },
+        { status: 400, statusText: 'Bad Request' },
+      );
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(root().textContent).toContain('The user @Ana Diaz does not exist or is no longer active.');
+      expect(textarea().value).toBe('@Ana Diaz ');
+    });
+
+    it('passes axe with a mention shown and the list open', async () => {
+      await load([comment('c1', `Hi @[Ana Diaz](${ANA})`)]);
+      write('@an');
+      (await vi.waitFor(() => http.expectOne((r) => r.url === USERS))).flush([{ userCode: ANA, fullName: 'Ana Diaz' }]);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(root().querySelector('[role="option"]')).not.toBeNull();
+      await expectNoAxeViolations(root());
+    });
+  });
+
   it('has no accessibility violations', async () => {
     await load([comment('c1', 'First!'), comment('c2', 'Second')]);
     await expectNoAxeViolations(root());
@@ -138,7 +263,9 @@ describe('WorkItemComments', () => {
       comment: { ...comment(code, content), workItemCode, author: { userCode, fullName: 'Luis Lopez' } },
     });
     const items = () => [...root().querySelectorAll('li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim());
-    const status = () => root().querySelector('p[role="status"]:not(:empty)')?.textContent?.replace(/\s+/g, ' ').trim();
+    // the first status line that says something (the mention field keeps an empty one for its own announcements)
+    const status = () =>
+      [...root().querySelectorAll('p[role="status"]')].map((line) => line.textContent?.replace(/\s+/g, ' ').trim()).find((text) => text);
 
     afterEach(() => vi.useRealTimers());
 

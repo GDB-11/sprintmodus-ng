@@ -1,0 +1,50 @@
+<section aria-labelledby="history-heading" class="flex flex-col gap-3">
+  <div class="flex flex-wrap items-center justify-between gap-4">
+    <h2 id="history-heading" class="text-lg font-semibold">Historial</h2>
+    <button
+      type="button"
+      [class]="buttonClasses"
+      [attr.aria-expanded]="open()"
+      aria-controls="history-content"
+      (click)="toggle()"
+    >
+      {{ open() ? 'Ocultar historial' : 'Mostrar historial' }}
+    </button>
+  </div>
+
+  <div id="history-content" [hidden]="!open()" class="flex flex-col gap-3">
+    @if (failed()) {
+      <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
+        No se pudo cargar el historial.
+        <button type="button" class="underline" (click)="retry()">Reintentar</button>
+      </p>
+    }
+    @if (loading() && entries().length === 0) {
+      <p role="status">Cargando historial…</p>
+    } @else if (!failed() && entries().length === 0) {
+      <p>Este elemento aún no tiene cambios registrados.</p>
+    } @else if (entries().length > 0) {
+      <ol
+        aria-label="Cambios del elemento, del más reciente al más antiguo"
+        [attr.aria-busy]="loading()"
+        class="flex flex-col"
+      >
+        @for (entry of entries(); track $index) {
+          <li class="border-b border-neutral-300 py-3 first:pt-0 dark:border-neutral-700">
+            <app-history-entry [entry]="entry" [sprintNames]="sprintNames()" />
+          </li>
+        }
+      </ol>
+      <div class="flex flex-wrap items-center gap-3">
+        <p class="text-sm text-neutral-800 dark:text-neutral-300">
+          Mostrando {{ entries().length }} de {{ total() }} cambios
+        </p>
+        @if (hasMore()) {
+          <button type="button" [class]="buttonClasses" [disabled]="loading()" (click)="showMore()">
+            Mostrar más
+          </button>
+        }
+      </div>
+    }
+  </div>
+</section>

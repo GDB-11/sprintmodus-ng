@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
+import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { form, FormRoot, maxLength, required } from '@angular/forms/signals';
 import { filter, firstValueFrom, Subject, throttleTime } from 'rxjs';
@@ -9,8 +9,10 @@ import { BoardWebSocketService } from '../../../board/services/board-websocket.s
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { notBlank } from '../../../shared/not-blank';
 import { valueOf } from '../../../shared/resource-value';
-import { TextareaField } from '../../../shared/ui/textarea-field/textarea-field';
-import { WorkItemComment } from '../../models/work-item.models';
+import { MentionField } from '../../../users/components/mention-field/mention-field';
+import { MentionText } from '../../../users/components/mention-text/mention-text';
+import { toMentionTokens } from '../../../users/models/mention-text';
+import { UserRef, WorkItemComment } from '../../models/work-item.models';
 import { CommentService } from '../../services/comment.service';
 
 const MAX_COMMENT_LENGTH = 10000;
@@ -20,12 +22,13 @@ const TYPING_NOTICE_MS = 2000;
 const TYPING_SHOWN_MS = 3500;
 
 /**
- * The comments of a work item, oldest first, and a form to add one. Comments cannot be edited or deleted. Comments other
- * people add appear as they are posted, and it says who is typing one, while the project's live board is connected.
+ * The comments of a work item, oldest first, and a form to add one, where typing `@` offers the organization's people to
+ * mention (they are notified). Comments cannot be edited or deleted. Comments other people add appear as they are posted, and
+ * it says who is typing one, while the project's live board is connected.
  */
 @Component({
   selector: 'app-work-item-comments',
-  imports: [DatePipe, FormRoot, TextareaField],
+  imports: [DatePipe, FormRoot, MentionField, MentionText],
   templateUrl: './work-item-comments.html',
 })
 export class WorkItemComments {
@@ -34,6 +37,8 @@ export class WorkItemComments {
   private readonly auth = inject(AuthService);
 
   readonly workItemCode = input.required<string>();
+  /** This user posted a comment (the others' arrive over the live board). */
+  readonly posted = output<void>();
 
   protected readonly errorMessage = signal<string | null>(null);
 
@@ -52,6 +57,8 @@ export class WorkItemComments {
   protected readonly typingNow = computed(() => Object.values(this.typing()));
 
   private readonly model = signal({ content: '' });
+  /** Whom this person picked from the `@` list while writing; their names become tokens when the comment is sent. */
+  protected readonly mentions = signal<readonly UserRef[]>([]);
 
   protected readonly commentForm = form(
     this.model,
@@ -68,11 +75,13 @@ export class WorkItemComments {
           this.errorMessage.set(null);
           try {
             const added = await firstValueFrom(
-              this.commentService.add(this.workItemCode(), this.model().content.trim()),
+              this.commentService.add(this.workItemCode(), toMentionTokens(this.model().content.trim(), this.mentions())),
             );
             this.append(added);
             this.model.set({ content: '' });
+            this.mentions.set([]);
             this.commentForm().reset();
+            this.posted.emit();
           } catch (error) {
             this.errorMessage.set(apiErrorMessage(error, 'No se pudo publicar el comentario.'));
           }

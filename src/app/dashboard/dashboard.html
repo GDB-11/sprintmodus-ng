@@ -1,6 +1,9 @@
 <main class="min-h-screen bg-light-bg p-6 text-neutral-900 dark:bg-dark-bg dark:text-neutral-100">
   <div class="mx-auto flex max-w-3xl flex-col gap-4">
-    <h1 class="text-2xl font-semibold">Panel</h1>
+    <div class="flex flex-wrap items-start justify-between gap-3">
+      <h1 class="text-2xl font-semibold">Panel</h1>
+      <app-notifications-bell />
+    </div>
     @if (tenant(); as tenant) {
       <p>
         Sesión iniciada como {{ authService.getCurrentUser()?.fullName }} en

@@ -1,0 +1,58 @@
+<div class="relative flex flex-col gap-1.5">
+  <label [for]="inputId()" class="text-sm font-medium">{{ label() }}</label>
+  <textarea
+    #control
+    [id]="inputId()"
+    [rows]="rows()"
+    [formField]="field()"
+    [attr.aria-required]="state().required()"
+    [attr.aria-invalid]="showError()"
+    [attr.aria-describedby]="describedBy()"
+    aria-haspopup="listbox"
+    aria-autocomplete="list"
+    [attr.aria-controls]="open() ? listboxId() : null"
+    [attr.aria-activedescendant]="activeOptionId()"
+    (focus)="onFocus()"
+    (blur)="onBlur()"
+    (input)="onInput()"
+    (click)="syncCaret()"
+    (keyup)="syncCaret()"
+    (keydown)="onKeydown($event)"
+    class="rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-2 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400"
+  ></textarea>
+  @if (open()) {
+    <ul
+      [id]="listboxId()"
+      role="listbox"
+      aria-label="Personas a las que mencionar"
+      class="absolute top-full z-10 mt-1 max-h-56 w-full max-w-sm overflow-auto rounded-md border border-neutral-700 bg-light-bg p-1 text-sm shadow-md dark:border-neutral-400 dark:bg-dark-surface-secondary"
+    >
+      @for (person of results(); track person.userCode; let index = $index) {
+        <li
+          [id]="optionId(index)"
+          role="option"
+          [attr.aria-selected]="index === activeIndex()"
+          (mousedown)="$event.preventDefault()"
+          (click)="pick(person)"
+          (mouseenter)="activeIndex.set(index)"
+          [class]="
+            index === activeIndex()
+              ? 'cursor-pointer rounded-sm bg-primary-500 px-3 py-2 font-semibold text-neutral-900'
+              : 'cursor-pointer rounded-sm px-3 py-2 text-neutral-900 dark:text-neutral-100'
+          "
+        >
+          {{ person.fullName }}
+        </li>
+      }
+    </ul>
+  }
+  @if (hint()) {
+    <p [id]="hintId()" class="text-sm text-neutral-800 dark:text-neutral-300">{{ hint() }}</p>
+  }
+  @if (showError()) {
+    <p [id]="errorId()" role="alert" class="text-sm font-medium text-error-800 dark:text-error-300">
+      {{ errorMessage() }}
+    </p>
+  }
+  <p role="status" class="sr-only">{{ announcement() }}</p>
+</div>

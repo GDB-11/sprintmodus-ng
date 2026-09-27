@@ -198,3 +198,46 @@ export interface WorkItemComment {
   content: string;
   createdAt: string;
 }
+
+/** What kind of change a history entry records; the backend writes one entry per change, in its transaction. */
+export type ChangeType =
+  | 'CREATED'
+  | 'STATE_CHANGED'
+  | 'ASSIGNED'
+  | 'UNASSIGNED'
+  | 'EFFORT_CHANGED'
+  | 'DESCRIPTION_EDITED'
+  | 'FIELD_CHANGED'
+  | 'PARENT_CHANGED'
+  | 'SPRINT_CHANGED'
+  | 'COMMENTED'
+  | 'COMMENT_EDITED'
+  | 'COMMENT_DELETED'
+  | 'LINKED'
+  | 'UNLINKED'
+  | 'DELETED'
+  | 'RESTORED';
+
+/**
+ * One change to a work item. `oldValue`/`newValue` are what was stored (a status change stores status codes, text is cut
+ * short by the backend); `additionalData` carries the names to show, which entries written before a name was added lack.
+ */
+export interface HistoryEntry {
+  changeType: ChangeType;
+  /** The field that changed (`Status`, `Title`, `EffortPoints`…), when the change is about one. */
+  field?: string;
+  oldValue?: string;
+  newValue?: string;
+  additionalData: Record<string, string>;
+  /** Absent only if the backend could not resolve the user. */
+  changedBy?: UserRef;
+  createdAt: string;
+}
+
+/** One page of a history, newest change first. */
+export interface HistoryPage {
+  items: HistoryEntry[];
+  total: number;
+  page: number;
+  size: number;
+}

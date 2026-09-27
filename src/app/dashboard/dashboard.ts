@@ -2,6 +2,7 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../auth/services/auth.service';
 import { SubscriptionPlan } from '../auth/models/auth.models';
+import { NotificationsBell } from '../notifications/components/notifications-bell/notifications-bell';
 import { TenantContextService } from '../tenant/services/tenant-context.service';
 
 const PLAN_LABELS: Record<SubscriptionPlan, string> = {
@@ -13,7 +14,7 @@ const PLAN_LABELS: Record<SubscriptionPlan, string> = {
 /** Landing page for signed-in users. */
 @Component({
   selector: 'app-dashboard',
-  imports: [RouterLink],
+  imports: [NotificationsBell, RouterLink],
   templateUrl: './dashboard.html',
 })
 export class Dashboard {

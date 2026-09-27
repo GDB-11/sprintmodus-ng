@@ -1,0 +1,16 @@
+# Only what the build needs goes into the build context
+.git
+.github
+.angular
+.vscode
+.idea
+node_modules
+dist
+docs
+planning
+CLAUDE.md
+README.md
+docker-compose.yml
+Dockerfile
+.dockerignore
+*.log
