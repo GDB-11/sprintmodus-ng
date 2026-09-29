@@ -31,7 +31,7 @@ import { WorkItemService } from '../../../work-items/services/work-item.service'
 import { ItemMovedEvent, StatusChangedEvent } from '../../models/board.models';
 import { compareForBoard, placeBefore, rankGroupOf } from '../../models/board-order';
 import { BoardWebSocketService } from '../../services/board-websocket.service';
-import { BoardConnection } from '../board-connection/board-connection';
+import { ConnectionIndicator } from '../../../shared/layout/connection-indicator/connection-indicator';
 import { KanbanCard, MoveOption } from '../kanban-card/kanban-card';
 import { ALL_SPRINTS, BACKLOG, SprintFilter } from '../sprint-filter/sprint-filter';
 
@@ -88,7 +88,7 @@ interface PendingMove {
     Page,
     RouterLink,
     StatusLabel,
-    BoardConnection,
+    ConnectionIndicator,
     SprintFilter,
     KanbanCard,
     CdkDropListGroup,

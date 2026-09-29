@@ -314,3 +314,12 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Phase 16 (app shell): the sticky top bar's height, so a focused control scrolled to is never hidden under it
+   (WCAG 2.4.11), and the scrim behind the phone drawer and the global-search dialog (both native <dialog>s). */
+html {
+  scroll-padding-top: 3.5rem;
+}
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}

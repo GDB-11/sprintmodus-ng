@@ -1,0 +1,35 @@
+@if (disabledReason(); as reason) {
+  <div
+    class="flex items-center gap-3 rounded-md px-3 py-2 text-text-faint"
+    [attr.title]="reason"
+  >
+    <app-icon [name]="item().icon" />
+    <span [class]="expanded() ? 'flex-1 text-sm font-medium' : 'sr-only'">{{ item().label }}</span>
+    <app-icon name="lock" [class]="expanded() ? '' : 'sr-only'" />
+  </div>
+  @if (expanded()) {
+    <app-disabled-reason [reason]="reason" />
+  }
+} @else {
+  <a
+    [routerLink]="item().route"
+    routerLinkActive="is-active-nav-item"
+    #rla="routerLinkActive"
+    [attr.aria-current]="rla.isActive ? 'page' : null"
+    [attr.title]="item().label"
+    [attr.aria-label]="ariaLabel()"
+    [class]="
+      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ' +
+      'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400 ' +
+      (rla.isActive ? 'bg-control-track font-semibold text-text' : 'text-text-muted hover:bg-control-track hover:text-text')
+    "
+  >
+    <app-icon [name]="item().icon" />
+    <span [class]="expanded() ? 'flex-1' : 'sr-only'">{{ item().label }}</span>
+    @if (badgeCount(); as count) {
+      @if (count > 0) {
+        <app-badge [count]="count" />
+      }
+    }
+  </a>
+}

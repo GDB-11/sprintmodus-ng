@@ -1,6 +1,18 @@
 export type OrganizationRole = 'OWNER' | 'ADMIN' | 'MEMBER';
 
+export const ORGANIZATION_ROLE_LABELS: Record<OrganizationRole, string> = {
+  OWNER: 'Propietario',
+  ADMIN: 'Administrador',
+  MEMBER: 'Miembro',
+};
+
 export type SubscriptionPlan = 'FREE' | 'PRO' | 'ENTERPRISE';
+
+export const SUBSCRIPTION_PLAN_LABELS: Record<SubscriptionPlan, string> = {
+  FREE: 'Gratis',
+  PRO: 'Pro',
+  ENTERPRISE: 'Empresarial',
+};
 
 export interface LoginRequest {
   email: string;

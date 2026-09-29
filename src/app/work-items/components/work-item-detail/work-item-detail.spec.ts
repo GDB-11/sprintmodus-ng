@@ -343,7 +343,7 @@ describe('WorkItemDetail', () => {
       await open();
 
       expect(board.connect).toHaveBeenCalledWith('project-1');
-      expect(root().querySelector('app-board-connection [role="status"]')?.textContent).toContain('Conectado en vivo');
+      expect(root().querySelector('app-connection-indicator [role="status"]')?.textContent).toContain('Conectado en vivo');
     });
 
     it('tells who changed the status and reloads the item when someone else does', async () => {

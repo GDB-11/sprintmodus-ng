@@ -1,0 +1,24 @@
+<a
+  href="#main-content"
+  class="sr-only rounded-md bg-primary-700 px-3 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50"
+  >Saltar al contenido</a
+>
+<a
+  href="#shell-nav"
+  class="sr-only rounded-md bg-primary-700 px-3 py-2 text-sm font-semibold text-white focus:not-sr-only focus:fixed focus:top-2 focus:left-32 focus:z-50"
+  >Saltar a la navegación</a
+>
+
+<div class="wallpaper flex min-h-dvh flex-col">
+  <app-shell-topbar (menuToggle)="drawerOpen.set(true)" />
+
+  <div class="flex flex-1 items-start">
+    <app-shell-sidebar />
+
+    <main id="main-content" tabindex="-1" class="min-w-0 flex-1 p-4 focus:outline-none sm:p-6">
+      <router-outlet />
+    </main>
+  </div>
+
+  <app-shell-drawer [(open)]="drawerOpen" />
+</div>

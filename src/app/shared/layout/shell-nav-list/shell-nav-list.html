@@ -1,0 +1,10 @@
+<nav aria-label="Principal" class="flex flex-col gap-1">
+  @for (item of items; track item.route) {
+    <app-sidebar-nav-item
+      [item]="item"
+      [expanded]="expanded()"
+      [disabledReason]="disabledReasonOf(item)"
+      [badgeCount]="badgeCountOf(item)"
+    />
+  }
+</nav>

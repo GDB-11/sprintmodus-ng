@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { filter, map, merge, Observable } from 'rxjs';
 import { AuthService } from '../../../auth/services/auth.service';
 import { Permissions } from '../../../auth/services/permissions.service';
-import { BoardConnection } from '../../../board/components/board-connection/board-connection';
+import { ConnectionIndicator } from '../../../shared/layout/connection-indicator/connection-indicator';
 import { ItemMovedEvent, StatusChangedEvent } from '../../../board/models/board.models';
 import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
 import { ProjectService } from '../../../projects/services/project.service';
@@ -43,7 +43,7 @@ const SECONDARY_BUTTON_CLASSES =
     WorkItemLinks,
     WorkItemComments,
     WorkItemHistory,
-    BoardConnection,
+    ConnectionIndicator,
   ],
   templateUrl: './work-item-detail.html',
 })

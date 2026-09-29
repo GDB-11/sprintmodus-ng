@@ -18,6 +18,10 @@ export class FakeAuth {
     return this.currentUser()?.user ?? null;
   }
 
+  logout(): void {
+    this.currentUser.set(null);
+  }
+
   becomes(role: OrganizationRole, id = 'u-me'): void {
     this.currentUser.set(sessionOf(role, id));
   }

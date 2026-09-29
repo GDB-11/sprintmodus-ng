@@ -1,0 +1,35 @@
+@if (user(); as current) {
+  <button
+    #origin="cdkOverlayOrigin"
+    cdkOverlayOrigin
+    type="button"
+    (click)="open.set(!open())"
+    [attr.aria-label]="'Cuenta de ' + current.fullName"
+    class="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+  >
+    <app-avatar [name]="current.fullName" />
+  </button>
+
+  <app-popover [origin]="origin" [(open)]="open" label="Cuenta">
+    <div class="flex flex-col gap-3 p-1">
+      <div class="flex items-center gap-2">
+        <app-avatar [name]="current.fullName" />
+        <div class="min-w-0">
+          <p class="truncate text-sm font-semibold text-text">{{ current.fullName }}</p>
+          <p class="truncate text-xs text-text-muted">{{ roleLabel() }}</p>
+        </div>
+      </div>
+      @if (tenant(); as org) {
+        <p class="text-xs text-text-muted">{{ org.organizationName }} · {{ planLabel() }}</p>
+      }
+      <button
+        type="button"
+        (click)="logout()"
+        class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm font-medium text-text hover:bg-control-track focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+      >
+        <app-icon name="log-out" />
+        Cerrar sesión
+      </button>
+    </div>
+  </app-popover>
+}

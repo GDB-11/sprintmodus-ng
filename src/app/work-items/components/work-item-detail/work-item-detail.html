@@ -10,7 +10,7 @@
     <p class="text-neutral-800 dark:text-neutral-300">
       {{ current.displayKey }} · {{ typeLabels[current.type] }}
     </p>
-    <app-board-connection [projectCode]="current.projectCode" />
+    <app-connection-indicator [projectCode]="current.projectCode" />
 
     @if (editing()) {
       <app-work-item-edit

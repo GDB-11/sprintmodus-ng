@@ -28,4 +28,15 @@ describe('UserService', () => {
 
     expect(found).toEqual(['Ana Diaz']);
   });
+
+  it('counts the active users of the tenant', () => {
+    let count = 0;
+    service.count().subscribe((result) => (count = result.count));
+
+    const request = http.expectOne(`${environment.apiUrl}/api/users/count`);
+    expect(request.request.method).toBe('GET');
+    request.flush({ count: 4 });
+
+    expect(count).toBe(4);
+  });
 });

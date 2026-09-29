@@ -1,0 +1,19 @@
+<dialog
+  #dialogEl
+  aria-label="Navegación"
+  (click)="onBackdropClick($event)"
+  (close)="onNativeClose()"
+  class="glass fixed inset-y-0 left-0 m-0 h-dvh max-h-none w-[85vw] max-w-[320px] overflow-y-auto rounded-none p-3"
+>
+  <div class="flex flex-col gap-3">
+    <button
+      type="button"
+      (click)="open.set(false)"
+      aria-label="Cerrar la navegación"
+      class="inline-flex items-center justify-center self-end rounded-md p-2 text-text-muted hover:bg-control-track hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+    >
+      <app-icon name="x" />
+    </button>
+    <app-shell-nav-list [expanded]="true" />
+  </div>
+</dialog>

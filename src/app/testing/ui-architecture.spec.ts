@@ -21,7 +21,6 @@ const ALLOW_LIST = new Set<string>([
   'auth/components/auth-card/auth-card.html',
   'auth/pages/login/login.html',
   'auth/pages/register-organization/register-organization.html',
-  'board/components/board-connection/board-connection.html',
   'board/components/card-children/card-children.html',
   'board/components/kanban-board/kanban-board.html',
   'board/components/kanban-card/kanban-card.html',

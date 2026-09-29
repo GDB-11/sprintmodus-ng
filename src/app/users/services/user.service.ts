@@ -14,4 +14,9 @@ export class UserService {
     const params = new HttpParams().set('q', query).set('limit', limit);
     return this.http.get<UserRef[]>(`${environment.apiUrl}/api/users`, { params });
   }
+
+  /** How many active users the tenant has, for the plan usage meter; `maxUsers` is already in the JWT. */
+  count(): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>(`${environment.apiUrl}/api/users/count`);
+  }
 }

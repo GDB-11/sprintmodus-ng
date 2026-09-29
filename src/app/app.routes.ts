@@ -26,31 +26,40 @@ export const routes: Routes = [
       ),
   },
   {
-    path: 'dashboard',
+    // Every authenticated screen renders inside the shell (top bar + sidebar), Phase 16. Same URLs as before: nesting
+    // under an empty path segment doesn't change them.
+    path: '',
     canActivate: [authGuard],
-    loadComponent: () => import('./dashboard/dashboard').then((m) => m.Dashboard),
-  },
-  {
-    path: 'work-items',
-    canActivate: [authGuard],
-    loadChildren: () => import('./work-items/work-items.routes').then((m) => m.WORK_ITEM_ROUTES),
-  },
-  {
-    path: 'board',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./board/components/kanban-board/kanban-board').then((m) => m.KanbanBoard),
-  },
-  {
-    path: 'sprints',
-    canActivate: [authGuard],
-    loadChildren: () => import('./sprints/sprints.routes').then((m) => m.SPRINT_ROUTES),
-  },
-  {
-    path: 'notifications',
-    canActivate: [authGuard],
-    loadComponent: () =>
-      import('./notifications/components/notification-list/notification-list').then((m) => m.NotificationList),
+    loadComponent: () => import('./shared/layout/app-shell/app-shell').then((m) => m.AppShell),
+    children: [
+      {
+        path: 'dashboard',
+        data: { breadcrumb: 'Panel' },
+        loadComponent: () => import('./dashboard/dashboard').then((m) => m.Dashboard),
+      },
+      {
+        path: 'work-items',
+        data: { breadcrumb: 'Elementos de trabajo' },
+        loadChildren: () => import('./work-items/work-items.routes').then((m) => m.WORK_ITEM_ROUTES),
+      },
+      {
+        path: 'board',
+        data: { breadcrumb: 'Tablero' },
+        loadComponent: () =>
+          import('./board/components/kanban-board/kanban-board').then((m) => m.KanbanBoard),
+      },
+      {
+        path: 'sprints',
+        data: { breadcrumb: 'Sprints' },
+        loadChildren: () => import('./sprints/sprints.routes').then((m) => m.SPRINT_ROUTES),
+      },
+      {
+        path: 'notifications',
+        data: { breadcrumb: 'Notificaciones' },
+        loadComponent: () =>
+          import('./notifications/components/notification-list/notification-list').then((m) => m.NotificationList),
+      },
+    ],
   },
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },

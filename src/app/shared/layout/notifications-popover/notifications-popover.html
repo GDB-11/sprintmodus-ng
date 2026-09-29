@@ -1,0 +1,63 @@
+<button
+  #origin="cdkOverlayOrigin"
+  cdkOverlayOrigin
+  type="button"
+  (click)="toggle()"
+  [attr.aria-label]="label()"
+  class="relative inline-flex items-center justify-center rounded-md p-2 text-text-muted hover:bg-control-track hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+>
+  <app-icon name="bell" />
+  @if (count() > 0) {
+    <app-badge [count]="count()" class="absolute -top-1 -right-1" />
+  }
+</button>
+
+<app-popover [origin]="origin" [(open)]="open" label="Notificaciones">
+  <div class="flex w-80 max-w-[85vw] flex-col gap-2">
+    <div class="flex items-center justify-between gap-2">
+      <h2 class="text-sm font-semibold text-text">Notificaciones</h2>
+      @if (count() > 0) {
+        <button
+          type="button"
+          (click)="markAllRead()"
+          class="text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
+        >
+          Marcar todas como leídas
+        </button>
+      }
+    </div>
+
+    @if (isLoading()) {
+      <p role="status" class="text-sm text-text-muted">Cargando…</p>
+    } @else if (hasError()) {
+      <p role="alert" class="text-sm text-error-800 dark:text-error-300">No se pudieron cargar las notificaciones.</p>
+    } @else if (notifications().length === 0) {
+      <p class="text-sm text-text-muted">No tienes notificaciones.</p>
+    } @else {
+      <ul class="flex flex-col gap-0.5">
+        @for (notification of notifications(); track notification.notificationCode) {
+          <li>
+            <button
+              type="button"
+              (click)="select(notification.notificationCode, notification.workItem.workItemCode)"
+              class="flex w-full flex-col items-start gap-0.5 rounded-md px-2 py-1.5 text-left text-sm hover:bg-control-track focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+            >
+              <span [class]="notification.isRead ? 'text-text-muted' : 'font-medium text-text'">{{ describe(notification) }}</span>
+              @if (!notification.isRead) {
+                <span class="text-xs font-semibold text-secondary-900 dark:text-secondary-400">Sin leer</span>
+              }
+            </button>
+          </li>
+        }
+      </ul>
+    }
+
+    <button
+      type="button"
+      (click)="viewAll()"
+      class="self-start text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
+    >
+      Ver todas
+    </button>
+  </div>
+</app-popover>

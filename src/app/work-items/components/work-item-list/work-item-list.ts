@@ -2,7 +2,7 @@ import { Component, computed, inject, linkedSignal } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { merge, auditTime } from 'rxjs';
-import { BoardConnection } from '../../../board/components/board-connection/board-connection';
+import { ConnectionIndicator } from '../../../shared/layout/connection-indicator/connection-indicator';
 import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
 import { ProjectService } from '../../../projects/services/project.service';
 import { valueOf } from '../../../shared/resource-value';
@@ -28,7 +28,7 @@ const SELECT_CLASSES =
  */
 @Component({
   selector: 'app-work-item-list',
-  imports: [Page, RouterLink, StatusLabel, BoardConnection],
+  imports: [Page, RouterLink, StatusLabel, ConnectionIndicator],
   templateUrl: './work-item-list.html',
 })
 export class WorkItemList {

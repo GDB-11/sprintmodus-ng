@@ -9,7 +9,7 @@
   } @else if (!selectedProject()) {
     <p>Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo.</p>
   } @else {
-    <app-board-connection [projectCode]="selectedProject()!.projectCode" />
+    <app-connection-indicator [projectCode]="selectedProject()!.projectCode" />
     <div class="flex flex-wrap items-end gap-4">
       <div class="flex flex-col gap-1.5">
         <label for="project" class="text-sm font-medium">Proyecto</label>

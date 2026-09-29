@@ -1,4 +1,13 @@
-import { Burndown, BurndownPoint, Sprint } from './models/project.models';
+import { Burndown, BurndownPoint, Project, Sprint } from './models/project.models';
+
+export function project(overrides: Partial<Project> = {}): Project {
+  return {
+    projectCode: 'p1',
+    name: 'Warehouse',
+    key: 'WAR',
+    ...overrides,
+  };
+}
 
 export function sprint(overrides: Partial<Sprint> = {}): Sprint {
   return {

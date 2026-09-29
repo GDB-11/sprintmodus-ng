@@ -1,15 +1,20 @@
-import { signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { Router, provideRouter } from '@angular/router';
 import { expectNoAxeViolations } from '../../../testing/axe';
-import { ConnectionStatus, OnlineUser } from '../../models/board.models';
-import { BoardWebSocketService } from '../../services/board-websocket.service';
-import { BoardConnection } from './board-connection';
+import { ConnectionStatus, OnlineUser } from '../../../board/models/board.models';
+import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
+import { ConnectionIndicator } from './connection-indicator';
 
-describe('BoardConnection', () => {
+@Component({ template: '' })
+class Dummy {}
+
+describe('ConnectionIndicator', () => {
   const status = signal<ConnectionStatus>('connecting');
   const usersOnline = signal<readonly OnlineUser[]>([]);
   const board = { connectionStatus: status.asReadonly(), usersOnline: usersOnline.asReadonly(), connect: vi.fn(), release: vi.fn() };
-  let fixture: ComponentFixture<BoardConnection>;
+  let fixture: ComponentFixture<ConnectionIndicator>;
+  let router: Router;
 
   beforeEach(async () => {
     status.set('connecting');
@@ -17,10 +22,14 @@ describe('BoardConnection', () => {
     board.connect.mockClear();
     board.release.mockClear();
     await TestBed.configureTestingModule({
-      imports: [BoardConnection],
-      providers: [{ provide: BoardWebSocketService, useValue: board }],
+      imports: [ConnectionIndicator],
+      providers: [
+        { provide: BoardWebSocketService, useValue: board },
+        provideRouter([{ path: 'other', component: Dummy }]),
+      ],
     }).compileComponents();
-    fixture = TestBed.createComponent(BoardConnection);
+    router = TestBed.inject(Router);
+    fixture = TestBed.createComponent(ConnectionIndicator);
     fixture.componentRef.setInput('projectCode', 'p-1');
     fixture.detectChanges();
   });
@@ -41,6 +50,14 @@ describe('BoardConnection', () => {
     fixture.destroy();
 
     expect(board.release).toHaveBeenCalled();
+  });
+
+  it('re-asserts connect() on every navigation, so it reclaims a connection another instance released', async () => {
+    board.connect.mockClear();
+
+    await router.navigateByUrl('/other');
+
+    expect(board.connect).toHaveBeenCalledWith('p-1');
   });
 
   it.each<[ConnectionStatus, string]>([

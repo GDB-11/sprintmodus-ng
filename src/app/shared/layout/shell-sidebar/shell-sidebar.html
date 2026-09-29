@@ -1,0 +1,29 @@
+<aside
+  id="shell-nav"
+  [class]="'glass hidden shrink-0 flex-col justify-between md:flex ' + widthClasses()"
+>
+  <div class="flex flex-col gap-3 p-3">
+    <button
+      type="button"
+      (click)="toggle()"
+      [attr.aria-label]="sidebarState.collapsed() ? 'Expandir la barra lateral' : 'Contraer la barra lateral'"
+      class="hidden items-center justify-center self-end rounded-md p-2 text-text-muted hover:bg-control-track hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 lg:inline-flex dark:focus-visible:outline-secondary-400"
+    >
+      <app-icon [name]="sidebarState.collapsed() ? 'chevron-right' : 'chevron-left'" />
+    </button>
+    <app-shell-nav-list [expanded]="expanded()" />
+  </div>
+
+  @if (expanded()) {
+    <div class="hidden flex-col gap-3 border-t border-control-border p-3 lg:flex">
+      @if (tenant(); as org) {
+        <div class="flex flex-col gap-0.5">
+          <p class="truncate text-sm font-semibold text-text">{{ org.organizationName }}</p>
+          <p class="truncate text-xs text-text-muted">{{ org.organizationCode }}</p>
+        </div>
+        <app-meter label="Proyectos" [value]="projectsUsed()" [max]="org.maxProjects" />
+        <app-meter label="Usuarios" [value]="usersUsed()" [max]="org.maxUsers" />
+      }
+    </div>
+  }
+</aside>
