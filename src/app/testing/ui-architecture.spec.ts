@@ -24,13 +24,13 @@ const EXEMPT_PREFIXES = [
   // work-item-detail's own page-header equivalent (ancestors + key + status + title + chips): it owns that screen's
   // one <h1>, the same role app-page-header/app-page play for every other screen (CLAUDE.md, Components rule 5).
   'work-items/components/work-item-header/',
+  // The entry screens (login/registro) have no app-shell, so app-auth-card is their page frame and owns their one <h1>.
+  'auth/components/auth-card/',
 ];
 
 // prettier-ignore
 const ALLOW_LIST = new Set<string>([
   'app.html',
-  'auth/components/auth-card/auth-card.html',
-  'auth/pages/login/login.html',
   'auth/pages/register-organization/register-organization.html',
   'board/components/kanban-board/kanban-board.html',
   'board/components/kanban-card/kanban-card.html',

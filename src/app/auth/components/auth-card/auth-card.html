@@ -1,7 +1,13 @@
-<main class="flex min-h-screen items-center justify-center bg-light-bg p-4 text-neutral-900 dark:bg-dark-bg dark:text-neutral-100">
-  <div class="w-full max-w-md rounded-xl bg-light-surface-secondary p-6 shadow-sm sm:p-8 dark:bg-dark-surface-secondary">
-    <h1 class="text-2xl font-semibold">{{ heading() }}</h1>
-    <p class="mt-1 mb-6 text-neutral-800 dark:text-neutral-300">{{ subheading() }}</p>
-    <ng-content />
+<main class="wallpaper flex min-h-screen items-center justify-center p-4 text-text">
+  <div class="glass relative w-full max-w-md p-6 sm:p-8">
+    <div class="glass-highlight"></div>
+    <div class="relative flex flex-col gap-4">
+      <app-logo [markOnly]="true" />
+      <h1 class="text-xl font-semibold">{{ heading() }}</h1>
+      @if (subheading()) {
+        <p class="text-text-muted">{{ subheading() }}</p>
+      }
+      <ng-content />
+    </div>
   </div>
 </main>

@@ -4,6 +4,9 @@ import { email, form, FormRoot, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthCard } from '../../components/auth-card/auth-card';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Button } from '../../../shared/ui/button/button';
+import { TextLink } from '../../../shared/ui/text-link/text-link';
 import { TextField } from '../../../shared/ui/text-field/text-field';
 import { LoginRequest } from '../../models/auth.models';
 import { AuthService } from '../../services/auth.service';
@@ -31,7 +34,7 @@ function safeReturnUrl(url: string | null): string {
 
 @Component({
   selector: 'app-login',
-  imports: [AuthCard, TextField, FormRoot, RouterLink],
+  imports: [AuthCard, Banner, Button, TextField, TextLink, FormRoot, RouterLink],
   templateUrl: './login.html',
 })
 export class Login {

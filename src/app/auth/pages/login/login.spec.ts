@@ -50,9 +50,9 @@ describe('Login', () => {
     expect(login).not.toHaveBeenCalled();
     const alerts = [...root().querySelectorAll('[role="alert"]')].map((el) => el.textContent?.trim());
     expect(alerts).toEqual([
-      'Ingresa el código de tu organización.',
       'Ingresa tu correo electrónico.',
       'Ingresa tu contraseña.',
+      'Ingresa el código de tu organización.',
     ]);
     expect(root().querySelector('#email')?.getAttribute('aria-invalid')).toBe('true');
   });

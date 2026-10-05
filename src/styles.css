@@ -323,3 +323,16 @@ html {
 dialog::backdrop {
   background: rgba(0, 0, 0, 0.4);
 }
+
+/* Tailwind v4's preflight leaves buttons with the default arrow; every clickable control gets the pointer. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  select:not(:disabled) {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
