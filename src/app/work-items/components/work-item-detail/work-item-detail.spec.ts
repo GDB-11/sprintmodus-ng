@@ -93,7 +93,8 @@ describe('WorkItemDetail', () => {
     await open(workItem({ description: 'Line one\nLine two', assignees: [{ assignmentCode: 'a1', userCode: 'u1', fullName: 'Mia Member', role: 'DEV' }] }));
 
     expect(root().querySelector('h1')?.textContent).toBe('Pay by card');
-    expect(root().textContent).toContain('WAR-1000 · Elemento del backlog');
+    expect(root().textContent).toContain('WAR-1000');
+    expect(root().textContent).toContain('Elemento del backlog');
     expect(root().textContent).toContain('New');
     expect(root().textContent).toContain('Mia Member (Desarrollo)');
     expect(root().textContent).toContain('Line one');
@@ -156,7 +157,7 @@ describe('WorkItemDetail', () => {
       await open(workItem({ sprintCode: 's1' }));
 
       expect(control('sprint')).toBeNull();
-      const details = root().querySelector('dl')!.textContent!.replace(/\s+/g, ' ');
+      const details = root().textContent!.replace(/\s+/g, ' ');
       expect(details).toContain('Sprint 1');
       expect(details).toContain('Solo los propietarios y administradores planifican los sprints.');
     });
@@ -164,7 +165,7 @@ describe('WorkItemDetail', () => {
     it('says the item is in the backlog when it is in no sprint', async () => {
       await open();
 
-      expect(root().querySelector('dl')!.textContent).toContain('Backlog (sin sprint)');
+      expect(root().textContent).toContain('Backlog (sin sprint)');
     });
 
     it('disables deleting an item somebody else created, and says who can', async () => {
@@ -432,7 +433,7 @@ describe('WorkItemDetail', () => {
 
     it('is offered closed, asks for nothing until opened, and follows a change made on the page while open', async () => {
       await open();
-      expect(root().querySelector('#history-heading')?.textContent).toBe('Historial');
+      expect(root().querySelector('app-work-item-history h2')?.textContent).toBe('Historial');
       http.expectNone((r) => r.url === HISTORY_URL);
 
       toggle().click();

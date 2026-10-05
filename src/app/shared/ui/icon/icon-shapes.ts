@@ -50,7 +50,12 @@ export type IconName =
   | 'loader'
   | 'external-link'
   | 'building'
-  | 'star';
+  | 'star'
+  | 'marker-diamond'
+  | 'marker-hexagon'
+  | 'marker-circle'
+  | 'marker-triangle'
+  | 'marker-square';
 
 /** ~40 icons in Lucide's 24x24 outline style (stroke, round caps/joins), adapted for inline use with no external asset. */
 export const ICON_SHAPES: Record<IconName, readonly IconShape[]> = {
@@ -245,4 +250,10 @@ export const ICON_SHAPES: Record<IconName, readonly IconShape[]> = {
     { tag: 'line', x1: 15, y1: 22, x2: 15, y2: 14 },
   ],
   star: [{ tag: 'polygon', points: '12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2' }],
+  // Work item type markers (`app-work-item-type-icon`): a distinct shape per type, never colour alone.
+  'marker-diamond': [{ tag: 'polygon', points: '12 2 22 12 12 22 2 12' }],
+  'marker-hexagon': [{ tag: 'polygon', points: '12 2 20.5 7 20.5 17 12 22 3.5 17 3.5 7' }],
+  'marker-circle': [{ tag: 'circle', cx: 12, cy: 12, r: 9.5 }],
+  'marker-triangle': [{ tag: 'polygon', points: '12 2.5 22 21 2 21' }],
+  'marker-square': [{ tag: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 3 }],
 };

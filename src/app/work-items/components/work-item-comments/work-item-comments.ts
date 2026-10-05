@@ -9,6 +9,10 @@ import { BoardWebSocketService } from '../../../board/services/board-websocket.s
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { notBlank } from '../../../shared/not-blank';
 import { valueOf } from '../../../shared/resource-value';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Button } from '../../../shared/ui/button/button';
+import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { Panel } from '../../../shared/ui/panel/panel';
 import { MentionField } from '../../../users/components/mention-field/mention-field';
 import { MentionText } from '../../../users/components/mention-text/mention-text';
 import { toMentionTokens } from '../../../users/models/mention-text';
@@ -28,7 +32,7 @@ const TYPING_SHOWN_MS = 3500;
  */
 @Component({
   selector: 'app-work-item-comments',
-  imports: [DatePipe, FormRoot, MentionField, MentionText],
+  imports: [DatePipe, FormRoot, MentionField, MentionText, Banner, Button, ErrorState, Panel],
   templateUrl: './work-item-comments.html',
 })
 export class WorkItemComments {

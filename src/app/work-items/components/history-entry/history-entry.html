@@ -1,35 +1,26 @@
-<p>
-  <span class="font-semibold">{{ entry().changedBy?.fullName ?? 'Usuario desconocido' }}</span>
+<p class="text-sm">
+  <span class="font-semibold text-text">{{ entry().changedBy?.fullName ?? 'Usuario desconocido' }}</span>
   {{ change().text }}
   @if (change().item; as target) {
-    <a
-      [routerLink]="['/work-items', target.code]"
-      class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
-      >{{ target.key }}</a
-    >
+    <a appTextLink [routerLink]="['/work-items', target.code]">{{ target.key }}</a>
   }
 </p>
-<p class="text-sm text-neutral-800 dark:text-neutral-300">
+<p class="text-sm text-text-muted">
   <time [attr.datetime]="entry().createdAt">{{ entry().createdAt | date: 'medium' }}</time>
 </p>
 @if (change().quote; as words) {
-  <blockquote class="mt-1 whitespace-pre-wrap border-l-2 border-neutral-700 pl-3 dark:border-neutral-400">{{ words }}</blockquote>
+  <blockquote class="mt-1 ps-3 text-sm whitespace-pre-wrap text-text">{{ words }}</blockquote>
 }
 @if (change().before !== undefined || change().after !== undefined) {
-  <details class="mt-1">
-    <summary
-      class="cursor-pointer text-sm font-medium text-secondary-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
-    >
-      Ver el cambio
-    </summary>
-    <dl class="mt-1 flex flex-col gap-1.5">
+  <details appDisclosure summary="Ver el cambio" class="mt-1">
+    <dl class="flex flex-col gap-1.5 text-sm">
       <div>
-        <dt class="text-sm font-medium">Antes</dt>
-        <dd class="whitespace-pre-wrap">{{ change().before ?? '(vacío)' }}</dd>
+        <dt class="font-medium text-text">Antes</dt>
+        <dd class="whitespace-pre-wrap text-text-muted">{{ change().before ?? '(vacío)' }}</dd>
       </div>
       <div>
-        <dt class="text-sm font-medium">Después</dt>
-        <dd class="whitespace-pre-wrap">{{ change().after ?? '(vacío)' }}</dd>
+        <dt class="font-medium text-text">Después</dt>
+        <dd class="whitespace-pre-wrap text-text-muted">{{ change().after ?? '(vacío)' }}</dd>
       </div>
     </dl>
   </details>

@@ -10,8 +10,14 @@
   <tbody>
     @for (row of rows(); track trackBy()(row)) {
       <tr class="border-b border-neutral-300 dark:border-neutral-700">
-        @for (column of columns(); track column.header) {
-          <td class="p-2 text-text" [class.text-right]="column.numeric">{{ column.cell(row) }}</td>
+        @for (column of columns(); track column.header; let columnIndex = $index) {
+          <td class="p-2 text-text" [class.text-right]="column.numeric">
+            @if (templateFor(columnIndex); as template) {
+              <ng-container *ngTemplateOutlet="template; context: { $implicit: row }" />
+            } @else {
+              {{ textOf(column, row) }}
+            }
+          </td>
         }
       </tr>
     }
@@ -22,10 +28,16 @@
   <li class="sr-only">{{ caption() }}</li>
   @for (row of rows(); track trackBy()(row)) {
     <li class="glass flex flex-col gap-1 p-3 text-sm">
-      @for (column of columns(); track column.header) {
+      @for (column of columns(); track column.header; let columnIndex = $index) {
         <div class="flex items-baseline justify-between gap-3">
           <span class="font-medium text-text-muted">{{ column.header }}</span>
-          <span class="text-text">{{ column.cell(row) }}</span>
+          <span class="text-text">
+            @if (templateFor(columnIndex); as template) {
+              <ng-container *ngTemplateOutlet="template; context: { $implicit: row }" />
+            } @else {
+              {{ textOf(column, row) }}
+            }
+          </span>
         </div>
       }
     </li>

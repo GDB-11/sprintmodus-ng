@@ -1,0 +1,8 @@
+<dl class="flex flex-col gap-2 text-sm">
+  @for (row of rows(); track row.label) {
+    <div class="flex justify-between gap-3">
+      <dt class="text-text-muted">{{ row.label }}</dt>
+      <dd class="text-right text-text">{{ row.value }}</dd>
+    </div>
+  }
+</dl>

@@ -12,19 +12,31 @@ import { ProjectService } from '../../../projects/services/project.service';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { valueOf } from '../../../shared/resource-value';
-import { Page } from '../../../shared/ui/page/page';
-import { ASSIGNMENT_ROLE_LABELS, ITEM_TYPE_LABELS, PRIORITY_LABELS, WorkItem } from '../../models/work-item.models';
+import { Button } from '../../../shared/ui/button/button';
+import { ConfirmInline } from '../../../shared/ui/confirm-inline/confirm-inline';
+import { Control } from '../../../shared/ui/control/control';
+import { DisabledReason } from '../../../shared/ui/disabled-reason/disabled-reason';
+import { Disclosure } from '../../../shared/ui/disclosure/disclosure';
+import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
+import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { Panel } from '../../../shared/ui/panel/panel';
+import { TextLink } from '../../../shared/ui/text-link/text-link';
+import {
+  ASSIGNMENT_ROLE_LABELS,
+  ITEM_TYPE_LABELS,
+  PRIORITY_LABELS,
+  WorkItem,
+  WorkItemSummary,
+} from '../../models/work-item.models';
 import { WorkItemService } from '../../services/work-item.service';
-import { StatusLabel } from '../status-label/status-label';
+import { CriteriaList } from '../criteria-list/criteria-list';
+import { MetaList, MetaRow } from '../meta-list/meta-list';
 import { WorkItemComments } from '../work-item-comments/work-item-comments';
 import { WorkItemEdit } from '../work-item-edit/work-item-edit';
+import { WorkItemHeader, WorkItemHeaderData } from '../work-item-header/work-item-header';
 import { WorkItemHistory } from '../work-item-history/work-item-history';
 import { WorkItemLinks } from '../work-item-links/work-item-links';
-
-const SELECT_CLASSES =
-  'rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-2 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400';
-const SECONDARY_BUTTON_CLASSES =
-  'rounded-md border border-neutral-700 px-4 py-2 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400';
+import { WorkItemRow } from '../work-item-row/work-item-row';
 
 /**
  * One work item: its fields, the controls that change its status (only legal transitions are offered), sprint and parent,
@@ -35,10 +47,21 @@ const SECONDARY_BUTTON_CLASSES =
 @Component({
   selector: 'app-work-item-detail',
   imports: [
-    Page,
     RouterLink,
     DatePipe,
-    StatusLabel,
+    Button,
+    ConfirmInline,
+    Control,
+    DisabledReason,
+    Disclosure,
+    EmptyState,
+    ErrorState,
+    Panel,
+    TextLink,
+    CriteriaList,
+    MetaList,
+    WorkItemHeader,
+    WorkItemRow,
     WorkItemEdit,
     WorkItemLinks,
     WorkItemComments,
@@ -57,8 +80,6 @@ export class WorkItemDetail {
   private readonly auth = inject(AuthService);
   private readonly permissions = inject(Permissions);
 
-  protected readonly selectClasses = SELECT_CLASSES;
-  protected readonly secondaryButtonClasses = SECONDARY_BUTTON_CLASSES;
   protected readonly typeLabels = ITEM_TYPE_LABELS;
   protected readonly priorityLabels = PRIORITY_LABELS;
   protected readonly roleLabels = ASSIGNMENT_ROLE_LABELS;
@@ -116,6 +137,54 @@ export class WorkItemDetail {
   protected canDelete(item: WorkItem): boolean {
     return this.permissions.canDelete(item);
   }
+
+  /** Root first, immediate parent last; built from `parents` (already loaded for the "Elemento superior" picker), not a
+   * separate request. Stops at the first code that page doesn't have (truncated, or an item in another project). */
+  protected readonly ancestors = computed<WorkItemSummary[]>(() => {
+    const byCode = new Map((valueOf(this.parents)?.items ?? []).map((item) => [item.workItemCode, item]));
+    const chain: WorkItemSummary[] = [];
+    const seen = new Set<string>();
+    let code = this.loadedItem()?.parentCode;
+    while (code && byCode.has(code) && !seen.has(code)) {
+      seen.add(code);
+      const parent = byCode.get(code)!;
+      chain.unshift(parent);
+      code = parent.parentCode;
+    }
+    return chain;
+  });
+
+  protected readonly headerData = computed<WorkItemHeaderData | null>(() => {
+    const item = this.loadedItem();
+    if (!item) {
+      return null;
+    }
+    return {
+      type: item.type,
+      displayKey: item.displayKey,
+      status: item.status,
+      title: item.title,
+      priority: item.priority,
+      sprintLabel: this.sprintName(),
+      effortLabel: `${item.effortPoints} pts`,
+    };
+  });
+
+  protected readonly metaRows = computed<MetaRow[]>(() => {
+    const item = this.loadedItem();
+    if (!item) {
+      return [];
+    }
+    const assignedText =
+      item.assignees.length === 0
+        ? 'Nadie'
+        : item.assignees.map((a) => `${a.fullName} (${this.roleLabels[a.role]})`).join(', ');
+    return [
+      { label: 'Asignado', value: assignedText },
+      { label: 'Relaciones', value: item.links.length === 0 ? 'Sin relaciones' : `${item.links.length}` },
+      { label: 'Creado', value: item.createdBy?.fullName ?? 'Usuario desconocido' },
+    ];
+  });
 
   /** Sprints the item can be put in: the ones still open, plus the one it is in now. */
   protected readonly sprintChoices = computed(() => {

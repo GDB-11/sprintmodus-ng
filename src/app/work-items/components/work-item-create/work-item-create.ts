@@ -7,6 +7,8 @@ import { ProjectService } from '../../../projects/services/project.service';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { notBlank } from '../../../shared/not-blank';
 import { valueOf } from '../../../shared/resource-value';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Button } from '../../../shared/ui/button/button';
 import { Page } from '../../../shared/ui/page/page';
 import { SelectField, SelectOption } from '../../../shared/ui/select-field/select-field';
 import { TextareaField } from '../../../shared/ui/textarea-field/textarea-field';
@@ -52,7 +54,7 @@ const PRIORITY_OPTIONS: SelectOption[] = PRIORITIES.map((priority) => ({
 /** Creates a work item of any type in a project. A non-standard parent is accepted; the backend's warning is shown. */
 @Component({
   selector: 'app-work-item-create',
-  imports: [Page, FormRoot, TextField, TextareaField, SelectField],
+  imports: [Page, FormRoot, TextField, TextareaField, SelectField, Banner, Button],
   templateUrl: './work-item-create.html',
 })
 export class WorkItemCreate {

@@ -1,7 +1,7 @@
 <summary
   class="flex cursor-pointer list-none items-center justify-between gap-2 rounded-md py-2 text-sm font-semibold text-text [&::-webkit-details-marker]:hidden"
 >
-  {{ summary() }}
+  <ng-content select="[disclosureSummary]">{{ summary() }}</ng-content>
   <app-icon name="chevron-down" class="shrink-0 transition-transform duration-150 group-open:rotate-180" />
 </summary>
 <div class="pt-2">

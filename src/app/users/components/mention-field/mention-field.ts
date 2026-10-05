@@ -2,6 +2,10 @@ import { Component, ElementRef, Injector, afterNextRender, computed, inject, inp
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FieldTree, FormField } from '@angular/forms/signals';
 import { catchError, map, of, startWith, switchMap, timer } from 'rxjs';
+import { Control } from '../../../shared/ui/control/control';
+import { FieldError } from '../../../shared/ui/field-error/field-error';
+import { MenuOption } from '../../../shared/ui/menu-option/menu-option';
+import { MenuSurface } from '../../../shared/ui/menu-surface/menu-surface';
 import { UserRef } from '../../../work-items/models/work-item.models';
 import { findMentionQuery, insertMention, pickOf } from '../../models/mention-text';
 import { UserService } from '../../services/user.service';
@@ -24,7 +28,7 @@ type SearchState = 'idle' | 'loading' | 'done' | 'failed';
  */
 @Component({
   selector: 'app-mention-field',
-  imports: [FormField],
+  imports: [FormField, Control, MenuSurface, MenuOption, FieldError],
   templateUrl: './mention-field.html',
 })
 export class MentionField {

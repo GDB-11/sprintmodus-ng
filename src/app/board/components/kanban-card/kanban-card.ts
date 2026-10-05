@@ -9,8 +9,8 @@ import {
   WorkItemStatus,
   WorkItemSummary,
 } from '../../../work-items/models/work-item.models';
+import { WorkItemTreeNode } from '../../../work-items/components/work-item-tree-node/work-item-tree-node';
 import { assigneesText, childrenText } from '../../models/card-text';
-import { CardChildren } from '../card-children/card-children';
 
 /** A status the card can go to. `allowed` is false when the workflow asks for a role this user does not have. */
 export interface MoveOption {
@@ -37,7 +37,7 @@ const COMPACT_BUTTON_CLASSES =
  */
 @Component({
   selector: 'app-kanban-card',
-  imports: [RouterLink, CdkDragHandle, CardChildren],
+  imports: [RouterLink, CdkDragHandle, WorkItemTreeNode],
   templateUrl: './kanban-card.html',
 })
 export class KanbanCard {

@@ -1,0 +1,64 @@
+@if (item(); as node) {
+  @if ((node.childCount ?? 0) > 0) {
+    <div class="flex flex-col gap-1.5">
+      <div class="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          appTextLink
+          [attr.aria-expanded]="ownOpened()"
+          [attr.aria-label]="(ownOpened() ? 'Ocultar' : 'Mostrar') + ' ' + childrenText(node.childCount ?? 0) + ' de ' + node.displayKey"
+          (click)="ownOpened.set(!ownOpened())"
+        >
+          <app-icon name="chevron-right" class="transition-transform duration-150" [class.rotate-90]="ownOpened()" />
+        </button>
+        <app-work-item-row class="min-w-0 flex-1" [item]="node" [showAssignees]="true" />
+      </div>
+      @if (ownOpened()) {
+        <div class="ps-6">
+          <app-work-item-tree-node [parentCode]="node.workItemCode" />
+        </div>
+      }
+    </div>
+  } @else {
+    <app-work-item-row [item]="node" [showAssignees]="true" />
+  }
+} @else {
+  @if (loadingChildren()) {
+    <app-skeleton height="1.25rem" />
+    <app-skeleton height="1.25rem" width="80%" />
+  } @else if (children.error()) {
+    <app-error-state message="No se pudieron cargar los elementos secundarios." (retry)="children.reload()" />
+  } @else {
+    <ul class="flex flex-col gap-2">
+      @for (child of nodes(); track child.workItemCode) {
+        <li>
+          @if (child.childCount > 0) {
+            <div class="flex flex-col gap-1.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  appTextLink
+                  [attr.aria-expanded]="isExpanded(child.workItemCode)"
+                  [attr.aria-label]="(isExpanded(child.workItemCode) ? 'Ocultar' : 'Mostrar') + ' ' + childrenText(child.childCount) + ' de ' + child.displayKey"
+                  (click)="toggleChild(child.workItemCode)"
+                >
+                  <app-icon name="chevron-right" class="transition-transform duration-150" [class.rotate-90]="isExpanded(child.workItemCode)" />
+                </button>
+                <app-work-item-row class="min-w-0 flex-1" [item]="child" [showAssignees]="true" />
+              </div>
+              @if (isExpanded(child.workItemCode)) {
+                <div class="ps-6">
+                  <app-work-item-tree-node [parentCode]="child.workItemCode" />
+                </div>
+              }
+            </div>
+          } @else {
+            <app-work-item-row [item]="child" [showAssignees]="true" />
+          }
+        </li>
+      } @empty {
+        <li><app-empty-state message="Sin elementos secundarios." /></li>
+      }
+    </ul>
+  }
+}

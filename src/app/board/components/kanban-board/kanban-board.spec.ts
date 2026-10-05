@@ -467,7 +467,7 @@ describe('KanbanBoard', () => {
 
       expect(toggle().getAttribute('aria-expanded')).toBe('false');
       expect(toggle().textContent).toContain('Mostrar 3 elementos secundarios');
-      expect(root().querySelector('app-card-children')).toBeNull();
+      expect(root().querySelector('app-work-item-tree-node')).toBeNull();
       http.expectNone((req) => req.url === ITEMS_URL);
     });
 
@@ -481,7 +481,7 @@ describe('KanbanBoard', () => {
       request.flush({ items: [CHILD], total: 1, page: 0, size: 200 });
       await settle();
 
-      const tree = root().querySelector('app-card-children')!;
+      const tree = root().querySelector('app-work-item-tree-node')!;
       expect(tree.textContent).toContain('WAR-1010');
       expect(tree.textContent).toContain('Tarea');
       expect(tree.textContent).toContain('Call the gateway');
@@ -494,7 +494,7 @@ describe('KanbanBoard', () => {
       expect(grandchildren.request.params.get('parentCode')).toBe('task-1');
       grandchildren.flush({ items: [GRANDCHILD], total: 1, page: 0, size: 200 });
       await settle();
-      expect(root().querySelectorAll('app-card-children')).toHaveLength(2);
+      expect(root().querySelectorAll('app-work-item-tree-node')).toHaveLength(2);
       expect(root().textContent).toContain('Retry on timeout');
     });
 
@@ -513,11 +513,11 @@ describe('KanbanBoard', () => {
         updatedAt: '2026-01-06T10:00:00Z',
       });
       fixture.detectChanges();
-      expect(root().querySelector('app-card-children')!.textContent).toContain('Done');
+      expect(root().querySelector('app-work-item-tree-node')!.textContent).toContain('Done');
 
       toggle().click();
       fixture.detectChanges();
-      expect(root().querySelector('app-card-children')).toBeNull();
+      expect(root().querySelector('app-work-item-tree-node')).toBeNull();
     });
 
     it('is free of accessibility violations, open', async () => {

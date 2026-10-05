@@ -11,6 +11,11 @@ export const WORK_ITEM_ROUTES: Routes = [
     loadComponent: () => import('./components/work-item-create/work-item-create').then((m) => m.WorkItemCreate),
   },
   {
+    path: 'overview',
+    loadComponent: () =>
+      import('./components/work-item-overview/work-item-overview').then((m) => m.WorkItemOverview),
+  },
+  {
     path: 'admin/workflows',
     canActivate: [adminGuard],
     loadComponent: () =>

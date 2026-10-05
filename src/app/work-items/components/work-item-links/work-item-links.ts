@@ -4,6 +4,12 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { valueOf } from '../../../shared/resource-value';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Button } from '../../../shared/ui/button/button';
+import { Control } from '../../../shared/ui/control/control';
+import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
+import { Panel } from '../../../shared/ui/panel/panel';
+import { TextLink } from '../../../shared/ui/text-link/text-link';
 import {
   Link,
   LINK_TYPE_LABELS,
@@ -14,15 +20,12 @@ import {
 import { WorkItemService } from '../../services/work-item.service';
 import { StatusLabel } from '../status-label/status-label';
 
-const SELECT_CLASSES =
-  'rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-2 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400';
-
 /** The relationships of a work item to other items (possibly in other projects). Creating and removing a link goes
  * straight to the backend; the parent reloads the item afterward, since links are part of its detail, not a separate
  * resource this component owns. */
 @Component({
   selector: 'app-work-item-links',
-  imports: [RouterLink, StatusLabel],
+  imports: [RouterLink, StatusLabel, Banner, Button, Control, EmptyState, Panel, TextLink],
   templateUrl: './work-item-links.html',
 })
 export class WorkItemLinks {
@@ -32,7 +35,6 @@ export class WorkItemLinks {
   readonly links = input.required<readonly Link[]>();
   readonly changed = output<void>();
 
-  protected readonly selectClasses = SELECT_CLASSES;
   protected readonly linkTypes = LINK_TYPES;
   protected readonly linkTypeLabels = LINK_TYPE_LABELS;
 

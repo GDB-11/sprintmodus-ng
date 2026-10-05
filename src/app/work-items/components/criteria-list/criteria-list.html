@@ -1,0 +1,8 @@
+<ul class="flex flex-col gap-1.5 text-sm">
+  @for (line of lines(); track $index) {
+    <li class="flex items-start gap-2">
+      <app-icon name="check" class="mt-0.5 shrink-0" />
+      <span class="text-text">{{ line }}</span>
+    </li>
+  }
+</ul>

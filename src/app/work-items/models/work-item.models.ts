@@ -9,6 +9,21 @@ export const ITEM_TYPE_LABELS: Record<ItemType, string> = {
   TASK: 'Tarea',
 };
 
+/**
+ * A type's marker shape, read by `app-work-item-type-icon`. Colour-only markers fail WCAG for colour-blind users
+ * (CLAUDE.md, "colour-only type markers"), so the shape itself carries the meaning; colour is only reinforcement
+ * (the icon inherits its surrounding text colour rather than a type-specific one).
+ */
+export type ItemTypeShape = 'diamond' | 'hexagon' | 'circle' | 'triangle' | 'square';
+
+export const ITEM_TYPE_SHAPES: Record<ItemType, ItemTypeShape> = {
+  EPIC: 'diamond',
+  FEATURE: 'hexagon',
+  PBI: 'circle',
+  BUG: 'triangle',
+  TASK: 'square',
+};
+
 export const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
@@ -17,6 +32,14 @@ export const PRIORITY_LABELS: Record<Priority, string> = {
   MEDIUM: 'Media',
   HIGH: 'Alta',
   CRITICAL: 'Crítica',
+};
+
+/** A priority's chip tone, read by `app-priority-chip`. Same tone-per-priority pairing `kanban-card` uses today. */
+export const PRIORITY_TONES: Record<Priority, 'neutral' | 'error' | 'warning' | 'info'> = {
+  LOW: 'neutral',
+  MEDIUM: 'info',
+  HIGH: 'warning',
+  CRITICAL: 'error',
 };
 
 export type AssignmentRole = 'DEV' | 'QA' | 'PO' | 'PM' | 'SCRUM_MASTER';
@@ -98,6 +121,23 @@ export interface WorkItemPage {
   total: number;
   page: number;
   size: number;
+}
+
+/**
+ * What `app-work-item-row` and `app-work-item-tree-node` need to show one item: a key, its type and status, and
+ * whatever richer fields the caller happens to have. Both `WorkItemSummary` and `ChildItem` satisfy it structurally,
+ * so the same row renders a full list item or a bare parent/child reference without a mapping step.
+ */
+export interface WorkItemRowItem {
+  workItemCode: string;
+  displayKey: string;
+  type: ItemType;
+  title: string;
+  status: WorkItemStatus;
+  priority?: Priority;
+  effortPoints?: number;
+  assignees?: readonly Assignee[];
+  childCount?: number;
 }
 
 export interface ChildItem {

@@ -5,9 +5,9 @@ import { provideRouter, Router } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { FakeBoard, provideFakeBoard } from '../../../board/board.testing';
 import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
+import { expectNoAxeViolations } from '../../../testing/axe';
 import { summary } from '../../work-items.testing';
 import { WorkItemList } from './work-item-list';
-import { expectNoAxeViolations } from '../../../testing/axe';
 
 const PROJECTS = [
   { projectCode: 'p1', name: 'Web App Rewrite', key: 'WAR' },
@@ -56,76 +56,139 @@ describe('WorkItemList', () => {
     fixture.detectChanges();
   }
 
-  it('lists the first project when the URL names none', async () => {
-    await open();
-    const request = await nextItemsRequest();
-    expect(request.request.params.get('projectCode')).toBe('p1');
-    expect(request.request.params.get('size')).toBe('25');
-    request.flush({
-      items: [summary(), summary({ workItemCode: 'item-2', displayKey: 'WAR-1001', title: 'Refund', type: 'BUG' })],
-      total: 2,
-      page: 0,
-      size: 25,
+  describe('Árbol (the default view)', () => {
+    it('lists the project\'s Epics as roots, plus a "Sin épica" group', async () => {
+      await open();
+      const request = await nextItemsRequest();
+      expect(request.request.params.get('projectCode')).toBe('p1');
+      expect(request.request.params.get('size')).toBe('200');
+      request.flush({
+        items: [
+          summary({ workItemCode: 'epic-1', displayKey: 'WAR-1', title: 'Checkout', type: 'EPIC' }),
+          summary({ workItemCode: 'orphan-1', displayKey: 'WAR-2', title: 'Orphan bug', type: 'BUG', parentCode: undefined }),
+        ],
+        total: 2,
+        page: 0,
+        size: 200,
+      });
+      await settle();
+
+      expect(root().textContent).toContain('WAR-1');
+      expect(root().textContent).toContain('Checkout');
+      expect(root().textContent).toContain('Sin épica');
+      expect(root().textContent).toContain('WAR-2');
     });
-    await settle();
 
-    const rows = [...root().querySelectorAll('tbody tr')].map((row) => row.textContent?.replace(/\s+/g, ' ').trim());
-    expect(rows).toHaveLength(2);
-    expect(rows[0]).toContain('WAR-1000');
-    expect(rows[0]).toContain('Pay by card');
-    expect(rows[1]).toContain('Error');
-    expect(root().querySelector('a[href="/work-items/item-1"]')?.textContent).toContain('WAR-1000');
-    expect(root().textContent).toContain('Mostrando 1–2 de 2');
+    it('says so when the project has no Epics yet', async () => {
+      await open();
+      (await nextItemsRequest()).flush({ items: [], total: 0, page: 0, size: 200 });
+      await settle();
+
+      expect(root().textContent).toContain('Este proyecto aún no tiene épicas.');
+    });
   });
 
-  it('follows the project and type in the URL', async () => {
-    await open('/work-items?project=p2&type=BUG');
+  describe('Lista (via ?view=list)', () => {
+    it('lists the first project when the URL names none', async () => {
+      await open('/work-items?view=list');
+      const request = await nextItemsRequest();
+      expect(request.request.params.get('projectCode')).toBe('p1');
+      expect(request.request.params.get('size')).toBe('25');
+      request.flush({
+        items: [summary(), summary({ workItemCode: 'item-2', displayKey: 'WAR-1001', title: 'Refund', type: 'BUG' })],
+        total: 2,
+        page: 0,
+        size: 25,
+      });
+      await settle();
 
-    const request = await nextItemsRequest();
-    expect(request.request.params.get('projectCode')).toBe('p2');
-    expect(request.request.params.get('type')).toBe('BUG');
-    request.flush({ items: [], total: 0, page: 0, size: 25 });
-    await settle();
+      const rows = [...root().querySelectorAll('table tbody tr')].map((row) => row.textContent?.replace(/\s+/g, ' ').trim());
+      expect(rows).toHaveLength(2);
+      expect(rows[0]).toContain('WAR-1000');
+      expect(rows[0]).toContain('Pay by card');
+      expect(rows[1]).toContain('Error');
+      expect(root().querySelector('a[href="/work-items/item-1"]')?.textContent).toContain('WAR-1000');
+      expect(root().textContent).toContain('Mostrando 1–2 de 2');
+    });
 
-    expect(root().textContent).toContain('Sin elementos de tipo Error en este proyecto.');
+    it('follows the project and type in the URL', async () => {
+      await open('/work-items?view=list&project=p2&type=BUG');
+
+      const request = await nextItemsRequest();
+      expect(request.request.params.get('projectCode')).toBe('p2');
+      expect(request.request.params.get('type')).toBe('BUG');
+      request.flush({ items: [], total: 0, page: 0, size: 25 });
+      await settle();
+
+      expect(root().textContent).toContain('Sin elementos de tipo Error en este proyecto.');
+    });
+
+    it('filters by type through the filter chips', async () => {
+      await open('/work-items?view=list');
+      (await nextItemsRequest()).flush({ items: [summary()], total: 1, page: 0, size: 25 });
+      await settle();
+
+      const bugChip = [...root().querySelectorAll<HTMLButtonElement>('button[aria-pressed]')].find((b) => b.textContent?.trim() === 'Error')!;
+      bugChip.click();
+
+      const request = await nextItemsRequest();
+      expect(request.request.params.get('type')).toBe('BUG');
+      expect(router.parseUrl(router.url).queryParams['type']).toBe('BUG');
+      request.flush({ items: [], total: 0, page: 0, size: 25 });
+    });
+
+    it('asks for the next page and disables Previous on the first', async () => {
+      await open('/work-items?view=list');
+      (await nextItemsRequest()).flush({ items: [summary()], total: 60, page: 0, size: 25 });
+      await settle();
+
+      const [previous, next] = [...root().querySelectorAll<HTMLButtonElement>('nav button')];
+      expect(previous.disabled).toBe(true);
+      expect(root().textContent).toContain('Mostrando 1–25 de 60');
+
+      next.click();
+
+      const request = await nextItemsRequest();
+      expect(request.request.params.get('page')).toBe('1');
+      request.flush({ items: [], total: 60, page: 1, size: 25 });
+    });
+
+    it('offers a retry when the items cannot be loaded', async () => {
+      await open('/work-items?view=list');
+      (await nextItemsRequest()).flush(null, { status: 500, statusText: 'Server Error' });
+      await settle();
+
+      expect(root().querySelector('[role="alert"]')?.textContent).toContain('No se pudieron cargar los elementos de trabajo.');
+      root().querySelector<HTMLButtonElement>('[role="alert"] button')!.click();
+      fixture.detectChanges();
+
+      (await nextItemsRequest()).flush({ items: [summary()], total: 1, page: 0, size: 25 });
+      await settle();
+      expect(root().querySelectorAll('table tbody tr')).toHaveLength(1);
+    });
   });
 
-  it('searches by typing and submitting, and resets the page', async () => {
-    await open('/work-items?page=2');
-    (await nextItemsRequest()).flush({ items: [summary()], total: 100, page: 2, size: 25 });
-    await settle();
+  describe('search', () => {
+    it('switches to Lista, searches by submitting, and resets the page', async () => {
+      await open('/work-items?view=list&page=2');
+      (await nextItemsRequest()).flush({ items: [summary()], total: 100, page: 2, size: 25 });
+      await settle();
 
-    const search = root().querySelector<HTMLInputElement>('#search')!;
-    search.value = 'checkout';
-    search.dispatchEvent(new Event('input'));
-    root().querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+      const search = root().querySelector<HTMLInputElement>('#work-items-search')!;
+      search.value = 'checkout';
+      search.dispatchEvent(new Event('input'));
+      root().querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
 
-    const request = await nextItemsRequest();
-    const params = router.parseUrl(router.url).queryParams;
-    expect(params['q']).toBe('checkout');
-    expect(params['page']).toBeUndefined();
-    expect(request.request.params.get('q')).toBe('checkout');
-    request.flush({ items: [], total: 0, page: 0, size: 25 });
-    await settle();
+      const request = await nextItemsRequest();
+      const params = router.parseUrl(router.url).queryParams;
+      expect(params['q']).toBe('checkout');
+      expect(params['page']).toBeUndefined();
+      expect(request.request.params.get('q')).toBe('checkout');
+      request.flush({ items: [], total: 0, page: 0, size: 25 });
+      await settle();
 
-    expect(root().textContent).toContain('Sin resultados para "checkout".');
-  });
-
-  it('asks for the next page and disables Previous on the first', async () => {
-    await open();
-    (await nextItemsRequest()).flush({ items: [summary()], total: 60, page: 0, size: 25 });
-    await settle();
-
-    const [previous, next] = [...root().querySelectorAll<HTMLButtonElement>('nav button')];
-    expect(previous.disabled).toBe(true);
-    expect(root().textContent).toContain('Mostrando 1–25 de 60');
-
-    next.click();
-
-    const request = await nextItemsRequest();
-    expect(router.url).toBe('/work-items?page=1');
-    expect(request.request.params.get('page')).toBe('1');
-    request.flush({ items: [], total: 60, page: 1, size: 25 });
+      expect(root().textContent).toContain('Sin resultados para «checkout».');
+    });
   });
 
   it('says so when the organization has no projects', async () => {
@@ -133,25 +196,10 @@ describe('WorkItemList', () => {
     await settle();
 
     expect(root().textContent).toContain('Aún no tienes proyectos');
-    expect(root().querySelector('table')).toBeNull();
-  });
-
-  it('offers a retry when the items cannot be loaded', async () => {
-    await open();
-    (await nextItemsRequest()).flush(null, { status: 500, statusText: 'Server Error' });
-    await settle();
-
-    expect(root().querySelector('[role="alert"]')?.textContent).toContain('No se pudieron cargar los elementos de trabajo.');
-    root().querySelector<HTMLButtonElement>('[role="alert"] button')!.click();
-    fixture.detectChanges();
-
-    (await nextItemsRequest()).flush({ items: [summary()], total: 1, page: 0, size: 25 });
-    await settle();
-    expect(root().querySelectorAll('tbody tr')).toHaveLength(1);
   });
 
   it('has no accessibility violations', async () => {
-    await open();
+    await open('/work-items?view=list');
     (await nextItemsRequest()).flush({
       items: [summary(), summary({ workItemCode: 'item-2', displayKey: 'WAR-1001', title: 'Refund', type: 'BUG' })],
       total: 60,
@@ -168,7 +216,7 @@ describe('WorkItemList', () => {
     const move = { workItemCode: 'item-1', displayKey: 'WAR-1000', status: { code: 'DONE', displayName: 'Done', isInitial: false, isTerminal: true }, allowedStatuses: [], fromStatus: 'NEW', updatedAt: 'now' };
 
     async function openList(): Promise<void> {
-      await open('/work-items?project=p2');
+      await open('/work-items?view=list&project=p2');
       (await nextItemsRequest()).flush(PAGE);
       await settle();
     }

@@ -1,151 +1,143 @@
-<app-page heading="Elementos de trabajo" backLink="/dashboard" backLabel="Panel">
-  @if (projects.isLoading()) {
-    <p role="status">Cargando proyectos…</p>
-  } @else if (projects.error()) {
-    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
-      No se pudieron cargar tus proyectos.
-      <button type="button" class="underline" (click)="projects.reload()">Reintentar</button>
-    </p>
-  } @else if (!selectedProject()) {
-    <p>Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo.</p>
-  } @else {
-    <app-connection-indicator [projectCode]="selectedProject()!.projectCode" />
-    <div class="flex flex-wrap items-end gap-4">
-      <div class="flex flex-col gap-1.5">
-        <label for="project" class="text-sm font-medium">Proyecto</label>
-        <select id="project" [class]="selectClasses" (change)="selectProject($event)">
-          @for (project of loadedProjects(); track project.projectCode) {
-            <option
-              [value]="project.projectCode"
-              [selected]="project.projectCode === selectedProject()?.projectCode"
-            >
-              {{ project.name }} ({{ project.key }})
-            </option>
-          }
-        </select>
-      </div>
-      <div class="flex flex-col gap-1.5">
-        <label for="type" class="text-sm font-medium">Tipo</label>
-        <select id="type" [class]="selectClasses" (change)="selectType($event)">
-          <option value="" [selected]="!type()">Todos los tipos</option>
-          @for (option of itemTypes; track option) {
-            <option [value]="option" [selected]="option === type()">
-              {{ typeLabels[option] }}
-            </option>
-          }
-        </select>
-      </div>
-      <form (submit)="search($event)" class="flex flex-col gap-1.5">
-        <label for="search" class="text-sm font-medium">Buscar</label>
-        <div class="flex gap-2">
-          <input
-            id="search"
-            type="search"
-            [value]="queryDraft()"
-            (input)="onQueryDraft($event)"
-            placeholder="Título o descripción…"
-            [class]="selectClasses"
-          />
-          <button
-            type="submit"
-            class="rounded-md border border-neutral-700 px-3 py-2 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
-          >
-            Buscar
-          </button>
-        </div>
-      </form>
-      <a
-        routerLink="/board"
-        [queryParams]="{ project: selectedProject()?.projectCode, type: type() ?? undefined }"
-        class="ml-auto text-sm font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
-        >Ver como tablero</a
-      >
-      <a
-        routerLink="/work-items/new"
-        [queryParams]="{ project: selectedProject()?.projectCode }"
-        class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
-        >Nuevo elemento de trabajo</a
-      >
-    </div>
+@if (projectContext.projects.isLoading()) {
+  <p role="status">Cargando proyectos…</p>
+} @else if (projectContext.projects.error()) {
+  <app-error-state message="No se pudieron cargar tus proyectos." (retry)="projectContext.projects.reload()" />
+} @else if (!selectedProject()) {
+  <app-empty-state message="Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo." />
+} @else {
+  <app-page-header heading="Elementos de trabajo">
+    <a pageHeaderActions appButton routerLink="/work-items/new" [queryParams]="{ project: selectedProject()!.projectCode }">
+      Nuevo elemento de trabajo
+    </a>
+  </app-page-header>
 
+  <app-connection-indicator [projectCode]="selectedProject()!.projectCode" />
+
+  <div class="flex flex-wrap items-center gap-3">
+    <app-segmented-control
+      groupLabel="Vista de elementos de trabajo"
+      [options]="viewOptions"
+      [value]="view()"
+      (valueChange)="setView($event)"
+    />
+    <a
+      appTextLink
+      routerLink="/work-items/overview"
+      [queryParams]="{ project: selectedProject()!.projectCode }"
+    >
+      Vista general
+    </a>
+    <a
+      appTextLink
+      routerLink="/board"
+      [queryParams]="{ project: selectedProject()!.projectCode, type: type() ?? undefined }"
+      class="ml-auto"
+    >
+      Ver como tablero →
+    </a>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-2">
+    <button type="button" appFilterChip [pressed]="!type()" (click)="selectType(null)">Todos</button>
+    @for (option of itemTypes; track option) {
+      <button type="button" appFilterChip [pressed]="option === type()" (click)="selectType(option)">
+        {{ typeLabels[option] }}
+      </button>
+    }
+    <form (submit)="search($event)" class="ml-auto">
+      <app-search-field
+        inputId="work-items-search"
+        label="Buscar"
+        placeholder="Título o descripción…"
+        [value]="queryDraft()"
+        (valueChange)="onQueryDraft($event)"
+      />
+    </form>
+  </div>
+
+  @if (view() === 'tree') {
+    @if (treeSource.isLoading()) {
+      <app-skeleton height="2rem" />
+      <app-skeleton height="2rem" width="90%" />
+      <app-skeleton height="2rem" width="75%" />
+    } @else if (treeSource.error()) {
+      <app-error-state message="No se pudieron cargar los elementos de trabajo." (retry)="treeSource.reload()" />
+    } @else {
+      @if (treeTruncated()) {
+        <p role="status" class="text-sm text-text-muted">
+          Mostrando los primeros {{ roots().length + orphans().length }} elementos de {{ treeTotal() }}.
+        </p>
+      }
+      <p class="text-sm text-text-muted">Jerarquía Épica → Feature → Historia/Bug → Tarea.</p>
+      <div class="flex flex-col gap-3">
+        @for (epic of roots(); track epic.workItemCode) {
+          <app-work-item-tree-node [item]="epic" />
+        } @empty {
+          <app-empty-state message="Este proyecto aún no tiene épicas." />
+        }
+        @if (orphans().length > 0) {
+          <div class="flex flex-col gap-2">
+            <h2 class="text-sm font-semibold text-text-muted">Sin épica</h2>
+            @for (orphan of orphans(); track orphan.workItemCode) {
+              <app-work-item-tree-node [item]="orphan" />
+            }
+          </div>
+        }
+      </div>
+    }
+  } @else {
     @if (items.isLoading()) {
-      <p role="status">Cargando elementos de trabajo…</p>
+      <app-skeleton height="2rem" />
+      <app-skeleton height="2rem" width="90%" />
     } @else if (items.error()) {
-      <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
-        No se pudieron cargar los elementos de trabajo.
-        <button type="button" class="underline" (click)="items.reload()">Reintentar</button>
-      </p>
+      <app-error-state message="No se pudieron cargar los elementos de trabajo." (retry)="items.reload()" />
     } @else if (loadedItems(); as result) {
       @if (result.items.length === 0) {
-        <p>
-          @if (query()) {
-            Sin resultados para "{{ query() }}".
-          } @else if (type()) {
-            Sin elementos de tipo {{ typeLabels[type()!] }} en este proyecto.
-          } @else {
-            Este proyecto aún no tiene elementos de trabajo.
-          }
-        </p>
+        <app-empty-state
+          [message]="
+            query()
+              ? 'Sin resultados para «' + query() + '».'
+              : type()
+                ? 'Sin elementos de tipo ' + typeLabels[type()!] + ' en este proyecto.'
+                : 'Este proyecto aún no tiene elementos de trabajo.'
+          "
+        />
       } @else {
-        <div
-          role="region"
-          aria-label="Tabla de elementos de trabajo"
-          tabindex="0"
-          class="overflow-x-auto rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+        <app-data-table
+          [caption]="'Elementos de trabajo de ' + selectedProject()!.name"
+          [columns]="listaColumns"
+          [rows]="result.items"
+          [trackBy]="trackByCode"
         >
-          <table class="w-full min-w-160 text-left text-sm">
-            <caption class="sr-only">
-              Elementos de trabajo de {{ selectedProject()?.name }}
-            </caption>
-            <thead>
-              <tr class="border-b border-neutral-700 dark:border-neutral-400">
-                <th scope="col" class="p-2">Clave</th>
-                <th scope="col" class="p-2">Título</th>
-                <th scope="col" class="p-2">Tipo</th>
-                <th scope="col" class="p-2">Estado</th>
-                <th scope="col" class="p-2">Prioridad</th>
-                <th scope="col" class="p-2 text-right">Puntos</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of result.items; track item.workItemCode) {
-                <tr class="border-b border-neutral-300 dark:border-neutral-700">
-                  <td class="p-2 whitespace-nowrap">
-                    <a
-                      [routerLink]="['/work-items', item.workItemCode]"
-                      class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
-                      >{{ item.displayKey }}</a
-                    >
-                  </td>
-                  <td class="p-2">{{ item.title }}</td>
-                  <td class="p-2">{{ typeLabels[item.type] }}</td>
-                  <td class="p-2"><app-status-label [status]="item.status" /></td>
-                  <td class="p-2">{{ priorityLabels[item.priority] }}</td>
-                  <td class="p-2 text-right">{{ item.effortPoints }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+          <ng-template appDataTableCell let-item>
+            <a appTextLink [routerLink]="['/work-items', item.workItemCode]">{{ item.displayKey }}</a>
+          </ng-template>
+          <ng-template appDataTableCell let-item>{{ item.title }}</ng-template>
+          <ng-template appDataTableCell let-item>
+            <span class="inline-flex items-center gap-1.5"><app-work-item-type-icon [type]="item.type" />{{ typeLabel(item.type) }}</span>
+          </ng-template>
+          <ng-template appDataTableCell let-item>
+            <app-status-label [status]="item.status" />
+          </ng-template>
+          <ng-template appDataTableCell let-item>
+            <app-priority-chip [priority]="item.priority" />
+          </ng-template>
+          <ng-template appDataTableCell let-item>{{ item.effortPoints }}</ng-template>
+        </app-data-table>
 
         <nav aria-label="Paginación" class="flex items-center justify-between gap-4 text-sm">
-          <p role="status">
-            Mostrando {{ firstShown() }}–{{ lastShown() }} de {{ result.total }}
-          </p>
+          <p role="status">Mostrando {{ firstShown() }}–{{ lastShown() }} de {{ result.total }}</p>
           <div class="flex gap-2">
-            <button
-              type="button"
-              [disabled]="page() === 0"
-              (click)="goToPage(page() - 1)"
-              class="rounded-md border border-neutral-700 px-3 py-1.5 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
-            >
+            <button type="button" appButton variant="secondary" size="compact" [disabled]="page() === 0" (click)="goToPage(page() - 1)">
               Anterior
             </button>
             <button
               type="button"
+              appButton
+              variant="secondary"
+              size="compact"
               [disabled]="page() + 1 >= totalPages()"
               (click)="goToPage(page() + 1)"
-              class="rounded-md border border-neutral-700 px-3 py-1.5 font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
             >
               Siguiente
             </button>
@@ -154,4 +146,4 @@
       }
     }
   }
-</app-page>
+}

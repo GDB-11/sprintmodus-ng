@@ -3,6 +3,8 @@ import { form, FormRoot, maxLength, required } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { notBlank } from '../../../shared/not-blank';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Button } from '../../../shared/ui/button/button';
 import { SelectField, SelectOption } from '../../../shared/ui/select-field/select-field';
 import { TextareaField } from '../../../shared/ui/textarea-field/textarea-field';
 import { TextField } from '../../../shared/ui/text-field/text-field';
@@ -51,7 +53,7 @@ function toModel(item: WorkItem): EditModel {
 /** Edits the plain fields of a work item. Status, sprint and parent have their own controls on the detail page. */
 @Component({
   selector: 'app-work-item-edit',
-  imports: [FormRoot, TextField, TextareaField, SelectField],
+  imports: [FormRoot, TextField, TextareaField, SelectField, Banner, Button],
   templateUrl: './work-item-edit.html',
 })
 export class WorkItemEdit {

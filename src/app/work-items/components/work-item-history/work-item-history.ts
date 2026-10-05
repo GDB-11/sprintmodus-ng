@@ -2,14 +2,15 @@ import { Component, computed, effect, inject, input, signal, untracked } from '@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY, filter, forkJoin, map, merge, Subject, switchMap } from 'rxjs';
 import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
+import { Button } from '../../../shared/ui/button/button';
+import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { Panel } from '../../../shared/ui/panel/panel';
 import { SprintNames } from '../../models/history-description';
 import { HistoryEntry } from '../../models/work-item.models';
 import { HistoryService } from '../../services/history.service';
 import { HistoryEntryView } from '../history-entry/history-entry';
 
 const PAGE_SIZE = 20;
-const SECONDARY_BUTTON_CLASSES =
-  'rounded-md border border-neutral-700 px-3 py-1.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400';
 
 /**
  * The timeline of a work item, newest change first, behind a disclosure so that it is only fetched for whoever asks for it.
@@ -18,7 +19,7 @@ const SECONDARY_BUTTON_CLASSES =
  */
 @Component({
   selector: 'app-work-item-history',
-  imports: [HistoryEntryView],
+  imports: [HistoryEntryView, Button, ErrorState, Panel],
   templateUrl: './work-item-history.html',
 })
 export class WorkItemHistory {
@@ -30,7 +31,6 @@ export class WorkItemHistory {
   readonly version = input<unknown>();
   readonly sprintNames = input<SprintNames>({});
 
-  protected readonly buttonClasses = SECONDARY_BUTTON_CLASSES;
   protected readonly open = signal(false);
   protected readonly entries = signal<readonly HistoryEntry[]>([]);
   protected readonly total = signal(0);

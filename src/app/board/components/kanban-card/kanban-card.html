@@ -39,7 +39,7 @@
       </button>
       <div [id]="'children-' + card().workItemCode">
         @if (expanded()) {
-          <app-card-children [parentCode]="card().workItemCode" />
+          <app-work-item-tree-node [parentCode]="card().workItemCode" />
         }
       </div>
     </div>

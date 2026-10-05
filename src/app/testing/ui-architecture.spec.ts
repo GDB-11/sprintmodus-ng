@@ -13,7 +13,18 @@ import { basename, dirname, join, relative } from 'node:path';
  */
 const SRC = join(process.cwd(), 'src/app');
 
-const EXEMPT_PREFIXES = ['shared/ui/', 'shared/layout/', 'design/', 'testing/'];
+const EXEMPT_PREFIXES = [
+  'shared/ui/',
+  'shared/layout/',
+  'design/',
+  'testing/',
+  // Domain -> look leaf maps (CLAUDE.md, Components rule 4): they hold tokens the same way a shared/ui primitive
+  // does, just keyed by a domain enum (status stage) instead of a generic prop. Not a feature template.
+  'work-items/components/status-label/',
+  // work-item-detail's own page-header equivalent (ancestors + key + status + title + chips): it owns that screen's
+  // one <h1>, the same role app-page-header/app-page play for every other screen (CLAUDE.md, Components rule 5).
+  'work-items/components/work-item-header/',
+];
 
 // prettier-ignore
 const ALLOW_LIST = new Set<string>([
@@ -21,7 +32,6 @@ const ALLOW_LIST = new Set<string>([
   'auth/components/auth-card/auth-card.html',
   'auth/pages/login/login.html',
   'auth/pages/register-organization/register-organization.html',
-  'board/components/card-children/card-children.html',
   'board/components/kanban-board/kanban-board.html',
   'board/components/kanban-card/kanban-card.html',
   'board/components/sprint-filter/sprint-filter.html',
@@ -35,17 +45,7 @@ const ALLOW_LIST = new Set<string>([
   'sprints/components/sprint-management/sprint-management.html',
   'sprints/components/sprint-settings/sprint-settings.html',
   'sprints/components/velocity-history/velocity-history.html',
-  'users/components/mention-field/mention-field.html',
-  'users/components/mention-text/mention-text.html',
-  'work-items/components/history-entry/history-entry.html',
-  'work-items/components/status-label/status-label.html',
-  'work-items/components/work-item-comments/work-item-comments.html',
-  'work-items/components/work-item-create/work-item-create.html',
-  'work-items/components/work-item-detail/work-item-detail.html',
-  'work-items/components/work-item-edit/work-item-edit.html',
-  'work-items/components/work-item-history/work-item-history.html',
-  'work-items/components/work-item-links/work-item-links.html',
-  'work-items/components/work-item-list/work-item-list.html',
+  // Phase 19's job (Configuración de flujo): the workflow editor itself, not touched by Phase 17.
   'work-items/components/workflow-admin/workflow-admin.html',
 ]);
 
@@ -98,7 +98,7 @@ function rawTagViolations(html: string): string[] {
   for (const match of html.matchAll(/<(button|table|details|svg)\b[^>]*>/gi)) {
     const tag = match[1].toLowerCase();
     const whole = match[0];
-    if (tag === 'button' && /\bappButton\b/.test(whole)) continue;
+    if (tag === 'button' && /\bapp(Button|FilterChip|TextLink)\b/.test(whole)) continue;
     if (tag === 'details' && /\bappDisclosure\b/.test(whole)) continue;
     violations.push(`<${tag}>`);
   }

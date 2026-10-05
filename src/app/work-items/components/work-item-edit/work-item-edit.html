@@ -1,8 +1,6 @@
 <form [formRoot]="editForm" class="flex max-w-2xl flex-col gap-4">
   @if (errorMessage(); as message) {
-    <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
-      {{ message }}
-    </p>
+    <app-banner kind="error">{{ message }}</app-banner>
   }
   <app-text-field [field]="editForm.title" inputId="edit-title" label="Título" />
   <app-textarea-field
@@ -40,19 +38,9 @@
     />
   </div>
   <div class="flex gap-3">
-    <button
-      type="submit"
-      [disabled]="editForm().submitting()"
-      class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
-    >
+    <button type="submit" appButton [disabled]="editForm().submitting()">
       {{ editForm().submitting() ? 'Guardando…' : 'Guardar cambios' }}
     </button>
-    <button
-      type="button"
-      (click)="cancelled.emit()"
-      class="rounded-md border border-neutral-700 px-4 py-2.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
-    >
-      Cancelar
-    </button>
+    <button type="button" appButton variant="secondary" (click)="cancelled.emit()">Cancelar</button>
   </div>
 </form>

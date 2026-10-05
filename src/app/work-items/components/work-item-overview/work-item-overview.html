@@ -1,0 +1,38 @@
+@if (projectContext.projects.isLoading()) {
+  <p role="status">Cargando proyectos…</p>
+} @else if (!projectContext.current()) {
+  <app-empty-state message="Aún no tienes proyectos." />
+} @else {
+  <app-page-header heading="Vista general" [backLink]="['/work-items']" backLabel="Elementos de trabajo" />
+  <p class="text-sm text-text-muted">
+    Jerarquía completa del backlog en una sola tabla: estado, tipo y título, indentados por nivel.
+  </p>
+
+  @if (source.isLoading()) {
+    <app-skeleton height="2rem" />
+    <app-skeleton height="2rem" width="90%" />
+    <app-skeleton height="2rem" width="75%" />
+  } @else if (source.error()) {
+    <app-error-state message="No se pudo cargar la vista general." (retry)="source.reload()" />
+  } @else if (rows().length === 0) {
+    <app-empty-state message="Este proyecto aún no tiene elementos de trabajo." />
+  } @else {
+    @if (truncated()) {
+      <p role="status" class="text-sm text-text-muted">Mostrando los primeros {{ rows().length }} elementos de {{ total() }}.</p>
+    }
+    <app-data-table caption="Vista general del backlog" [columns]="columns" [rows]="rows()" [trackBy]="trackByCode">
+      <ng-template appDataTableCell let-row>
+        <app-status-label [status]="row.item.status" />
+      </ng-template>
+      <ng-template appDataTableCell let-row>
+        <div class="flex min-w-0 items-center gap-2" [class]="indentClass(row.depth)">
+          <app-work-item-type-icon [type]="row.item.type" />
+          <span class="min-w-0 truncate text-text">{{ row.item.title }}</span>
+        </div>
+      </ng-template>
+      <ng-template appDataTableCell let-row>
+        <a appTextLink [routerLink]="['/work-items', row.item.workItemCode]">{{ row.item.displayKey }}</a>
+      </ng-template>
+    </app-data-table>
+  }
+}

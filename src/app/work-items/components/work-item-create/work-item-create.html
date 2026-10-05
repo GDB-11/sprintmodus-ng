@@ -1,9 +1,7 @@
 <app-page heading="Nuevo elemento de trabajo" backLink="/work-items" backLabel="Elementos de trabajo">
   <form [formRoot]="createForm" class="flex max-w-2xl flex-col gap-4">
     @if (errorMessage(); as message) {
-      <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
-        {{ message }}
-      </p>
+      <app-banner kind="error">{{ message }}</app-banner>
     }
     <app-select-field
       [field]="createForm.projectCode"
@@ -57,11 +55,7 @@
       />
     </div>
     <div>
-      <button
-        type="submit"
-        [disabled]="createForm().submitting() || !createForm.projectCode().value()"
-        class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
-      >
+      <button type="submit" appButton [disabled]="createForm().submitting() || !createForm.projectCode().value()">
         {{ createForm().submitting() ? 'Creando…' : 'Crear elemento de trabajo' }}
       </button>
     </div>
