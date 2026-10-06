@@ -1,0 +1,7 @@
+<div role="group" aria-label="Columnas del tablero" class="-mx-1 flex gap-2 overflow-x-auto px-1 py-1">
+  @for (tab of tabs(); track tab.code) {
+    <button type="button" appFilterChip class="shrink-0" [pressed]="selected() === tab.code" (click)="selected.set(tab.code)">
+      {{ tab.label }} · {{ tab.count }}
+    </button>
+  }
+</div>
