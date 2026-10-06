@@ -128,8 +128,10 @@ describe('WorkItemList', () => {
       (await nextItemsRequest()).flush({ items: [summary()], total: 1, page: 0, size: 25 });
       await settle();
 
-      const bugChip = [...root().querySelectorAll<HTMLButtonElement>('button[aria-pressed]')].find((b) => b.textContent?.trim() === 'Error')!;
-      bugChip.click();
+      root().querySelector<HTMLButtonElement>('app-select-menu button[role="combobox"]')!.click();
+      fixture.detectChanges();
+      const bugOption = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent?.trim() === 'Error')!;
+      bugOption.click();
 
       const request = await nextItemsRequest();
       expect(request.request.params.get('type')).toBe('BUG');
@@ -222,13 +224,6 @@ describe('WorkItemList', () => {
     }
 
     afterEach(() => vi.useRealTimers());
-
-    it('follows the live board of the project it lists, and follows the project when it changes', async () => {
-      await openList();
-
-      expect(board.connect).toHaveBeenCalledWith('p2');
-      expect(root().querySelector('app-connection-indicator')?.textContent).toContain('Conectado');
-    });
 
     it('reloads the list when an item is moved, once for a burst of changes', async () => {
       await openList();

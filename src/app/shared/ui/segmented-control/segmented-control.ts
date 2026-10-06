@@ -20,7 +20,7 @@ export class SegmentedControl<T extends string> {
       'rounded-[7px] px-3 py-1.5 text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 ' +
       'focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400';
     return this.value() === option.value
-      ? `${base} bg-light-bg text-text shadow-sm dark:bg-dark-bg`
+      ? `${base} bg-light-bg text-text shadow-sm dark:bg-control-border`
       : `${base} text-text-muted hover:text-text`;
   }
 }

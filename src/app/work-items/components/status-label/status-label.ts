@@ -12,7 +12,7 @@ type StatusStage = 'initial' | 'in-progress' | 'done';
  */
 @Component({
   selector: 'app-status-label',
-  host: { class: 'inline-flex items-center gap-2' },
+  host: { class: 'inline-flex items-center gap-2 text-text' },
   templateUrl: './status-label.html',
 })
 export class StatusLabel {

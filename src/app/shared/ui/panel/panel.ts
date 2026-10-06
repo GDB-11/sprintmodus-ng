@@ -11,4 +11,6 @@ import { Component, booleanAttribute, input } from '@angular/core';
 export class Panel {
   readonly heading = input<string>();
   readonly eyebrow = input(false, { transform: booleanAttribute });
+  /** Tighter padding, for a panel that wraps a single row (a leaf in a tree). */
+  readonly compact = input(false, { transform: booleanAttribute });
 }

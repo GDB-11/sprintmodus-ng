@@ -1,6 +1,6 @@
 @if (item(); as node) {
   @if ((node.childCount ?? 0) > 0) {
-    <div class="flex flex-col gap-1.5">
+    <app-panel>
       <div class="flex flex-wrap items-center gap-2">
         <button
           type="button"
@@ -14,13 +14,13 @@
         <app-work-item-row class="min-w-0 flex-1" [item]="node" [showAssignees]="true" />
       </div>
       @if (ownOpened()) {
-        <div class="ps-6">
-          <app-work-item-tree-node [parentCode]="node.workItemCode" />
+        <div class="ps-4">
+          <app-work-item-tree-node [parentCode]="node.workItemCode" [startOpen]="startOpen()" />
         </div>
       }
-    </div>
+    </app-panel>
   } @else {
-    <app-work-item-row [item]="node" [showAssignees]="true" />
+    <app-panel compact><app-work-item-row [item]="node" [showAssignees]="true" /></app-panel>
   }
 } @else {
   @if (loadingChildren()) {
@@ -29,11 +29,11 @@
   } @else if (children.error()) {
     <app-error-state message="No se pudieron cargar los elementos secundarios." (retry)="children.reload()" />
   } @else {
-    <ul class="flex flex-col gap-2">
+    <ul class="flex flex-col gap-2.5">
       @for (child of nodes(); track child.workItemCode) {
         <li>
           @if (child.childCount > 0) {
-            <div class="flex flex-col gap-1.5">
+            <app-panel>
               <div class="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -47,13 +47,13 @@
                 <app-work-item-row class="min-w-0 flex-1" [item]="child" [showAssignees]="true" />
               </div>
               @if (isExpanded(child.workItemCode)) {
-                <div class="ps-6">
-                  <app-work-item-tree-node [parentCode]="child.workItemCode" />
+                <div class="ps-4">
+                  <app-work-item-tree-node [parentCode]="child.workItemCode" [startOpen]="startOpen()" />
                 </div>
               }
-            </div>
+            </app-panel>
           } @else {
-            <app-work-item-row [item]="child" [showAssignees]="true" />
+            <app-panel compact><app-work-item-row [item]="child" [showAssignees]="true" /></app-panel>
           }
         </li>
       } @empty {

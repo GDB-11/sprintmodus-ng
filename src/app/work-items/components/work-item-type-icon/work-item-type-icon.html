@@ -1,2 +1,4 @@
-<app-icon [name]="icon()" class="size-3 shrink-0" />
+<span [class]="'inline-flex size-5 items-center justify-center rounded-md ' + look().badge">
+  <app-icon [name]="look().icon" class="inline-flex size-3.5" />
+</span>
 <span class="sr-only">{{ label() }}</span>

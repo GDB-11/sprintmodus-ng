@@ -7,6 +7,7 @@ import { childrenText } from '../../../board/models/card-text';
 import { valueOf } from '../../../shared/resource-value';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { Panel } from '../../../shared/ui/panel/panel';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { TextLink } from '../../../shared/ui/text-link/text-link';
@@ -26,7 +27,7 @@ import { WorkItemRow } from '../work-item-row/work-item-row';
  */
 @Component({
   selector: 'app-work-item-tree-node',
-  imports: [WorkItemRow, Icon, Skeleton, ErrorState, EmptyState, TextLink, WorkItemTreeNode],
+  imports: [Panel, WorkItemRow, Icon, Skeleton, ErrorState, EmptyState, TextLink, WorkItemTreeNode],
   templateUrl: './work-item-tree-node.html',
 })
 export class WorkItemTreeNode {
@@ -37,9 +38,11 @@ export class WorkItemTreeNode {
   readonly item = input<WorkItemRowItem & { childCount?: number }>();
   /** Renders the children of this code as a list of rows. */
   readonly parentCode = input<string>();
+  /** Opens every level on arrival (the Árbol view shows the whole hierarchy); the board's card children stay closed. */
+  readonly startOpen = input(false);
 
   /** `item` mode's own open state. */
-  protected readonly ownOpened = signal(false);
+  protected readonly ownOpened = linkedSignal(() => this.startOpen());
   /** `parentCode` mode's per-row open state, by code. */
   private readonly expandedCodes = signal<ReadonlySet<string>>(new Set());
   protected readonly childrenText = childrenText;
@@ -61,7 +64,7 @@ export class WorkItemTreeNode {
   }
 
   protected isExpanded(code: string): boolean {
-    return this.expandedCodes().has(code);
+    return this.expandedCodes().has(code) !== this.startOpen();
   }
 
   protected toggleChild(code: string): void {

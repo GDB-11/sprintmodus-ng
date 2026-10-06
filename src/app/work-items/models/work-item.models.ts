@@ -1,3 +1,5 @@
+import type { IconName } from '../../shared/ui/icon/icon-shapes';
+
 export const ITEM_TYPES = ['EPIC', 'FEATURE', 'PBI', 'BUG', 'TASK'] as const;
 export type ItemType = (typeof ITEM_TYPES)[number];
 
@@ -10,18 +12,16 @@ export const ITEM_TYPE_LABELS: Record<ItemType, string> = {
 };
 
 /**
- * A type's marker shape, read by `app-work-item-type-icon`. Colour-only markers fail WCAG for colour-blind users
- * (CLAUDE.md, "colour-only type markers"), so the shape itself carries the meaning; colour is only reinforcement
- * (the icon inherits its surrounding text colour rather than a type-specific one).
+ * A type's look, read by `app-work-item-type-icon`: an Azure DevOps-style glyph (crown, trophy, book, bug, clipboard)
+ * in a coloured badge. The glyph itself carries the meaning, so colour is only reinforcement (colour-only markers fail
+ * WCAG); each badge/glyph pair is a `styles.css` token pair checked in `theme-contrast.spec.ts`.
  */
-export type ItemTypeShape = 'diamond' | 'hexagon' | 'circle' | 'triangle' | 'square';
-
-export const ITEM_TYPE_SHAPES: Record<ItemType, ItemTypeShape> = {
-  EPIC: 'diamond',
-  FEATURE: 'hexagon',
-  PBI: 'circle',
-  BUG: 'triangle',
-  TASK: 'square',
+export const ITEM_TYPE_LOOKS: Record<ItemType, { icon: IconName; badge: string }> = {
+  EPIC: { icon: 'type-epic', badge: 'bg-type-epic text-light-bg' },
+  FEATURE: { icon: 'type-feature', badge: 'bg-type-feature text-light-bg' },
+  PBI: { icon: 'type-pbi', badge: 'bg-type-pbi text-light-bg' },
+  BUG: { icon: 'type-bug', badge: 'bg-type-bug text-light-bg' },
+  TASK: { icon: 'type-task', badge: 'bg-type-task text-neutral-900' },
 };
 
 export const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const;

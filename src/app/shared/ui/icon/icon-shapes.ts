@@ -51,11 +51,11 @@ export type IconName =
   | 'external-link'
   | 'building'
   | 'star'
-  | 'marker-diamond'
-  | 'marker-hexagon'
-  | 'marker-circle'
-  | 'marker-triangle'
-  | 'marker-square';
+  | 'type-epic'
+  | 'type-feature'
+  | 'type-pbi'
+  | 'type-bug'
+  | 'type-task';
 
 /** ~40 icons in Lucide's 24x24 outline style (stroke, round caps/joins), adapted for inline use with no external asset. */
 export const ICON_SHAPES: Record<IconName, readonly IconShape[]> = {
@@ -251,9 +251,19 @@ export const ICON_SHAPES: Record<IconName, readonly IconShape[]> = {
   ],
   star: [{ tag: 'polygon', points: '12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2' }],
   // Work item type markers (`app-work-item-type-icon`): a distinct shape per type, never colour alone.
-  'marker-diamond': [{ tag: 'polygon', points: '12 2 22 12 12 22 2 12' }],
-  'marker-hexagon': [{ tag: 'polygon', points: '12 2 20.5 7 20.5 17 12 22 3.5 17 3.5 7' }],
-  'marker-circle': [{ tag: 'circle', cx: 12, cy: 12, r: 9.5 }],
-  'marker-triangle': [{ tag: 'polygon', points: '12 2.5 22 21 2 21' }],
-  'marker-square': [{ tag: 'rect', x: 3, y: 3, width: 18, height: 18, rx: 3 }],
+  // Azure DevOps-style work item glyphs: crown, trophy, book, bug, clipboard with a check.
+  'type-epic': [{ tag: 'path', d: 'M3 8l4.5 4L12 5l4.5 7L21 8l-2 10H5z' }, { tag: 'path', d: 'M5 21h14' }],
+  'type-feature': [
+    { tag: 'path', d: 'M7 4h10v5a5 5 0 0 1-10 0z' },
+    { tag: 'path', d: 'M7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 14v4M8 20h8' },
+  ],
+  'type-pbi': [{ tag: 'path', d: 'M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2zM9 9h6M9 13h6' }],
+  'type-bug': [
+    { tag: 'path', d: 'M8 9a4 4 0 0 1 8 0v6a4 4 0 0 1-8 0zM12 9v10' },
+    { tag: 'path', d: 'M4 9l4 2M20 9l-4 2M4 16l4-1M20 16l-4-1M9 5L7 3M15 5l2-2' },
+  ],
+  'type-task': [
+    { tag: 'path', d: 'M9 4h6v3H9zM7 5.5H5v15h14v-15h-2' },
+    { tag: 'path', d: 'M8.5 14l2.5 2.5 4.5-5' },
+  ],
 };

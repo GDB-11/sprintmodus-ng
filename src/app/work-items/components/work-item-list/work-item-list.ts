@@ -2,15 +2,15 @@ import { Component, computed, inject, linkedSignal } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { merge, auditTime } from 'rxjs';
-import { ConnectionIndicator } from '../../../shared/layout/connection-indicator/connection-indicator';
 import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
 import { ProjectContextService } from '../../../projects/services/project-context.service';
 import { valueOf } from '../../../shared/resource-value';
+import { Chip } from '../../../shared/ui/chip/chip';
+import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
 import { Button } from '../../../shared/ui/button/button';
 import { DataTable, DataTableCell, DataTableColumn } from '../../../shared/ui/data-table/data-table';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
-import { FilterChip } from '../../../shared/ui/filter-chip/filter-chip';
 import { PageHeader } from '../../../shared/ui/page-header/page-header';
 import { SearchField } from '../../../shared/ui/search-field/search-field';
 import { SegmentedControl, SegmentedOption } from '../../../shared/ui/segmented-control/segmented-control';
@@ -60,12 +60,12 @@ const LISTA_COLUMNS: DataTableColumn<WorkItemSummary>[] = [
   selector: 'app-work-item-list',
   imports: [
     RouterLink,
-    ConnectionIndicator,
+    Chip,
+    SelectMenu,
     PageHeader,
     Button,
     TextLink,
     SearchField,
-    FilterChip,
     SegmentedControl,
     EmptyState,
     ErrorState,
@@ -89,6 +89,10 @@ export class WorkItemList {
   protected readonly itemTypes = ITEM_TYPES;
   protected readonly typeLabels = ITEM_TYPE_LABELS;
   protected readonly priorityLabels = PRIORITY_LABELS;
+  protected readonly typeOptions: SelectMenuOption[] = [
+    { value: '', label: 'Todos los tipos' },
+    ...ITEM_TYPES.map((value) => ({ value, label: ITEM_TYPE_LABELS[value] })),
+  ];
   protected readonly viewOptions = VIEW_OPTIONS;
   protected readonly listaColumns = LISTA_COLUMNS;
 
@@ -145,6 +149,18 @@ export class WorkItemList {
   protected readonly orphans = computed(() =>
     (valueOf(this.treeSource)?.items ?? []).filter((item) => item.type !== 'EPIC' && !item.parentCode),
   );
+  /** "2 épicas · 2 features · 3 historias/bugs · 2 tareas", from the loaded items. */
+  protected readonly treeSummary = computed(() => {
+    const items = valueOf(this.treeSource)?.items ?? [];
+    const count = (...types: ItemType[]) => items.filter((item) => types.includes(item.type)).length;
+    const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+    return [
+      plural(count('EPIC'), 'épica', 'épicas'),
+      plural(count('FEATURE'), 'feature', 'features'),
+      plural(count('PBI', 'BUG'), 'historia/bug', 'historias/bugs'),
+      plural(count('TASK'), 'tarea', 'tareas'),
+    ].join(' · ');
+  });
   protected readonly treeTotal = computed(() => valueOf(this.treeSource)?.total ?? 0);
   protected readonly treeTruncated = computed(() => this.treeTotal() > TREE_SOURCE_SIZE);
 
@@ -163,8 +179,8 @@ export class WorkItemList {
       });
   }
 
-  protected selectType(type: ItemType | null): void {
-    this.navigate({ type, page: null });
+  protected selectType(type: string | null): void {
+    this.navigate({ type: type || null, page: null });
   }
 
   protected onQueryDraft(value: string): void {

@@ -1,13 +1,13 @@
 <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-sm">
   <app-work-item-type-icon [type]="item().type" />
   <a appTextLink [routerLink]="['/work-items', item().workItemCode]">{{ item().displayKey }}</a>
-  <span class="min-w-0 flex-1 truncate text-text">{{ item().title }}</span>
+  <span class="min-w-[12rem] flex-1 text-text">{{ item().title }}</span>
   <app-status-label [status]="item().status" />
   @if (item().priority; as priority) {
     <app-priority-chip [priority]="priority" />
   }
   @if (item().effortPoints !== undefined) {
-    <span class="text-text-muted">{{ item().effortPoints }} pts</span>
+    <span class="text-text-muted">{{ item().effortPoints }}pt</span>
   }
 </div>
 @if (showAssignees() && (item().assignees?.length ?? 0) > 0) {
