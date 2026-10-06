@@ -37,7 +37,6 @@ describe('AppShell', () => {
 
   async function loadProjects() {
     http.expectOne(`${environment.apiUrl}/api/projects`).flush([{ projectCode: 'p1', name: 'Warehouse', key: 'WAR' }]);
-    http.expectOne(`${environment.apiUrl}/api/users/count`).flush({ count: 1 });
     await Promise.resolve();
     TestBed.tick();
     fixture.detectChanges();

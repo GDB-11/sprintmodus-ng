@@ -1,14 +1,11 @@
 @if (disabledReason(); as reason) {
-  <div
-    class="flex items-center gap-3 rounded-md px-3 py-2 text-text-faint"
-    [attr.title]="reason"
-  >
-    <app-icon [name]="item().icon" />
-    <span [class]="expanded() ? 'flex-1 text-sm font-medium' : 'sr-only'">{{ item().label }}</span>
-    <app-icon name="lock" [class]="expanded() ? '' : 'sr-only'" />
+  <div class="flex items-center gap-3 rounded-lg p-2 text-text-faint" [attr.title]="reason">
+    <span [class]="tileClasses()"><app-icon [name]="item().icon" /></span>
+    <span class="text-sm font-medium" [class]="'flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ' + labelState()">{{ item().label }}</span>
+    <app-icon name="lock" [class]="expanded() ? (responsive() ? 'ml-2 hidden lg:inline-flex' : 'ml-2 inline-flex') : 'hidden'" />
   </div>
   @if (expanded()) {
-    <app-disabled-reason [reason]="reason" />
+    <div [class]="responsive() ? 'hidden lg:block' : ''"><app-disabled-reason [reason]="reason" /></div>
   }
 } @else {
   <a
@@ -19,16 +16,16 @@
     [attr.title]="item().label"
     [attr.aria-label]="ariaLabel()"
     [class]="
-      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150 ' +
+      'group relative flex items-center rounded-lg p-2 text-sm font-medium transition-colors duration-150 ' +
       'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400 ' +
       (rla.isActive ? 'bg-control-track font-semibold text-text' : 'text-text-muted hover:bg-control-track hover:text-text')
     "
   >
-    <app-icon [name]="item().icon" />
-    <span [class]="expanded() ? 'flex-1' : 'sr-only'">{{ item().label }}</span>
+    <span [class]="tileClasses()"><app-icon [name]="item().icon" /></span>
+    <span [class]="'flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ' + labelState()">{{ item().label }}</span>
     @if (badgeCount(); as count) {
       @if (count > 0) {
-        <app-badge [count]="count" />
+        <app-badge [count]="count" [class]="expanded() ? 'absolute -top-1 -right-1 lg:static' : 'absolute -top-1 -right-1'" />
       }
     }
   </a>

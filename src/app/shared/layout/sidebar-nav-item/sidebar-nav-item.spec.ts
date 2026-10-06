@@ -4,8 +4,8 @@ import { expectNoAxeViolations } from '../../../testing/axe';
 import { NavItem } from '../nav-items';
 import { SidebarNavItem } from './sidebar-nav-item';
 
-const ITEM: NavItem = { label: 'Notificaciones', icon: 'bell', route: '/notifications', badge: 'notifications' };
-const ADMIN_ITEM: NavItem = { label: 'Configuración de flujo', icon: 'settings', route: '/work-items/admin/workflows', adminOnly: true };
+const ITEM: NavItem = { label: 'Notificaciones', tone: 'warning', icon: 'bell', route: '/notifications', badge: 'notifications' };
+const ADMIN_ITEM: NavItem = { label: 'Configuración de flujo', tone: 'neutral', icon: 'settings', route: '/work-items/admin/workflows', adminOnly: true };
 const ADMIN_REASON = 'Requiere rol propietario o administrador.';
 
 describe('SidebarNavItem', () => {
@@ -29,13 +29,13 @@ describe('SidebarNavItem', () => {
     expect(link.textContent).toContain('Notificaciones');
   });
 
-  it('shows the label as text when expanded, and only to screen readers when railed', () => {
-    expect(root().querySelector('a span')?.className).not.toContain('sr-only');
+  it('shows the label as text from `lg` up when expanded, and only to screen readers when railed', () => {
+    expect(root().querySelector('a span:nth-of-type(2)')?.className).toContain('lg:opacity-100');
 
     fixture.componentRef.setInput('expanded', false);
     fixture.detectChanges();
 
-    expect(root().querySelector('a span')?.className).toContain('sr-only');
+    expect(root().querySelector('a span:nth-of-type(2)')?.className).not.toContain('lg:opacity-100');
   });
 
   it('shows a badge and says the count in words, never colour/shape alone', () => {

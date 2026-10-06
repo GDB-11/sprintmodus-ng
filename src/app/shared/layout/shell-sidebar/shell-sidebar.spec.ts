@@ -25,7 +25,6 @@ describe('ShellSidebar', () => {
 
   async function loadUsage(): Promise<void> {
     http.expectOne(`${environment.apiUrl}/api/projects`).flush([{ projectCode: 'p1', name: 'Warehouse', key: 'WAR' }]);
-    http.expectOne(`${environment.apiUrl}/api/users/count`).flush({ count: 3 });
     await Promise.resolve();
     TestBed.tick();
     fixture.detectChanges();
@@ -42,18 +41,16 @@ describe('ShellSidebar', () => {
     expect(root().textContent).toContain('acme');
     expect(root().textContent).toContain('Proyectos');
     expect(root().textContent).toContain('1 / 10');
-    expect(root().textContent).toContain('Usuarios');
-    expect(root().textContent).toContain('3 / 10');
   });
 
-  it('toggling collapses and expands the sidebar footer', async () => {
+  it('toggling collapses and expands the sidebar (the usage meter goes, the toggle stays)', async () => {
     await loadUsage();
-    expect(root().querySelector('.border-t')).not.toBeNull();
+    expect(root().querySelector('[inert]')).toBeNull();
 
     root().querySelector('button')!.click();
     fixture.detectChanges();
 
-    expect(root().querySelector('.border-t')).toBeNull();
+    expect(root().querySelector('[inert] app-meter')).not.toBeNull();
     expect(root().querySelector('button')?.getAttribute('aria-label')).toBe('Expandir la barra lateral');
   });
 

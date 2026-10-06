@@ -17,20 +17,23 @@ describe('ThemeToggle', () => {
   afterEach(() => document.documentElement.classList.remove('dark'));
 
   const root = () => fixture.nativeElement as HTMLElement;
-  const buttons = () => Array.from(root().querySelectorAll('button'));
+  const button = () => root().querySelector('button')!;
 
-  it('shows the three theme options, "sistema" pressed by default', () => {
-    const labels = buttons().map((b) => b.textContent?.trim());
-    expect(labels).toEqual(['Claro', 'Oscuro', 'Sistema']);
-    expect(buttons().find((b) => b.textContent?.trim() === 'Sistema')?.getAttribute('aria-pressed')).toBe('true');
+  it('says the current theme and the next one, "sistema" by default', () => {
+    expect(button().getAttribute('aria-label')).toBe('Tema: sistema. Cambiar a claro');
   });
 
-  it('choosing a theme applies it', () => {
-    buttons().find((b) => b.textContent?.trim() === 'Oscuro')!.click();
+  it('cycles claro, oscuro, sistema and applies each', () => {
+    const theme = TestBed.inject(ThemeService);
+    button().click();
     fixture.detectChanges();
     TestBed.tick();
+    expect(theme.theme()).toBe('claro');
 
-    expect(TestBed.inject(ThemeService).theme()).toBe('oscuro');
+    button().click();
+    fixture.detectChanges();
+    TestBed.tick();
+    expect(theme.theme()).toBe('oscuro');
     expect(document.documentElement.classList.contains('dark')).toBe(true);
   });
 

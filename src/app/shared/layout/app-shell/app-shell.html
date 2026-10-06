@@ -9,11 +9,11 @@
   >Saltar a la navegación</a
 >
 
-<div class="wallpaper flex min-h-dvh flex-col">
-  <app-shell-topbar (menuToggle)="drawerOpen.set(true)" />
+<div class="wallpaper flex min-h-dvh">
+  <app-shell-sidebar />
 
-  <div class="flex flex-1 items-start">
-    <app-shell-sidebar />
+  <div class="flex min-w-0 flex-1 flex-col">
+    <app-shell-topbar (menuToggle)="drawerOpen.set(true)" />
 
     <main id="main-content" tabindex="-1" class="min-w-0 flex-1 p-4 focus:outline-none sm:p-6">
       <router-outlet />

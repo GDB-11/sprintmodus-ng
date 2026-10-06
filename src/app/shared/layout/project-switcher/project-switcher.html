@@ -1,41 +1,8 @@
-<button
-  #origin="cdkOverlayOrigin"
-  cdkOverlayOrigin
-  type="button"
-  (click)="open.set(!open())"
-  class="flex min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-semibold text-text hover:bg-control-track focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
->
-  @if (context.current(); as project) {
-    <span class="truncate">{{ project.name }}</span>
-    <span class="hidden shrink-0 text-text-muted sm:inline">({{ project.key }})</span>
-  } @else if (isLoading()) {
-    <span>Cargando proyectos…</span>
-  } @else {
-    <span>Sin proyectos</span>
-  }
-  <app-icon name="chevron-down" />
-</button>
-
-<app-popover [origin]="origin" [(open)]="open" label="Cambiar de proyecto">
-  @if (projects().length === 0) {
-    <p class="p-2 text-sm text-text-muted">Todavía no tienes proyectos.</p>
-  } @else {
-    <ul class="flex flex-col gap-0.5">
-      @for (project of projects(); track project.projectCode) {
-        <li>
-          <button
-            type="button"
-            (click)="choose(project)"
-            [attr.aria-current]="project.projectCode === context.current()?.projectCode ? 'true' : null"
-            class="flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-control-track focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
-          >
-            <span class="truncate">{{ project.name }} <span class="text-text-muted">({{ project.key }})</span></span>
-            @if (project.projectCode === context.current()?.projectCode) {
-              <app-icon name="check" />
-            }
-          </button>
-        </li>
-      }
-    </ul>
-  }
-</app-popover>
+<app-select-menu
+  label="Proyecto"
+  [options]="options()"
+  [value]="context.current()?.projectCode ?? null"
+  (valueChange)="choose($event)"
+  [placeholder]="isLoading() ? 'Cargando proyectos…' : 'Sin proyectos'"
+  emptyText="Todavía no tienes proyectos."
+/>

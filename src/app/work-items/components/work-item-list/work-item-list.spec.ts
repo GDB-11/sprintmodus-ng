@@ -227,7 +227,7 @@ describe('WorkItemList', () => {
       await openList();
 
       expect(board.connect).toHaveBeenCalledWith('p2');
-      expect(root().querySelector('app-connection-indicator')?.textContent).toContain('Conectado en vivo');
+      expect(root().querySelector('app-connection-indicator')?.textContent).toContain('Conectado');
     });
 
     it('reloads the list when an item is moved, once for a burst of changes', async () => {

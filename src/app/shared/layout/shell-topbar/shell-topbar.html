@@ -1,53 +1,50 @@
 <header
-  class="glass sticky top-0 z-10 flex h-14 items-center gap-2 rounded-none border-x-0 border-t-0 px-3 [padding-top:env(safe-area-inset-top)]"
+  class="glass sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 rounded-none border-x-0 border-t-0 px-3 [padding-top:env(safe-area-inset-top)]"
 >
   <button
     type="button"
     (click)="menuToggle.emit()"
     aria-label="Abrir la navegación"
-    class="inline-flex items-center justify-center rounded-md p-2 text-text-muted hover:bg-control-track hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 md:hidden dark:focus-visible:outline-secondary-400"
+    class="inline-flex items-center justify-center rounded-md border border-control-border bg-control-track p-2 text-text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 md:hidden dark:focus-visible:outline-secondary-400"
   >
     <app-icon name="menu" />
   </button>
 
-  <a
-    routerLink="/dashboard"
-    aria-label="Ir al panel"
-    class="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
-  >
-    <app-logo [markOnly]="true" class="sm:hidden" />
-    <app-logo class="hidden sm:block" />
-  </a>
-
-  <app-project-switcher />
+  <app-project-switcher class="min-w-0" />
   <app-shell-breadcrumb />
 
-  <div class="ml-auto flex items-center gap-1">
+  <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
     <button
       type="button"
       (click)="searchOpen.set(true)"
       aria-label="Buscar (Ctrl+K)"
-      class="inline-flex items-center justify-center rounded-md p-2 text-text-muted hover:bg-control-track hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+      class="hidden w-64 items-center gap-2 rounded-[10px] border border-control-border bg-control-track px-3 py-2 text-left text-sm text-text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 lg:flex dark:focus-visible:outline-secondary-400"
+    >
+      <app-icon name="search" />
+      Buscar o Ctrl K…
+    </button>
+    <button
+      type="button"
+      (click)="searchOpen.set(true)"
+      aria-label="Buscar (Ctrl+K)"
+      class="hidden items-center justify-center rounded-md border border-control-border bg-control-track p-2 text-text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 sm:inline-flex lg:hidden dark:focus-visible:outline-secondary-400"
     >
       <app-icon name="search" />
     </button>
     <app-global-search [(open)]="searchOpen" />
 
-    <a
-      routerLink="/work-items/new"
-      class="gloss inline-flex items-center gap-1.5 rounded-md bg-primary-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-primary-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
-    >
+    <a appButton size="compact" routerLink="/work-items/new">
       <app-icon name="plus" />
-      <span class="hidden sm:inline">Nuevo</span>
-      <span class="sr-only sm:hidden">Nuevo elemento de trabajo</span>
+      <span class="hidden lg:inline">Nuevo</span>
+      <span class="sr-only lg:hidden">Nuevo elemento de trabajo</span>
     </a>
 
     @if (context.current(); as project) {
-      <app-connection-indicator [projectCode]="project.projectCode" class="hidden lg:flex" />
+      <app-connection-indicator [projectCode]="project.projectCode" [compact]="true" />
     }
 
     <app-notifications-popover />
-    <app-theme-toggle class="hidden sm:inline-flex" />
+    <app-theme-toggle />
     <app-user-menu />
   </div>
 </header>

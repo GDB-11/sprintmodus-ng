@@ -37,7 +37,7 @@ describe('ProjectSwitcher', () => {
 
   const root = () => fixture.nativeElement as HTMLElement;
   const trigger = () => root().querySelector('button')!;
-  const menu = () => overlayContainerElement.querySelector('[role="dialog"]');
+  const menu = () => overlayContainerElement.querySelector('[role="listbox"]');
 
   async function loadProjects(): Promise<void> {
     http
@@ -61,10 +61,10 @@ describe('ProjectSwitcher', () => {
     trigger().click();
     fixture.detectChanges();
 
-    const options = menu()!.querySelectorAll('button');
+    const options = menu()!.querySelectorAll('[role="option"]');
     expect(options.length).toBe(2);
-    expect(options[0].getAttribute('aria-current')).toBe('true');
-    expect(options[1].getAttribute('aria-current')).toBeNull();
+    expect(options[0].getAttribute('aria-selected')).toBe('true');
+    expect(options[1].getAttribute('aria-selected')).toBe('false');
   });
 
   it('choosing a project closes the menu and switches the current one', async () => {
@@ -72,8 +72,23 @@ describe('ProjectSwitcher', () => {
     trigger().click();
     fixture.detectChanges();
 
-    const options = menu()!.querySelectorAll('button');
+    const options = menu()!.querySelectorAll('[role="option"]');
     (options[1] as HTMLElement).click();
+    fixture.detectChanges();
+
+    expect(menu()).toBeNull();
+    expect(trigger().textContent).toContain('Orders');
+  });
+
+  it('can be driven from the keyboard', async () => {
+    await loadProjects();
+    trigger().focus();
+    trigger().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    fixture.detectChanges();
+    expect(trigger().getAttribute('aria-expanded')).toBe('true');
+
+    trigger().dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    trigger().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     fixture.detectChanges();
 
     expect(menu()).toBeNull();

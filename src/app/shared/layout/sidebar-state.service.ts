@@ -7,7 +7,7 @@ import { filter, map } from 'rxjs';
 const STORAGE_KEY = 'sprintmodus.sidebar.collapsed';
 
 /**
- * Whether the desktop sidebar shows as a 212px panel with labels or a 64px icon rail (tablet is always a rail; phone
+ * Whether the desktop sidebar shows as a 240px panel with labels or a 64px icon rail (tablet is always a rail; phone
  * uses the drawer instead and does not consult this). The choice is remembered, except on the board: there the rail is
  * the default (more room for the columns) and a toggle during that visit is a session-only override that clears the
  * moment the user leaves the board, so the remembered choice governs everywhere else again.

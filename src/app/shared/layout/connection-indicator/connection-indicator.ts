@@ -7,9 +7,9 @@ import { ConnectionStatus } from '../../../board/models/board.models';
 
 const STATUS_LABELS: Record<ConnectionStatus, string> = {
   connecting: 'Conectando…',
-  connected: 'Conectado en vivo',
+  connected: 'Conectado',
   reconnecting: 'Reconectando…',
-  offline: 'Sin conexión en vivo: los datos se actualizan cada cierto tiempo',
+  offline: 'Sin conexión: los datos se actualizan cada cierto tiempo',
 };
 
 /** The dot's colour: a token pair checked in `theme-contrast.spec.ts`. The words say the same thing, so colour is never the only cue. */
@@ -34,6 +34,8 @@ export class ConnectionIndicator {
   private readonly board = inject(BoardWebSocketService);
 
   readonly projectCode = input.required<string>();
+  /** In the top bar: the word shows only from `lg` up (a dot alone below it) and who else is online is left out. */
+  readonly compact = input(false);
 
   protected readonly status = this.board.connectionStatus;
   protected readonly label = computed(() => STATUS_LABELS[this.status()]);

@@ -1,26 +1,25 @@
-import { OverlayModule } from '@angular/cdk/overlay';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { ProjectContextService } from '../../../projects/services/project-context.service';
-import { Project } from '../../../projects/models/project.models';
 import { valueOf } from '../../resource-value';
-import { Icon } from '../../ui/icon/icon';
-import { Popover } from '../../ui/popover/popover';
+import { SelectMenu, SelectMenuOption } from '../../ui/select-menu/select-menu';
 
 /** Which project the shell (and, as screens migrate, the screens themselves) shows -- one control instead of a per-page select. */
 @Component({
   selector: 'app-project-switcher',
-  imports: [OverlayModule, Icon, Popover],
+  imports: [SelectMenu],
   templateUrl: './project-switcher.html',
 })
 export class ProjectSwitcher {
   protected readonly context = inject(ProjectContextService);
 
-  protected readonly open = signal(false);
-  protected readonly projects = computed(() => valueOf(this.context.projects) ?? []);
   protected readonly isLoading = computed(() => this.context.projects.isLoading());
+  protected readonly options = computed<SelectMenuOption[]>(() =>
+    (valueOf(this.context.projects) ?? []).map((project) => ({ value: project.projectCode, label: project.name, hint: project.key })),
+  );
 
-  protected choose(project: Project): void {
-    this.context.select(project.projectCode);
-    this.open.set(false);
+  protected choose(projectCode: string | null): void {
+    if (projectCode) {
+      this.context.select(projectCode);
+    }
   }
 }

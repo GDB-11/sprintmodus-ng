@@ -1,36 +1,55 @@
-<div class="mx-auto flex max-w-3xl flex-col gap-4">
-  <app-page-header heading="Panel">
-    @if (tenant(); as tenant) {
-      <p>
-        Sesión iniciada como {{ authService.getCurrentUser()?.fullName }} en
-        <strong>{{ tenant.organizationName }}</strong> ({{ tenant.organizationCode }}) en el plan
-        {{ planLabels[tenant.plan] }}: hasta {{ tenant.maxProjects }} proyectos y
-        {{ tenant.maxUsers }} usuarios.
-      </p>
+<div class="mx-auto flex max-w-6xl flex-col gap-6 text-text">
+  <app-page-header [heading]="'Hola, ' + firstName() + ' 👋'">
+    @if (tenant(); as org) {
+      <p class="text-text-muted">{{ org.organizationName }} · Plan {{ planLabel() }} · rol {{ roleLabel() }}</p>
     }
-    <div class="flex flex-wrap gap-3">
-      <a
-        routerLink="/work-items"
-        class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
-        >Elementos de trabajo</a
-      >
-      <a
-        routerLink="/board"
-        class="rounded-md border border-neutral-700 px-4 py-2.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
-        >Tablero</a
-      >
-      <a
-        routerLink="/sprints"
-        class="rounded-md border border-neutral-700 px-4 py-2.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
-        >Sprints</a
-      >
-      @if (canAdminister()) {
-        <a
-          routerLink="/work-items/admin/workflows"
-          class="rounded-md border border-neutral-700 px-4 py-2.5 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:focus-visible:outline-secondary-400"
-          >Configuración de flujo de trabajo</a
-        >
-      }
-    </div>
   </app-page-header>
+
+  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <app-panel [heading]="activeSprint() ? 'Sprint activo · ' + activeSprint()!.name : 'Sprint activo'" eyebrow>
+      @if (!activeSprint()) {
+        <p class="text-text-muted">No hay un sprint activo en este proyecto.</p>
+        <a appTextLink routerLink="/sprints" class="w-fit">Ir a los sprints</a>
+      } @else if (sprintChart(); as chart) {
+        <p class="flex flex-wrap items-baseline gap-2">
+          <span class="text-2xl font-extrabold tabular-nums">{{ chart.pace.remainingHours }}h</span>
+          <span class="text-text-muted">restantes de {{ chart.pace.baselineHours }}h</span>
+        </p>
+        <app-line-sparkline [ideal]="chart.ideal" [actual]="chart.actual" [label]="chart.label" />
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <app-chip [tone]="chart.pace.behind ? 'warning' : 'success'">
+            {{ chart.pace.behind ? 'Por detrás del ritmo' : 'En ritmo' }}
+          </app-chip>
+          <a appTextLink [routerLink]="['/sprints', activeSprint()!.sprintCode, 'burndown']">Ver burndown</a>
+        </div>
+      } @else {
+        <p class="text-text-muted">Todavía no hay horas registradas en este sprint.</p>
+      }
+    </app-panel>
+
+    <app-panel heading="Asignado a mí" eyebrow>
+      @if (assignedItems().length === 0) {
+        <p class="text-text-muted">No tienes elementos pendientes asignados.</p>
+      } @else {
+        <ul class="flex flex-col gap-2">
+          @for (item of assignedItems(); track item.workItemCode) {
+            <li class="flex items-center gap-2 text-sm">
+              <app-work-item-type-icon [type]="item.type" />
+              <a appTextLink [routerLink]="['/work-items', item.workItemCode]" class="shrink-0">{{ item.displayKey }}</a>
+              <span class="min-w-0 flex-1 truncate">{{ item.title }}</span>
+              <app-priority-chip [priority]="item.priority" />
+            </li>
+          }
+        </ul>
+      }
+    </app-panel>
+
+    <app-panel heading="Organización" eyebrow>
+      @if (tenant(); as org) {
+        <app-meter label="Proyectos" [value]="projectsUsed()" [max]="org.maxProjects" />
+        <app-meter label="Usuarios" [value]="usersUsed()" [max]="org.maxUsers" />
+        <p>Plan: <strong>{{ planLabel() }}</strong></p>
+      }
+    </app-panel>
+  </div>
 </div>

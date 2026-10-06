@@ -1,0 +1,19 @@
+<svg [attr.viewBox]="'0 0 ' + width + ' ' + height" role="img" [attr.aria-label]="label()" class="h-auto w-full max-w-60">
+  <path
+    [attr.d]="idealPath()"
+    fill="none"
+    stroke-width="2"
+    stroke-dasharray="4 3"
+    class="stroke-info-700 dark:stroke-info-600"
+  />
+  <path
+    [attr.d]="actualPath()"
+    fill="none"
+    stroke-width="2"
+    stroke-linejoin="round"
+    class="stroke-error-700 dark:stroke-error-500"
+  />
+  @if (lastPoint(); as point) {
+    <circle [attr.cx]="point.x" [attr.cy]="point.y" r="4" class="fill-error-700 dark:fill-error-500" />
+  }
+</svg>

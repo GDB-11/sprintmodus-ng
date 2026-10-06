@@ -1,29 +1,53 @@
 <aside
   id="shell-nav"
-  [class]="'glass hidden shrink-0 flex-col justify-between md:flex ' + widthClasses()"
+  [class]="'glass sticky top-0 hidden h-dvh shrink-0 flex-col justify-between overflow-hidden rounded-none border-y-0 border-l-0 transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] md:flex ' + widthClasses()"
 >
-  <div class="flex flex-col gap-3 p-3">
+  <!-- Specular sheen: a soft highlight band that sweeps across the glass as the width changes, either way. -->
+  <div
+    aria-hidden="true"
+    class="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,transparent_35%,rgba(255,255,255,0.28)_50%,transparent_65%)] bg-[length:300%_100%] transition-[background-position] duration-700 dark:bg-[linear-gradient(105deg,transparent_35%,rgba(255,255,255,0.12)_50%,transparent_65%)] ease-[cubic-bezier(0.22,1,0.36,1)]"
+    [class]="expanded() ? 'bg-[position:100%_0]' : 'bg-[position:0_0]'"
+  ></div>
+  <div class="relative flex flex-col gap-3 overflow-y-auto p-2">
+    <a
+      routerLink="/dashboard"
+      aria-label="Ir al panel"
+      class="flex items-center rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+    >
+      <app-logo [markOnly]="true" />
+      @if (tenant(); as org) {
+        <span
+          [class]="'hidden min-w-0 flex-col overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:flex ' + (expanded() ? 'ml-3 max-w-40 opacity-100' : 'ml-0 max-w-0 opacity-0')"
+        >
+          <span class="truncate text-base font-bold text-text">{{ org.organizationName }}</span>
+          <span class="truncate text-xs text-text-muted">{{ org.organizationCode }} · {{ planLabel() }}</span>
+        </span>
+      }
+    </a>
+    <app-shell-nav-list [expanded]="expanded()" />
+  </div>
+
+  <div class="relative flex flex-col border-t border-control-border p-3">
+    <div
+      [class]="'hidden transition-[grid-template-rows,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:grid ' + (expanded() ? 'mb-3 grid-rows-[1fr] opacity-100' : 'mb-0 grid-rows-[0fr] opacity-0')"
+      [attr.inert]="expanded() ? null : ''"
+    >
+      <div class="overflow-hidden">
+        @if (tenant(); as org) {
+          <app-meter label="Proyectos" [value]="projectsUsed()" [max]="org.maxProjects" />
+        }
+      </div>
+    </div>
     <button
       type="button"
       (click)="toggle()"
       [attr.aria-label]="sidebarState.collapsed() ? 'Expandir la barra lateral' : 'Contraer la barra lateral'"
-      class="hidden items-center justify-center self-end rounded-md p-2 text-text-muted hover:bg-control-track hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 lg:inline-flex dark:focus-visible:outline-secondary-400"
+      class="hidden items-center justify-center self-end rounded-md p-2 text-text-muted transition-colors hover:bg-control-track hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 lg:inline-flex dark:focus-visible:outline-secondary-400"
     >
-      <app-icon [name]="sidebarState.collapsed() ? 'chevron-right' : 'chevron-left'" />
+      <app-icon
+        name="chevron-left"
+        [class]="'inline-flex transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ' + (sidebarState.collapsed() ? 'rotate-180' : '')"
+      />
     </button>
-    <app-shell-nav-list [expanded]="expanded()" />
   </div>
-
-  @if (expanded()) {
-    <div class="hidden flex-col gap-3 border-t border-control-border p-3 lg:flex">
-      @if (tenant(); as org) {
-        <div class="flex flex-col gap-0.5">
-          <p class="truncate text-sm font-semibold text-text">{{ org.organizationName }}</p>
-          <p class="truncate text-xs text-text-muted">{{ org.organizationCode }}</p>
-        </div>
-        <app-meter label="Proyectos" [value]="projectsUsed()" [max]="org.maxProjects" />
-        <app-meter label="Usuarios" [value]="usersUsed()" [max]="org.maxUsers" />
-      }
-    </div>
-  }
 </aside>

@@ -3,7 +3,7 @@
     @for (crumb of crumbs(); track $index; let last = $last) {
       <li [class]="last ? 'truncate text-text' : 'truncate'">{{ crumb }}</li>
       @if (!last) {
-        <li aria-hidden="true">/</li>
+        <li aria-hidden="true">›</li>
       }
     }
   </ol>

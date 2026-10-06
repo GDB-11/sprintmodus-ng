@@ -35,7 +35,6 @@ const ALLOW_LIST = new Set<string>([
   'board/components/kanban-board/kanban-board.html',
   'board/components/kanban-card/kanban-card.html',
   'board/components/sprint-filter/sprint-filter.html',
-  'dashboard/dashboard.html',
   'notifications/components/notification-list/notification-list.html',
   'notifications/components/notifications-bell/notifications-bell.html',
   'shared/notifications/notification-outlet/notification-outlet.html',

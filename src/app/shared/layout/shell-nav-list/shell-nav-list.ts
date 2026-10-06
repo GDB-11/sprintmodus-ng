@@ -15,6 +15,8 @@ export class ShellNavList {
   private readonly inbox = inject(InboxService);
 
   readonly expanded = input(true);
+  /** The sidebar is a rail below `lg`; the drawer passes `false` because it is always wide. */
+  readonly responsive = input(true);
 
   protected readonly items = NAV_ITEMS;
 

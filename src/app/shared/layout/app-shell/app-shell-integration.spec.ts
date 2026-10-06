@@ -57,7 +57,6 @@ describe('AppShell (with a real screen inside it)', () => {
     await settle();
     http.expectOne((r) => r.url === `${environment.apiUrl}/api/work-items`).flush({ items: [], total: 0, page: 0, size: 25 });
     await settle();
-    http.expectOne(`${environment.apiUrl}/api/users/count`).flush({ count: 1 });
     await settle();
   }
 

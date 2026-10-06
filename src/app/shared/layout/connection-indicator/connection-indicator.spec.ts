@@ -62,9 +62,9 @@ describe('ConnectionIndicator', () => {
 
   it.each<[ConnectionStatus, string]>([
     ['connecting', 'Conectando'],
-    ['connected', 'Conectado en vivo'],
+    ['connected', 'Conectado'],
     ['reconnecting', 'Reconectando'],
-    ['offline', 'Sin conexión en vivo'],
+    ['offline', 'Sin conexión'],
   ])('says in words when the connection is %s', (state, words) => {
     status.set(state);
     fixture.detectChanges();
