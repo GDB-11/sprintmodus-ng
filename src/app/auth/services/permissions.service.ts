@@ -12,6 +12,9 @@ export class Permissions {
 
   readonly userCode = computed(() => this.auth.currentUser()?.user.id ?? null);
 
+  /** The organization-level role of the signed-in user, for screens that say it. */
+  readonly role = computed(() => this.auth.currentUser()?.user.role ?? null);
+
   /** Owners and admins: workflows, planning work into sprints, and the manual order of the cards on a board. */
   readonly canAdminister = computed(() => {
     const role = this.auth.currentUser()?.user.role;

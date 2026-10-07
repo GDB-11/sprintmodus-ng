@@ -1,7 +1,7 @@
 <app-select-menu
   label="Proyecto"
   [options]="options()"
-  [value]="context.current()?.projectCode ?? null"
+  [value]="context.current()?.projectCode ?? ''"
   (valueChange)="choose($event)"
   [placeholder]="isLoading() ? 'Cargando proyectos…' : 'Sin proyectos'"
   emptyText="Todavía no tienes proyectos."

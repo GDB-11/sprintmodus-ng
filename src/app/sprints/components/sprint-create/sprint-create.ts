@@ -7,6 +7,10 @@ import { ProjectService } from '../../../projects/services/project.service';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { notBlank } from '../../../shared/not-blank';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Button } from '../../../shared/ui/button/button';
+import { DisabledReason } from '../../../shared/ui/disabled-reason/disabled-reason';
+import { Panel } from '../../../shared/ui/panel/panel';
 import { TextField } from '../../../shared/ui/text-field/text-field';
 import { optionalNumber, parseOptionalNumber } from '../../../work-items/models/number-fields';
 
@@ -25,7 +29,7 @@ interface SprintModel {
  */
 @Component({
   selector: 'app-sprint-create',
-  imports: [FormRoot, TextField],
+  imports: [FormRoot, TextField, Panel, Banner, Button, DisabledReason],
   templateUrl: './sprint-create.html',
 })
 export class SprintCreate {

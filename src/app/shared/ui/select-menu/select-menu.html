@@ -3,6 +3,10 @@
   #origin="cdkOverlayOrigin"
   cdkOverlayOrigin
   type="button"
+  [id]="inputId() ?? null"
+  [disabled]="disabled()"
+  [attr.aria-invalid]="invalid() ? true : null"
+  [attr.aria-describedby]="describedBy()"
   role="combobox"
   aria-haspopup="listbox"
   [attr.aria-expanded]="open()"
@@ -11,7 +15,7 @@
   [attr.aria-label]="accessibleName()"
   (click)="toggle()"
   (keydown)="onKeydown($event)"
-  class="group flex w-full min-w-0 items-center gap-2 rounded-[10px] border border-control-border bg-control-track px-3 py-1.5 text-left text-sm text-text transition-colors duration-150 hover:bg-glass-bg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+  class="group flex w-full min-w-0 items-center gap-2 rounded-[10px] border border-control-border bg-control-track px-3 py-1.5 text-left text-sm text-text transition-colors duration-150 hover:bg-glass-bg disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
 >
   @if (selected(); as option) {
     <span class="min-w-0 truncate font-semibold">{{ option.label }}</span>
@@ -39,7 +43,7 @@
   (detach)="close()"
 >
   <div
-    class="glass max-w-[calc(100vw-2rem)] origin-top animate-[select-pop_180ms_cubic-bezier(0.22,1,0.36,1)] p-1.5 text-sm"
+    class="glass w-full max-w-[calc(100vw-2rem)] origin-top animate-[select-pop_180ms_cubic-bezier(0.22,1,0.36,1)] p-1.5 text-sm"
   >
     <div class="glass-highlight"></div>
     <ul [id]="uid + '-listbox'" role="listbox" [attr.aria-label]="label()" class="relative flex max-h-64 flex-col gap-0.5 overflow-auto">
@@ -48,11 +52,13 @@
           [id]="optionId(index)"
           role="option"
           [attr.aria-selected]="option.value === value()"
+          [attr.aria-disabled]="option.disabled ? true : null"
           (mousedown)="$event.preventDefault()"
           (click)="choose(index)"
-          (mouseenter)="activeIndex.set(index)"
+          (mouseenter)="option.disabled || activeIndex.set(index)"
           [class]="
-            'flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-text transition-colors duration-100 ' +
+            'flex items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-100 ' +
+            (option.disabled ? 'cursor-not-allowed text-text-muted ' : 'cursor-pointer text-text ') +
             (index === activeIndex() ? 'bg-control-track ' : '') +
             (option.value === value() ? 'font-semibold' : '')
           "

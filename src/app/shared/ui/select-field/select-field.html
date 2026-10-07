@@ -1,17 +1,22 @@
 <div class="flex flex-col gap-1.5">
-  <label [for]="inputId()" class="text-sm font-medium">{{ label() }}</label>
-  <select
-    [id]="inputId()"
-    [formField]="field()"
-    [attr.aria-required]="state().required()"
-    [attr.aria-invalid]="showError()"
-    [attr.aria-describedby]="describedBy()"
-    class="rounded-[10px] border border-control-border bg-control-track px-3 py-2 text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
-  >
-    @for (option of options(); track option.value) {
-      <option [value]="option.value">{{ option.label }}</option>
-    }
-  </select>
+  <label [for]="inputId()" class="text-sm font-medium text-text">{{ label() }}</label>
+  @if (searchable()) {
+    <app-searchable-select
+      [inputId]="inputId()"
+      [label]="label()"
+      [options]="options()"
+      [formField]="field()"
+      [describedBy]="describedBy()"
+    />
+  } @else {
+    <app-select-menu
+      [inputId]="inputId()"
+      [label]="label()"
+      [options]="options()"
+      [formField]="field()"
+      [describedBy]="describedBy()"
+    />
+  }
   @if (hint()) {
     <p [id]="hintId()" class="text-sm text-text-muted">{{ hint() }}</p>
   }

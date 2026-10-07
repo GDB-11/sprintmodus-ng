@@ -16,12 +16,15 @@
       <div class="flex flex-col gap-1.5">
         @if (current.allowedStatuses.length > 0) {
           <label for="change-status" class="text-sm font-medium">Mover a</label>
-          <select id="change-status" appControl [disabled]="busy()" (change)="changeStatus($event)">
-            <option value="" selected>Elige un estado</option>
-            @for (status of current.allowedStatuses; track status.code) {
-              <option [value]="status.code">{{ status.displayName }}</option>
-            }
-          </select>
+          <app-select-menu
+            inputId="change-status"
+            label="Mover a"
+            placeholder="Elige un estado"
+            [action]="true"
+            [options]="statusOptions()"
+            [disabled]="busy()"
+            (valueChange)="changeStatus($event)"
+          />
         } @else {
           <span class="text-sm font-medium">Mover a</span>
           <span class="py-2 text-sm text-text-muted">Sin más estados</span>
@@ -118,14 +121,14 @@
         <div class="flex flex-col gap-1.5">
           @if (canPlanSprints()) {
             <label for="sprint" class="text-sm font-medium">Sprint</label>
-            <select id="sprint" appControl [disabled]="busy() || sprints.isLoading()" (change)="moveToSprint($event, current)">
-              <option value="" [selected]="!current.sprintCode">Backlog (sin sprint)</option>
-              @for (sprint of sprintChoices(); track sprint.sprintCode) {
-                <option [value]="sprint.sprintCode" [selected]="sprint.sprintCode === current.sprintCode">
-                  {{ sprint.name }}
-                </option>
-              }
-            </select>
+            <app-select-menu
+              inputId="sprint"
+              label="Sprint"
+              [options]="sprintOptions()"
+              [value]="sprintChoice()"
+              [disabled]="busy() || sprints.isLoading()"
+              (valueChange)="moveToSprint($event, current)"
+            />
           } @else {
             <span class="text-sm font-medium">Sprint</span>
             <span class="text-sm text-text">{{ sprintName() }}</span>
@@ -135,14 +138,15 @@
 
         <div class="flex flex-col gap-1.5">
           <label for="parent" class="text-sm font-medium">Elemento superior</label>
-          <select id="parent" appControl [disabled]="busy() || parents.isLoading()" (change)="changeParent($event, current)">
-            <option value="" [selected]="!current.parentCode">Sin elemento superior</option>
-            @for (candidate of parentChoices(); track candidate.workItemCode) {
-              <option [value]="candidate.workItemCode" [selected]="candidate.workItemCode === current.parentCode">
-                {{ candidate.displayKey }} · {{ candidate.title }} ({{ typeLabels[candidate.type] }})
-              </option>
-            }
-          </select>
+          <app-searchable-select
+            inputId="parent"
+            label="Elemento superior"
+            searchPlaceholder="Buscar por clave o título…"
+            [options]="parentOptions()"
+            [value]="parentChoice()"
+            [disabled]="busy() || parents.isLoading()"
+            (valueChange)="changeParent($event, current)"
+          />
         </div>
       </app-panel>
     </div>

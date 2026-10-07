@@ -1,13 +1,10 @@
 import { CdkConnectedOverlay, CdkOverlayOrigin } from '@angular/cdk/overlay';
-import { Component, computed, ElementRef, input, model, signal, viewChild } from '@angular/core';
+import { Component, computed, ElementRef, input, model, output, signal, viewChild } from '@angular/core';
+import { FormValueControl } from '@angular/forms/signals';
 import { Icon } from '../icon/icon';
+import { nextEnabledIndex, SelectMenuOption } from './select-option';
 
-export interface SelectMenuOption {
-  value: string;
-  label: string;
-  /** A short secondary tag shown beside the label (a project key, for example). */
-  hint?: string;
-}
+export type { SelectMenuOption };
 
 let nextId = 0;
 
@@ -21,11 +18,24 @@ let nextId = 0;
   imports: [CdkConnectedOverlay, CdkOverlayOrigin, Icon],
   templateUrl: './select-menu.html',
 })
-export class SelectMenu {
+export class SelectMenu implements FormValueControl<string> {
   /** Names the control for screen readers ("Proyecto"); the current value is appended to it. */
   readonly label = input.required<string>();
   readonly options = input.required<readonly SelectMenuOption[]>();
-  readonly value = model<string | null>(null);
+  /** The chosen option's value; `''` (or a value no option has) means nothing is chosen and the placeholder shows. */
+  readonly value = model('');
+  /** Choosing runs something ("Mover a…") instead of setting a value: the trigger goes back to its placeholder at once. */
+  readonly action = input(false);
+  readonly disabled = input(false);
+  /** Set by Signal Forms (`[formField]`) or by hand: marks the trigger `aria-invalid`. */
+  readonly invalid = input(false);
+  readonly touched = input(false);
+  /** Ids of the hint/error paragraphs that describe the control. */
+  readonly describedBy = input<string | null>(null);
+  /** The trigger's `id`, so a visible `<label for>` points at it. */
+  readonly inputId = input<string>();
+  /** Fires when the list closes: Signal Forms marks the field touched. */
+  readonly touch = output<void>();
   /** Shown on the trigger while nothing is selected. */
   readonly placeholder = input('Seleccionar');
   /** Shown inside the open list when there are no options. */
@@ -39,7 +49,8 @@ export class SelectMenu {
   protected readonly selected = computed(() => this.options().find((option) => option.value === this.value()) ?? null);
   protected readonly accessibleName = computed(() => `${this.label()}: ${this.selected()?.label ?? this.placeholder()}`);
   protected readonly activeId = computed(() => (this.open() && this.options().length ? this.optionId(this.activeIndex()) : null));
-  protected readonly minWidth = computed(() => this.trigger().nativeElement.offsetWidth);
+  /** The trigger's width, measured each time the list opens (a computed would keep the first, possibly stale, measure). */
+  protected readonly minWidth = signal(0);
 
   protected optionId(index: number): string {
     return `${this.uid}-option-${index}`;
@@ -54,20 +65,33 @@ export class SelectMenu {
   }
 
   protected close(): void {
-    this.open.set(false);
+    if (this.open()) {
+      this.open.set(false);
+      this.touch.emit();
+    }
   }
 
   private show(): void {
+    if (this.disabled()) {
+      return;
+    }
     const selectedIndex = this.options().findIndex((option) => option.value === this.value());
-    this.activeIndex.set(Math.max(0, selectedIndex));
+    this.activeIndex.set(selectedIndex >= 0 ? selectedIndex : Math.max(0, nextEnabledIndex(this.options(), -1, 1)));
+    this.minWidth.set(this.trigger().nativeElement.offsetWidth);
     this.open.set(true);
     this.scrollActiveIntoView();
   }
 
   protected choose(index: number): void {
     const option = this.options()[index];
+    if (option?.disabled) {
+      return;
+    }
     if (option) {
       this.value.set(option.value);
+      if (this.action()) {
+        this.value.set('');
+      }
     }
     this.close();
     this.trigger().nativeElement.focus();
@@ -83,15 +107,20 @@ export class SelectMenu {
           this.show();
           return;
         }
-        const step = event.key === 'ArrowDown' ? 1 : -1;
-        this.move((this.activeIndex() + step + count) % Math.max(count, 1));
+        const next = nextEnabledIndex(this.options(), this.activeIndex(), event.key === 'ArrowDown' ? 1 : -1);
+        if (next >= 0) {
+          this.move(next);
+        }
         return;
       }
       case 'Home':
       case 'End':
         if (this.open()) {
           event.preventDefault();
-          this.move(event.key === 'Home' ? 0 : count - 1);
+          const edge = event.key === 'Home' ? nextEnabledIndex(this.options(), -1, 1) : nextEnabledIndex(this.options(), count, -1);
+          if (edge >= 0) {
+            this.move(edge);
+          }
         }
         return;
       case 'Enter':
@@ -118,7 +147,7 @@ export class SelectMenu {
       const options = this.options();
       for (let offset = 1; offset <= count; offset++) {
         const index = (this.activeIndex() + offset) % count;
-        if (options[index].label.toLowerCase().startsWith(letter)) {
+        if (!options[index].disabled && options[index].label.toLowerCase().startsWith(letter)) {
           if (!this.open()) {
             this.show();
           }

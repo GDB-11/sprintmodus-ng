@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Sprint } from '../../../projects/models/project.models';
 import { sprint as aSprint } from '../../../projects/projects.testing';
+import { chooseOption, openSelect } from '../../../testing/select-menu';
 import { expectNoAxeViolations } from '../../../testing/axe';
 import { ALL_SPRINTS, BACKLOG, SprintFilter } from './sprint-filter';
 
@@ -34,7 +35,7 @@ describe('SprintFilter', () => {
   }
 
   const root = () => fixture.nativeElement as HTMLElement;
-  const buttons = () => [...root().querySelectorAll('button')];
+  const buttons = () => [...root().querySelectorAll<HTMLButtonElement>('button:not([role="combobox"])')];
   const label = (button: Element) => button.textContent!.replace(/\s+/g, ' ').trim();
 
   it('puts the recently ended, the current and the upcoming sprints one click away, in timeline order', () => {
@@ -57,8 +58,8 @@ describe('SprintFilter', () => {
   it('keeps the sprints beyond those in a list of their own', () => {
     render();
 
-    const options = [...root().querySelectorAll('#other-sprints option')].map((option) => label(option));
-    expect(options).toEqual(['Elegir…', 'Sprint 7 · Planificado', 'Sprint 1 · Cerrado']);
+    const options = openSelect(root().querySelector<HTMLButtonElement>('button#other-sprints')!, () => fixture.detectChanges());
+    expect(options).toEqual(['Sprint 7 · Planificado', 'Sprint 1 · Cerrado']);
   });
 
   it('has no list of others when every sprint has a button', () => {
@@ -83,9 +84,7 @@ describe('SprintFilter', () => {
     buttons().find((button) => label(button).startsWith('Sprint 3'))!.click();
     buttons().find((button) => label(button).startsWith('Backlog'))!.click();
     buttons().find((button) => label(button) === 'Todos')!.click();
-    const list = root().querySelector<HTMLSelectElement>('#other-sprints')!;
-    list.value = 's7';
-    list.dispatchEvent(new Event('change'));
+    chooseOption(root().querySelector<HTMLButtonElement>('button#other-sprints')!, 'Sprint 7', () => fixture.detectChanges());
 
     expect(selections).toEqual(['s3', BACKLOG, ALL_SPRINTS, 's7']);
   });

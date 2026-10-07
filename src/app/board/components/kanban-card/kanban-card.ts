@@ -1,11 +1,16 @@
 import { CdkDragHandle } from '@angular/cdk/drag-drop';
 import { Component, computed, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AvatarGroup } from '../../../shared/ui/avatar-group/avatar-group';
+import { Button } from '../../../shared/ui/button/button';
+import { Card } from '../../../shared/ui/card/card';
+import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
+import { Icon } from '../../../shared/ui/icon/icon';
+import { TextLink } from '../../../shared/ui/text-link/text-link';
+import { PriorityChip } from '../../../work-items/components/priority-chip/priority-chip';
 import {
   ASSIGNMENT_ROLE_LABELS,
   AssignmentRole,
-  PRIORITY_LABELS,
-  Priority,
   WorkItemStatus,
   WorkItemSummary,
 } from '../../../work-items/models/work-item.models';
@@ -19,17 +24,6 @@ export interface MoveOption {
   requiredRole?: AssignmentRole;
 }
 
-/** Text and background pairs checked in `theme-contrast.spec.ts`; the word says the priority, colour only backs it up. */
-const PRIORITY_CLASSES: Record<Priority, string> = {
-  CRITICAL: 'bg-error-100 text-error-900',
-  HIGH: 'bg-warning-100 text-warning-900',
-  MEDIUM: 'bg-info-100 text-info-900',
-  LOW: 'bg-neutral-200 text-neutral-900',
-};
-
-const COMPACT_BUTTON_CLASSES =
-  'rounded-md border border-neutral-700 px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400';
-
 /**
  * One card of the Kanban board: key, title, priority, effort, assignees, sprint, a collapsible tree of its children, and the
  * controls that change it. What the user may not do is shown but disabled, with the reason: a move that needs a role they
@@ -37,7 +31,7 @@ const COMPACT_BUTTON_CLASSES =
  */
 @Component({
   selector: 'app-kanban-card',
-  imports: [RouterLink, CdkDragHandle, WorkItemTreeNode],
+  imports: [RouterLink, CdkDragHandle, WorkItemTreeNode, Card, PriorityChip, AvatarGroup, Button, SelectMenu, Icon, TextLink],
   templateUrl: './kanban-card.html',
 })
 export class KanbanCard {
@@ -55,14 +49,12 @@ export class KanbanCard {
   readonly moveTo = output<string>();
   readonly reorder = output<'up' | 'down'>();
 
-  protected readonly priorityLabels = PRIORITY_LABELS;
-  protected readonly compactButtonClasses = COMPACT_BUTTON_CLASSES;
   protected readonly reorderHint = 'Solo los propietarios y administradores cambian el orden de las tarjetas.';
   protected readonly assigneesText = assigneesText;
   protected readonly childrenText = childrenText;
   protected readonly expanded = signal(false);
 
-  protected readonly priorityClasses = computed(() => PRIORITY_CLASSES[this.card().priority]);
+  protected readonly assigneeNames = computed(() => this.card().assignees.map((assignee) => assignee.fullName));
   protected readonly hasAllowedMove = computed(() => this.moves().some((move) => move.allowed));
   /** The role that would let this user move the card, when none of the moves is theirs. */
   protected readonly missingRole = computed(() => {
@@ -74,10 +66,16 @@ export class KanbanCard {
     return role ? ASSIGNMENT_ROLE_LABELS[role] : '';
   }
 
-  protected onMoveSelected(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const status = select.value;
-    select.value = '';
+  protected readonly moveOptions = computed<SelectMenuOption[]>(() =>
+    this.moves().map((move) => ({
+      value: move.status.code,
+      label: move.status.displayName,
+      disabled: !move.allowed,
+      hint: move.allowed ? undefined : `requiere rol: ${this.roleLabel(move.requiredRole)}`,
+    })),
+  );
+
+  protected onMoveSelected(status: string): void {
     if (status) {
       this.moveTo.emit(status);
     }

@@ -1,5 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
+import { SearchableSelect } from '../searchable-select/searchable-select';
+import { SelectMenu } from '../select-menu/select-menu';
 
 export interface SelectOption {
   value: string;
@@ -9,7 +11,7 @@ export interface SelectOption {
 /** Labelled native select bound to a Signal Forms field, with hint and validation message. */
 @Component({
   selector: 'app-select-field',
-  imports: [FormField],
+  imports: [FormField, SelectMenu, SearchableSelect],
   templateUrl: './select-field.html',
 })
 export class SelectField {
@@ -18,6 +20,8 @@ export class SelectField {
   readonly label = input.required<string>();
   readonly options = input.required<readonly SelectOption[]>();
   readonly hint = input<string>();
+  /** Adds a search box to the list: for choices that can be many (parent items, people). */
+  readonly searchable = input(false);
 
   protected readonly state = computed(() => this.field()());
   protected readonly showError = computed(() => this.state().touched() && this.state().invalid());

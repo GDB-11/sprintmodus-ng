@@ -9,6 +9,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { Control } from '../../../shared/ui/control/control';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { Panel } from '../../../shared/ui/panel/panel';
+import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
 import { TextLink } from '../../../shared/ui/text-link/text-link';
 import {
   Link,
@@ -25,7 +26,7 @@ import { StatusLabel } from '../status-label/status-label';
  * resource this component owns. */
 @Component({
   selector: 'app-work-item-links',
-  imports: [RouterLink, StatusLabel, Banner, Button, Control, EmptyState, Panel, TextLink],
+  imports: [RouterLink, StatusLabel, Banner, Button, Control, EmptyState, Panel, SelectMenu, TextLink],
   templateUrl: './work-item-links.html',
 })
 export class WorkItemLinks {
@@ -35,7 +36,7 @@ export class WorkItemLinks {
   readonly links = input.required<readonly Link[]>();
   readonly changed = output<void>();
 
-  protected readonly linkTypes = LINK_TYPES;
+  protected readonly linkTypeOptions: readonly SelectMenuOption[] = LINK_TYPES.map((type) => ({ value: type, label: LINK_TYPE_LABELS[type] }));
   protected readonly linkTypeLabels = LINK_TYPE_LABELS;
 
   protected readonly adding = signal(false);
@@ -67,8 +68,8 @@ export class WorkItemLinks {
     this.errorMessage.set(null);
   }
 
-  protected onType(event: Event): void {
-    this.type.set((event.target as HTMLSelectElement).value as LinkType);
+  protected onType(value: string): void {
+    this.type.set(value as LinkType);
   }
 
   protected onQuery(event: Event): void {

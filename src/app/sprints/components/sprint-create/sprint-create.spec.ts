@@ -117,8 +117,7 @@ describe('SprintCreate', () => {
     expect(root().querySelector('form')).toBeNull();
     const button = root().querySelector<HTMLButtonElement>('button')!;
     expect(button.disabled).toBe(true);
-    expect(button.getAttribute('aria-describedby')).toBe('create-hint');
-    expect(root().querySelector('#create-hint')?.textContent).toContain('Solo los propietarios y administradores planifican los sprints.');
+    expect(root().textContent).toContain('Solo los propietarios y administradores planifican los sprints.');
   });
 
   it('is free of accessibility violations, for an admin and for a member', async () => {

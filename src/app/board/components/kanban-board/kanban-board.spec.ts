@@ -15,6 +15,7 @@ import { WorkItemSummary } from '../../../work-items/models/work-item.models';
 import { Workflow } from '../../../work-items/services/work-item.service';
 import { summary, workItem } from '../../../work-items/work-items.testing';
 import { FakeBoard, provideFakeBoard } from '../../board.testing';
+import { chooseOption, openSelect, selectTrigger } from '../../../testing/select-menu';
 import { ItemMovedEvent } from '../../models/board.models';
 import { BoardWebSocketService } from '../../services/board-websocket.service';
 import { BOARD_PAGE_SIZE, KanbanBoard, MOVE_TIMEOUT_MS } from './kanban-board';
@@ -103,15 +104,26 @@ describe('KanbanBoard', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    flushBurndown();
     http.verify();
   });
 
   const root = () => fixture.nativeElement as HTMLElement;
   const itemsRequest = () => vi.waitFor(() => http.expectOne((req) => req.url === ITEMS_URL));
-  const flushItems = async (items: WorkItemSummary[], total = items.length) =>
+  const flushItems = async (items: WorkItemSummary[], total = items.length) => {
     (await itemsRequest()).flush({ items, total, page: 0, size: BOARD_PAGE_SIZE });
+    flushBurndown();
+  };
+
+  /** The sprint summary asks for the burndown of a running sprint; nothing here is about it, but an open request is not stable. */
+  function flushBurndown(): void {
+    http
+      .match((req) => req.url.endsWith('/burndown'))
+      .forEach((req) => req.flush({ sprintCode: 's1', sprintName: 'Sprint 1', status: 'ACTIVE', startDate: '2026-01-15', endDate: '2026-01-28', days: 14, baselineHours: 0, points: [] }));
+  }
 
   async function settle(): Promise<void> {
+    flushBurndown();
     await fixture.whenStable();
     fixture.detectChanges();
   }
@@ -136,30 +148,26 @@ describe('KanbanBoard', () => {
   /** The keys of the cards in each column, by column name. */
   function columns(): Columns {
     return Object.fromEntries(
-      [...root().querySelectorAll('section')].map((section) => [
+      [...root().querySelectorAll('section[aria-labelledby]')].map((section) => [
         section.querySelector('h2 app-status-label')!.textContent!.trim(),
         [...section.querySelectorAll('article > div a')].map((link) => link.textContent!.trim()),
       ]),
     ) as Columns;
   }
 
-  const moveList = (key: string) => root().querySelector<HTMLSelectElement>(`select[aria-label="Mover ${key} a"]`)!;
-  const optionsOf = (select: HTMLSelectElement) => [...select.options].map((option) => option.textContent!.replace(/\s+/g, ' ').trim());
+  const moveList = (key: string) => selectTrigger(root(), `Mover ${key} a`);
+  const moveHost = (key: string) => moveList(key).closest('app-select-menu')!;
+  const optionsOf = (trigger: HTMLElement) => ['Mover a…', ...openSelect(trigger, () => fixture.detectChanges())];
   const button = (label: string) =>
     [...root().querySelectorAll<HTMLButtonElement>('button')].find((b) => b.getAttribute('aria-label') === label)!;
   const dropLists = () => fixture.debugElement.queryAll(By.directive(CdkDropList));
 
   function chooseMove(key: string, status: string): void {
-    const select = moveList(key);
-    select.value = status;
-    select.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseOption(moveList(key), status, () => fixture.detectChanges());
   }
 
   function choose(id: string, value: string): void {
-    const select = root().querySelector<HTMLSelectElement>(`#${id}`)!;
-    select.value = value;
-    select.dispatchEvent(new Event('change'));
+    chooseOption(root().querySelector<HTMLButtonElement>(`button#${id}`)!, value, () => fixture.detectChanges());
   }
 
   const echo = (status = STATUS.APPROVED, extra: Partial<ItemMovedEvent> = {}): ItemMovedEvent => ({
@@ -385,7 +393,7 @@ describe('KanbanBoard', () => {
     it('filters by priority', async () => {
       await open({ items: FILTERABLE });
 
-      choose('priority', 'HIGH');
+      choose('priority', 'Alta');
       await vi.waitFor(() => expect(router.parseUrl(router.url).queryParams['priority']).toBe('HIGH'));
       fixture.detectChanges();
 
@@ -395,15 +403,16 @@ describe('KanbanBoard', () => {
 
     it('filters by who works on it, offering everyone on the board, and those nobody works on', async () => {
       await open({ items: FILTERABLE });
-      const options = [...root().querySelectorAll<HTMLOptionElement>('#assignee option')].map((o) => o.textContent!.trim());
-      expect(options).toEqual(['Todos', 'Sin asignar', 'Ana Diaz', 'Luis Lopez']);
+      const options = openSelect(root().querySelector<HTMLButtonElement>('button#assignee')!, () => fixture.detectChanges());
+      expect(options).toEqual(['Todos los asignados', 'Sin asignar', 'Ana Diaz', 'Luis Lopez']);
+      document.querySelector<HTMLElement>('[role="option"]')!.click(); // closes the list again
 
-      choose('assignee', 'u-3');
+      choose('assignee', 'Ana Diaz');
       await vi.waitFor(() => expect(router.parseUrl(router.url).queryParams['assignee']).toBe('u-3'));
       fixture.detectChanges();
       expect(columns().New).toEqual(['WAR-1001']);
 
-      choose('assignee', 'none');
+      choose('assignee', 'Sin asignar');
       await vi.waitFor(() => expect(router.parseUrl(router.url).queryParams['assignee']).toBe('none'));
       fixture.detectChanges();
       expect(columns().New).toEqual(['WAR-1002']);
@@ -460,7 +469,7 @@ describe('KanbanBoard', () => {
     });
     const GRANDCHILD = summary({ workItemCode: 'sub-1', workItemNumber: 1011, displayKey: 'WAR-1011', type: 'TASK', title: 'Retry on timeout', parentCode: 'task-1' });
 
-    const toggle = () => root().querySelector<HTMLButtonElement>('button[aria-expanded]')!;
+    const toggle = () => root().querySelector<HTMLButtonElement>('button[aria-expanded]:not([aria-haspopup])')!;
 
     it('is collapsed until it is opened, and says how many children the card has', async () => {
       await open({ items: [summary({ childCount: 3 })] });
@@ -488,7 +497,7 @@ describe('KanbanBoard', () => {
       expect(tree.textContent).toContain('Luis Lopez (Desarrollo)');
       expect(toggle().getAttribute('aria-expanded')).toBe('true');
 
-      tree.querySelector<HTMLButtonElement>('button[aria-expanded]')!.click();
+      tree.querySelector<HTMLButtonElement>('button[aria-expanded]:not([aria-haspopup])')!.click();
       fixture.detectChanges();
       const grandchildren = await itemsRequest();
       expect(grandchildren.request.params.get('parentCode')).toBe('task-1');
@@ -572,8 +581,6 @@ describe('KanbanBoard', () => {
 
       const select = moveList('WAR-1000');
       expect(select.disabled).toBe(true);
-      expect(optionsOf(select)).toEqual(['Mover a…', 'Approved (requiere rol: Calidad (QA))']);
-      expect(select.options[1].disabled).toBe(true);
       expect(root().textContent).toContain('Solo alguien asignado como Calidad (QA) o un administrador puede mover esta tarjeta.');
       expect(moveList('WAR-1001').disabled).toBe(false); // an unrestricted move is theirs
     });
@@ -595,8 +602,7 @@ describe('KanbanBoard', () => {
       await open({ workflow: APPROVAL_NEEDS_QA, items: [assigned] });
 
       expect(moveList('WAR-1000').disabled).toBe(false);
-      expect(moveList('WAR-1000').options[1].disabled).toBe(false);
-      chooseMove('WAR-1000', 'APPROVED');
+      chooseMove('WAR-1000', 'Approved');
       expect(board.moveItem).toHaveBeenCalledWith('item-1', 'APPROVED');
     });
 
@@ -612,7 +618,8 @@ describe('KanbanBoard', () => {
       await open({ workflow: APPROVAL_NEEDS_QA });
 
       expect(moveList('WAR-1000').disabled).toBe(false);
-      expect(moveList('WAR-1000').options[1].disabled).toBe(false);
+      openSelect(moveList('WAR-1000'), () => fixture.detectChanges());
+      expect(document.querySelector('[role="option"]')!.getAttribute('aria-disabled')).toBeNull();
     });
   });
 
@@ -620,7 +627,7 @@ describe('KanbanBoard', () => {
     it('shows the move at once and keeps it when the server confirms it over the live connection', async () => {
       await open();
 
-      chooseMove('WAR-1000', 'APPROVED');
+      chooseMove('WAR-1000', 'Approved');
 
       expect(columns()).toEqual({ New: [], Approved: ['WAR-1000', 'WAR-1001'], Done: ['WAR-1002'] });
       expect(board.moveItem).toHaveBeenCalledWith('item-1', 'APPROVED');
@@ -631,15 +638,15 @@ describe('KanbanBoard', () => {
 
       expect(columns().Approved).toEqual(['WAR-1000', 'WAR-1001']);
       expect(root().querySelector('p[role="status"].sr-only')?.textContent).toContain('WAR-1000 movido a Approved.');
-      expect(moveList('WAR-1000').getAttribute('aria-busy')).toBe('false');
+      expect(moveHost('WAR-1000').getAttribute('aria-busy')).toBe('false');
     });
 
     it('does not let a card that is waiting for an answer move again', async () => {
       await open();
 
-      chooseMove('WAR-1000', 'APPROVED');
-      expect(moveList('WAR-1000').getAttribute('aria-busy')).toBe('true');
-      chooseMove('WAR-1000', 'DONE');
+      chooseMove('WAR-1000', 'Approved');
+      expect(moveHost('WAR-1000').getAttribute('aria-busy')).toBe('true');
+      chooseMove('WAR-1000', 'Done');
 
       expect(board.moveItem).toHaveBeenCalledTimes(1);
       expect(columns().Done).toEqual(['WAR-1002']);
@@ -647,7 +654,7 @@ describe('KanbanBoard', () => {
 
     it('puts the card back and says why when the server refuses the move', async () => {
       await open();
-      chooseMove('WAR-1000', 'APPROVED');
+      chooseMove('WAR-1000', 'Approved');
 
       board.errors$.next({ code: 'FORBIDDEN', message: 'Not allowed to move this item', workItemCode: 'item-1' });
       fixture.detectChanges();
@@ -669,7 +676,7 @@ describe('KanbanBoard', () => {
     it('reloads the board when a move is never answered', async () => {
       await open();
       vi.useFakeTimers();
-      chooseMove('WAR-1000', 'APPROVED');
+      chooseMove('WAR-1000', 'Approved');
 
       vi.advanceTimersByTime(MOVE_TIMEOUT_MS + 1);
 
@@ -681,7 +688,7 @@ describe('KanbanBoard', () => {
       await open();
       board.moveItem.mockReturnValue(false);
 
-      chooseMove('WAR-1000', 'APPROVED');
+      chooseMove('WAR-1000', 'Approved');
       expect(columns().Approved).toEqual(['WAR-1000', 'WAR-1001']);
 
       const request = http.expectOne(`${ITEMS_URL}/item-1/status`);
@@ -691,13 +698,13 @@ describe('KanbanBoard', () => {
       fixture.detectChanges();
 
       expect(columns().Approved).toEqual(['WAR-1000', 'WAR-1001']);
-      expect(moveList('WAR-1000').getAttribute('aria-busy')).toBe('false');
+      expect(moveHost('WAR-1000').getAttribute('aria-busy')).toBe('false');
     });
 
     it('puts the card back with the API error when the API refuses it', async () => {
       await open();
       board.moveItem.mockReturnValue(false);
-      chooseMove('WAR-1000', 'APPROVED');
+      chooseMove('WAR-1000', 'Approved');
 
       http
         .expectOne(`${ITEMS_URL}/item-1/status`)
@@ -740,7 +747,7 @@ describe('KanbanBoard', () => {
     it('keeps focus on the card after moving it from its own list, which moves to another column', async () => {
       await open();
 
-      chooseMove('WAR-1000', 'APPROVED');
+      chooseMove('WAR-1000', 'Approved');
       await settle();
 
       expect(document.activeElement).toBe(moveList('WAR-1000'));
@@ -749,7 +756,7 @@ describe('KanbanBoard', () => {
     it('puts a card that changes column at the end of its priority in the new one: its rank is gone', async () => {
       await open({ items: [...RANKED.slice(0, 2), summary({ workItemCode: 'x', workItemNumber: 1005, displayKey: 'WAR-1005', status: STATUS.APPROVED, boardRank: 1 })] });
 
-      chooseMove('WAR-1001', 'APPROVED');
+      chooseMove('WAR-1001', 'Approved');
 
       expect(columns().Approved).toEqual(['WAR-1005', 'WAR-1001']);
     });
@@ -923,18 +930,18 @@ describe('KanbanBoard', () => {
 
     it("lets the server's answer win over this user's own move when someone else moved the card first", async () => {
       await open();
-      chooseMove('WAR-1000', 'APPROVED');
+      chooseMove('WAR-1000', 'Approved');
 
       // Someone else's move of the same card is handled first and finds it in Done… their answer stands
       board.itemMoved$.next(echo(STATUS.DONE, { fromStatus: 'NEW', movedBy: { userCode: 'u-2', fullName: 'Luis Lopez' } }));
       fixture.detectChanges();
       expect(columns().Done).toEqual(['WAR-1000', 'WAR-1002']);
-      expect(moveList('WAR-1000').getAttribute('aria-busy')).toBe('true'); // still waiting for the answer to its own
+      expect(moveHost('WAR-1000').getAttribute('aria-busy')).toBe('true'); // still waiting for the answer to its own
 
       board.itemMoved$.next(echo(STATUS.APPROVED));
       fixture.detectChanges();
       expect(columns().Approved).toEqual(['WAR-1000', 'WAR-1001']);
-      expect(moveList('WAR-1000').getAttribute('aria-busy')).toBe('false');
+      expect(moveHost('WAR-1000').getAttribute('aria-busy')).toBe('false');
     });
 
     it('reloads once when an item it has not loaded moves: another type, or a new one', async () => {
@@ -953,7 +960,7 @@ describe('KanbanBoard', () => {
     it('follows the project and type into the URL', async () => {
       await open();
 
-      choose('type', 'TASK');
+      choose('type', 'Tarea');
       await vi.waitFor(() => expect(router.parseUrl(router.url).queryParams['type']).toBe('TASK'));
       fixture.detectChanges();
 

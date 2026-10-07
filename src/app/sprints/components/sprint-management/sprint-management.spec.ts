@@ -6,9 +6,10 @@ import { environment } from '../../../../environments/environment';
 import { FakeAuth, provideFakeAuth } from '../../../auth/auth.testing';
 import { AuthService } from '../../../auth/services/auth.service';
 import { Sprint, VelocityHistory } from '../../../projects/models/project.models';
-import { sprint } from '../../../projects/projects.testing';
+import { burndown, sprint } from '../../../projects/projects.testing';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { expectNoAxeViolations } from '../../../testing/axe';
+import { CHART_FACTORY } from '../burndown-chart/burndown-chart';
 import { HISTORY_SPRINTS, SprintManagement } from './sprint-management';
 
 const API = `${environment.apiUrl}/api`;
@@ -34,7 +35,9 @@ describe('SprintManagement', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SprintManagement],
-      providers: [provideRouter([{ path: 'sprints', component: SprintManagement }]), provideHttpClient(), provideHttpClientTesting(), provideFakeAuth()],
+      providers: [provideRouter([{ path: 'sprints', component: SprintManagement }]), provideHttpClient(), provideHttpClientTesting(), provideFakeAuth(),
+        { provide: CHART_FACTORY, useValue: () => ({ update: () => undefined, destroy: () => undefined }) },
+      ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
     router = TestBed.inject(Router);
@@ -48,15 +51,32 @@ describe('SprintManagement', () => {
   const wait = <T>(check: () => T) => vi.waitFor(check);
   const button = (label: string) =>
     [...root().querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent!.replace(/\s+/g, ' ').trim() === label)!;
-  const rows = () => [...root().querySelectorAll('tbody tr')].filter((row) => row.querySelector('td')?.classList.contains('font-medium'));
+  const rows = () => [...root().querySelector('app-data-table')!.querySelectorAll('tbody tr')];
+  const text = (element: Element) => element.textContent!.replace(/\s+/g, ' ').trim();
 
   async function settle(): Promise<void> {
     await fixture.whenStable();
     fixture.detectChanges();
   }
 
-  /** Opens the screen and answers what it asks for: projects, then the sprints, the velocity and the configuration of the first project. */
-  async function open(sprints: Sprint[] = [CLOSED, ACTIVE, PLANNED], url = '/sprints'): Promise<void> {
+  /** Answers the burndown request(s) the screen makes for the sprint it shows (ones superseded meanwhile are skipped). */
+  async function answerBurndown(pace: (number | null)[] = [36, 30]): Promise<void> {
+    const requests = await wait(() => {
+      const pending = http.match((req) => /\/sprints\/[^/]+\/burndown$/.test(req.url)).filter((r) => !r.cancelled);
+      expect(pending.length).toBeGreaterThan(0);
+      return pending;
+    });
+    for (const request of requests) {
+      const code = request.request.url.split('/').at(-2)!;
+      request.flush(burndown(14, 40, pace, { sprintCode: code, sprintName: `Sprint ${code.slice(1)}` }));
+    }
+    await settle();
+  }
+
+  const hasStarted = (sprints: Sprint[]) => sprints.some((s) => s.status !== 'PLANNED');
+
+  /** Opens the screen and answers what it asks for: projects, then the sprints, the burndown shown, the velocity and the configuration of the first project. */
+  async function open(sprints: Sprint[] = [CLOSED, ACTIVE, PLANNED], url = '/sprints', pace?: (number | null)[]): Promise<void> {
     await router.navigateByUrl(url);
     fixture = TestBed.createComponent(SprintManagement);
     fixture.detectChanges();
@@ -69,6 +89,10 @@ describe('SprintManagement', () => {
     expect(history.request.params.get('limit')).toBe(String(HISTORY_SPRINTS));
     history.flush({ ...HISTORY, projectCode: project });
     http.expectOne(`${API}/sprints/config`).flush({ defaultSprintDays: 14, sprintStartDay: 'MONDAY', velocityTrackingEnabled: true });
+    fixture.detectChanges();
+    if (hasStarted(sprints)) {
+      await answerBurndown(pace);
+    }
     await settle();
   }
 
@@ -76,49 +100,91 @@ describe('SprintManagement', () => {
   async function reloaded(sprints: Sprint[]): Promise<void> {
     (await wait(() => http.expectOne(`${API}/sprints?projectCode=p1`))).flush(sprints);
     (await wait(() => http.expectOne((req) => req.url === `${API}/sprints/velocity-history`))).flush(HISTORY);
+    fixture.detectChanges();
+    if (hasStarted(sprints)) {
+      await answerBurndown();
+    }
     await settle();
   }
 
   it('lists the sprints of the first project, newest first, with their state in words, dates and points', async () => {
     await open();
 
-    expect(rows().map((row) => [...row.querySelectorAll('td')].slice(0, 5).map((c) => c.textContent!.replace(/\s+/g, ' ').trim()))).toEqual([
-      ['Sprint 3', 'Planificado', 'Feb 2, 2026 – Feb 16, 2026 14 días', '0', '0'],
-      ['Sprint 2', 'Activo', 'Jan 19, 2026 – Feb 2, 2026 14 días', '30', '8'],
-      ['Sprint 1', 'Cerrado', 'Jan 5, 2026 – Jan 19, 2026 14 días', '30', '24'],
+    expect(rows().map((row) => [...row.querySelectorAll('td')].slice(0, 5).map(text))).toEqual([
+      ['Sprint 3', 'Planificado', '2–16 feb14 días', '0', '0'],
+      ['Sprint 2', 'Activo', '19 ene–2 feb14 días', '30', '8'],
+      ['Sprint 1', 'Cerrado', '5–19 ene14 días', '30', '24'],
     ]);
     expect(root().querySelector('h1')?.textContent).toBe('Sprints');
   });
 
-  it('links the burndown of every sprint that has begun, and only those', async () => {
-    await open();
+  describe('the burndown', () => {
+    it('shows the active sprint in place, with the chart', async () => {
+      await open();
 
-    const links = [...root().querySelectorAll('a')].filter((a) => a.textContent!.trim() === 'Ver burndown').map((a) => a.getAttribute('href'));
-    expect(links).toEqual(['/sprints/s2/burndown', '/sprints/s1/burndown']);
+      expect(root().textContent).toContain('Burndown · Sprint 2');
+      expect(root().querySelector('app-burndown-chart canvas')).not.toBeNull();
+      expect(button('Burndown Sprint 2').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('says how far above the ideal pace the sprint is, in hours', async () => {
+      await open([CLOSED, ACTIVE, PLANNED], '/sprints', [39, 38]);
+
+      expect(text(root())).toContain('h por encima del ritmo ideal');
+    });
+
+    it('says the sprint is on track when it is not above the ideal pace', async () => {
+      await open();
+
+      expect(root().textContent).toContain('Al día o por delante del ritmo ideal');
+    });
+
+    it('switches to another sprint that has begun when its button is pressed', async () => {
+      await open();
+
+      button('Burndown Sprint 1').click();
+      await answerBurndown();
+
+      expect(root().textContent).toContain('Burndown · Sprint 1');
+      expect(button('Burndown Sprint 1').getAttribute('aria-pressed')).toBe('true');
+    });
+
+    it('is disabled, with the reason, for a sprint that has not started', async () => {
+      await open();
+
+      const planned = button('Burndown Sprint 3');
+      expect(planned.disabled).toBe(true);
+      expect(planned.title).toBe('El burndown empieza cuando se inicia el sprint.');
+    });
+
+    it('is not shown while no sprint has begun', async () => {
+      await open([PLANNED]);
+
+      expect(root().textContent).not.toContain('Burndown ·');
+    });
   });
 
-  it('shows the velocity of the last closed sprints, the organization configuration, and the form for a new sprint', async () => {
+  it('shows the velocity of the last closed sprints and the organization configuration', async () => {
     await open();
 
-    expect(root().textContent).toContain('Velocidad promedio de los últimos 1 sprint cerrado: 24 puntos.');
+    expect(text(root())).toContain('Velocidad promedio de los últimos 1 sprint cerrado: 24 puntos.');
     expect(root().querySelector('#sprint-days')).not.toBeNull();
+  });
+
+  it('opens the form for a new sprint from the header button', async () => {
+    await open();
+    expect(root().querySelector('#sprint-name')).toBeNull();
+
+    button('Nuevo sprint').click();
+    fixture.detectChanges();
+
     expect(root().querySelector('#sprint-name')).not.toBeNull();
   });
 
-  it('follows the project in the URL and changes it from the list', async () => {
+  it('follows the project the shell has selected', async () => {
     await open([], '/sprints?project=p2');
+
     expect(root().textContent).toContain('Este proyecto aún no tiene sprints.');
-
-    const select = root().querySelector<HTMLSelectElement>('#project')!;
-    select.value = 'p1';
-    select.dispatchEvent(new Event('change'));
-    await wait(() => expect(router.parseUrl(router.url).queryParams['project']).toBe('p1'));
-    fixture.detectChanges();
-
-    (await wait(() => http.expectOne(`${API}/sprints?projectCode=p1`))).flush([CLOSED]);
-    (await wait(() => http.expectOne((req) => req.url === `${API}/sprints/velocity-history`))).flush(HISTORY);
-    await settle();
-    expect(rows()).toHaveLength(1);
   });
 
   describe('starting a sprint', () => {
@@ -214,7 +280,8 @@ describe('SprintManagement', () => {
     it('can still read the burndown, the velocity and the configuration', async () => {
       await open();
 
-      expect(root().querySelectorAll('a[href$="/burndown"]')).toHaveLength(2);
+      expect(button('Burndown Sprint 1').disabled).toBe(false);
+      expect(root().querySelector('app-burndown-chart')).not.toBeNull();
       expect(root().textContent).toContain('Velocidad promedio');
       expect(root().textContent).toContain('Solo los propietarios y administradores cambian esta configuración.');
     });

@@ -12,6 +12,7 @@ import { NotificationService } from '../../../shared/notifications/notification.
 import { APPROVED_STATUS, NEW_STATUS, summary, workItem } from '../../work-items.testing';
 import { WorkItem } from '../../models/work-item.models';
 import { WorkItemDetail } from './work-item-detail';
+import { chooseOption, closeSelect, openOptions, openSelect, selectedText } from '../../../testing/select-menu';
 import { expectNoAxeViolations } from '../../../testing/axe';
 
 const API = environment.apiUrl;
@@ -83,10 +84,7 @@ describe('WorkItemDetail', () => {
   }
 
   async function choose(id: string, value: string): Promise<void> {
-    const select = control<HTMLSelectElement>(id);
-    select.value = value;
-    select.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseOption(control(id), value, () => fixture.detectChanges());
   }
 
   it('shows the item with its status and only the statuses it can move to', async () => {
@@ -98,8 +96,9 @@ describe('WorkItemDetail', () => {
     expect(root().textContent).toContain('New');
     expect(root().textContent).toContain('Mia Member (Desarrollo)');
     expect(root().textContent).toContain('Line one');
-    const options = [...control<HTMLSelectElement>('change-status').options].map((o) => o.textContent?.trim());
-    expect(options).toEqual(['Elige un estado', 'Approved']);
+    const options = openSelect(control('change-status'), () => fixture.detectChanges());
+    closeSelect(control('change-status'), () => fixture.detectChanges());
+    expect(options).toEqual(['Approved']);
   });
 
   it("shows the children's rolled-up effort next to the item's own, only when there is one", async () => {
@@ -113,13 +112,13 @@ describe('WorkItemDetail', () => {
   it('offers no status when the workflow has no move from here', async () => {
     await open(workItem({ allowedStatuses: [] }));
 
-    expect(root().querySelector('select#change-status')).toBeNull();
+    expect(root().querySelector('button#change-status')).toBeNull();
     expect(root().textContent).toContain('Sin más estados');
   });
 
   it('changes the status and shows the backend answer', async () => {
     await open();
-    await choose('change-status', 'APPROVED');
+    await choose('change-status', 'Approved');
 
     const request = http.expectOne(`${ITEM_URL}/status`);
     expect(request.request.body).toEqual({ status: 'APPROVED' });
@@ -127,17 +126,15 @@ describe('WorkItemDetail', () => {
     await settle();
 
     expect(root().textContent).toContain('Approved');
-    expect([...control<HTMLSelectElement>('change-status').options].map((o) => o.textContent?.trim())).toEqual([
-      'Elige un estado',
-      'New',
-    ]);
+    expect(openSelect(control('change-status'), () => fixture.detectChanges())).toEqual(['New']);
+    closeSelect(control('change-status'), () => fixture.detectChanges());
     // the change did not reload the sprints or the parent candidates
     http.expectNone(`${API}/api/sprints?projectCode=project-1`);
   });
 
   it('explains a refused transition and reloads the item', async () => {
     await open();
-    await choose('change-status', 'APPROVED');
+    await choose('change-status', 'Approved');
 
     http.expectOne(`${ITEM_URL}/status`).flush(
       { code: 'STATUS_CHANGED_CONCURRENTLY', message: 'Someone else changed the status. Reload and try again.' },
@@ -195,17 +192,18 @@ describe('WorkItemDetail', () => {
 
   it('moves the item to a sprint and back to the backlog, offering only open sprints', async () => {
     await open();
-    const options = [...control<HTMLSelectElement>('sprint').options].map((o) => o.textContent?.trim());
+    const options = openSelect(control('sprint'), () => fixture.detectChanges());
+    closeSelect(control('sprint'), () => fixture.detectChanges());
     expect(options).toEqual(['Backlog (sin sprint)', 'Sprint 1']);
 
-    await choose('sprint', 's1');
+    await choose('sprint', 'Sprint 1');
     const move = http.expectOne(`${ITEM_URL}/sprint`);
     expect(move.request.method).toBe('PUT');
     expect(move.request.body).toEqual({ sprintCode: 's1' });
     move.flush(workItem({ sprintCode: 's1' }));
     await settle();
 
-    await choose('sprint', '');
+    await choose('sprint', 'Backlog');
     const back = http.expectOne(`${ITEM_URL}/sprint`);
     expect(back.request.method).toBe('DELETE');
     back.flush(workItem());
@@ -214,12 +212,10 @@ describe('WorkItemDetail', () => {
 
   it('sets a parent and surfaces the backend warning for a non-standard one', async () => {
     await open(workItem({ type: 'TASK' }));
-    expect([...control<HTMLSelectElement>('parent').options].map((o) => o.textContent?.trim().replace(/\s+/g, ' '))).toEqual([
-      'Sin elemento superior',
-      'WAR-999 · Checkout (Épica)',
-    ]);
+    expect(openSelect(control('parent'), () => fixture.detectChanges())).toEqual(['Sin elemento superior', 'WAR-999 · Checkout Épica']);
 
-    await choose('parent', 'epic-1');
+    openOptions()[1].click(); // the list is already open from the check above
+    fixture.detectChanges();
     const request = http.expectOne(`${ITEM_URL}/parent`);
     expect(request.request.method).toBe('PUT');
     expect(request.request.body).toEqual({ parentCode: 'epic-1' });
@@ -232,19 +228,20 @@ describe('WorkItemDetail', () => {
     await settle();
 
     expect(messages()).toEqual([['warning', 'EPIC is not a recommended parent for TASK.']]);
-    expect(control<HTMLSelectElement>('parent').value).toBe('epic-1');
+    expect(selectedText(control('parent'))).toContain('WAR-999');
   });
 
   it('puts the select back when a move is refused', async () => {
     await open();
-    await choose('sprint', 's1');
+    await choose('sprint', 'Sprint 1');
 
     http.expectOne(`${ITEM_URL}/sprint`).flush(
       { code: 'PROJECT_SERVICE_UNAVAILABLE', message: 'x' },
       { status: 503, statusText: 'Service Unavailable' },
     );
 
-    expect(control<HTMLSelectElement>('sprint').value).toBe('');
+    fixture.detectChanges();
+    expect(selectedText(control('sprint'))).toBe('Backlog (sin sprint)');
     expect(messages()[0][1]).toContain('no está disponible');
     (await vi.waitFor(() => http.expectOne(ITEM_URL))).flush(workItem());
     await settle();
@@ -443,7 +440,7 @@ describe('WorkItemDetail', () => {
       await settle();
       expect(root().querySelectorAll('#history-content li')).toHaveLength(1);
 
-      await choose('change-status', 'APPROVED');
+      await choose('change-status', 'Approved');
       http.expectOne(`${ITEM_URL}/status`).flush(workItem({ status: APPROVED_STATUS, allowedStatuses: [NEW_STATUS] }));
       const again = await vi.waitFor(() => http.expectOne((r) => r.url === HISTORY_URL));
       again.flush({

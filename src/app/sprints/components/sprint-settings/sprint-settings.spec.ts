@@ -6,6 +6,7 @@ import { FakeAuth, provideFakeAuth } from '../../../auth/auth.testing';
 import { AuthService } from '../../../auth/services/auth.service';
 import { SprintConfig } from '../../../projects/models/project.models';
 import { NotificationService } from '../../../shared/notifications/notification.service';
+import { chooseOption, openSelect, selectedText } from '../../../testing/select-menu';
 import { expectNoAxeViolations } from '../../../testing/axe';
 import { SprintSettings } from './sprint-settings';
 
@@ -48,8 +49,8 @@ describe('SprintSettings', () => {
     await open({ defaultSprintDays: 10, sprintStartDay: 'WEDNESDAY', velocityTrackingEnabled: false });
 
     expect(control<HTMLInputElement>('sprint-days').value).toBe('10');
-    expect(control<HTMLSelectElement>('sprint-start-day').value).toBe('WEDNESDAY');
-    expect([...control<HTMLSelectElement>('sprint-start-day').options].map((o) => o.textContent!.trim())).toEqual([
+    expect(selectedText(control('sprint-start-day'))).toBe('Miércoles');
+    expect(openSelect(control('sprint-start-day'), () => fixture.detectChanges())).toEqual([
       'Lunes',
       'Martes',
       'Miércoles',
@@ -66,10 +67,7 @@ describe('SprintSettings', () => {
     const days = control<HTMLInputElement>('sprint-days');
     days.value = '7';
     days.dispatchEvent(new Event('input'));
-    const day = control<HTMLSelectElement>('sprint-start-day');
-    day.value = 'TUESDAY';
-    day.dispatchEvent(new Event('input'));
-    day.dispatchEvent(new Event('change'));
+    chooseOption(control('sprint-start-day'), 'Martes', () => fixture.detectChanges());
     const tracking = root().querySelector<HTMLInputElement>('input[type="checkbox"]')!;
     tracking.click(); // a real click toggles the box and raises the events a person's click does
 

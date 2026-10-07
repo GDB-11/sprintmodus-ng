@@ -4,6 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, EMPTY, map, Subject, switchMap } from 'rxjs';
 import { apiErrorMessage } from '../../../shared/http-errors';
+import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
 import { Page } from '../../../shared/ui/page/page';
 import { describeNotification } from '../../models/notification-description';
 import { InboxNotification } from '../../models/notification.models';
@@ -19,7 +20,7 @@ const SECONDARY_BUTTON_CLASSES =
  */
 @Component({
   selector: 'app-notification-list',
-  imports: [DatePipe, Page, RouterLink],
+  imports: [DatePipe, Page, RouterLink, Checkbox],
   templateUrl: './notification-list.html',
 })
 export class NotificationList {

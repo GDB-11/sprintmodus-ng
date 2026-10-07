@@ -5,25 +5,14 @@ import {
   RouterStateSnapshot,
   UrlTree,
 } from '@angular/router';
-import { OrganizationRole } from '../models/auth.models';
 import { AuthService } from '../services/auth.service';
-import { adminGuard, authGuard, guestGuard } from './auth.guard';
+import { authGuard, guestGuard } from './auth.guard';
 
 function run(guard: typeof authGuard, authenticated: boolean, url = '/dashboard') {
   TestBed.configureTestingModule({ providers: [provideRouter([])] });
   vi.spyOn(TestBed.inject(AuthService), 'isAuthenticated').mockReturnValue(authenticated);
   return TestBed.runInInjectionContext(() =>
     guard({} as ActivatedRouteSnapshot, { url } as RouterStateSnapshot),
-  );
-}
-
-function runAdmin(role: OrganizationRole | undefined) {
-  TestBed.configureTestingModule({ providers: [provideRouter([])] });
-  vi.spyOn(TestBed.inject(AuthService), 'getCurrentUser').mockReturnValue(
-    role ? { id: 'u1', email: 'a@b.com', fullName: 'A', role } : null,
-  );
-  return TestBed.runInInjectionContext(() =>
-    adminGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot),
   );
 }
 
@@ -45,17 +34,5 @@ describe('guards', () => {
 
   it('guestGuard redirects authenticated users to the dashboard', () => {
     expect((run(guestGuard, true) as UrlTree).toString()).toBe('/dashboard');
-  });
-
-  it.each(['OWNER', 'ADMIN'] as const)('adminGuard lets %s through', (role) => {
-    expect(runAdmin(role)).toBe(true);
-  });
-
-  it('adminGuard redirects members to /work-items', () => {
-    expect((runAdmin('MEMBER') as UrlTree).toString()).toBe('/work-items');
-  });
-
-  it('adminGuard redirects a signed-out caller to /work-items', () => {
-    expect((runAdmin(undefined) as UrlTree).toString()).toBe('/work-items');
   });
 });

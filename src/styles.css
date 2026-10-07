@@ -194,6 +194,7 @@
    template picks) -- primary/secondary accent stops, text ink, glass/control surfaces and wallpaper stops. Every
    other token above is theme-invariant, exactly as before the redesign. */
 :root.dark {
+  color-scheme: dark; /* native scrollbars and form controls follow the theme */
   --color-text: oklch(0.95 0.006 240);
   --color-text-muted: oklch(0.74 0.012 240);
   --color-text-faint: oklch(0.58 0.014 240);

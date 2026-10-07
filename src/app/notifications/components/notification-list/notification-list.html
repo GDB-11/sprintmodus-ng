@@ -1,9 +1,6 @@
 <app-page heading="Notificaciones" backLink="/dashboard" backLabel="Volver al panel">
   <div class="flex flex-wrap items-center gap-4">
-    <label class="flex items-center gap-2 text-sm font-medium">
-      <input type="checkbox" [checked]="unreadOnly()" (change)="toggleUnreadOnly()" />
-      Solo las que no he leído
-    </label>
+    <app-checkbox [checked]="unreadOnly()" (checkedChange)="toggleUnreadOnly()">Solo las que no he leído</app-checkbox>
     <button type="button" [class]="buttonClasses" [disabled]="working() || !hasUnread()" (click)="markAllRead()">
       Marcar todas como leídas
     </button>

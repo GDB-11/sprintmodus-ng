@@ -37,7 +37,7 @@ describe('VelocityHistory', () => {
   it('draws bars that repeat the numbers, scaled to the largest, and hides them from assistive technology', () => {
     const root = render();
 
-    const bars = [...root.querySelectorAll<HTMLElement>('tbody td[aria-hidden="true"] div div')].map((bar) => bar.style.width);
+    const bars = [...root.querySelectorAll<HTMLElement>('.rounded-t-md')].map((bar) => bar.style.height);
     expect(bars).toEqual(['97%', '65%', '97%', '100%']);
   });
 
@@ -46,6 +46,7 @@ describe('VelocityHistory', () => {
 
     expect(root.textContent).toContain('Aún no hay sprints cerrados');
     expect(root.querySelector('table')).toBeNull();
+    expect(root.querySelector('.rounded-t-md')).toBeNull();
   });
 
   it('is free of accessibility violations', async () => {

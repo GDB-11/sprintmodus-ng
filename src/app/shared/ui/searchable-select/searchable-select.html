@@ -1,0 +1,94 @@
+<button
+  #trigger
+  #origin="cdkOverlayOrigin"
+  cdkOverlayOrigin
+  type="button"
+  [id]="inputId() ?? null"
+  [disabled]="disabled()"
+  aria-haspopup="listbox"
+  [attr.aria-expanded]="open()"
+  [attr.aria-invalid]="invalid() ? true : null"
+  [attr.aria-describedby]="describedBy()"
+  [attr.aria-label]="accessibleName()"
+  (click)="toggle()"
+  (keydown)="onTriggerKeydown($event)"
+  class="group flex w-full min-w-0 items-center gap-2 rounded-[10px] border border-control-border bg-control-track px-3 py-1.5 text-left text-sm text-text transition-colors duration-150 hover:bg-glass-bg disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+>
+  @if (selected(); as option) {
+    <span class="min-w-0 truncate font-semibold">{{ option.label }}</span>
+    @if (option.hint) {
+      <span class="shrink-0 rounded-md bg-control-track px-1.5 py-0.5 text-xs font-semibold tracking-wide text-text-muted">{{ option.hint }}</span>
+    }
+  } @else {
+    <span class="min-w-0 truncate text-text-muted">{{ placeholder() }}</span>
+  }
+  <app-icon
+    name="chevron-down"
+    [class]="'ml-auto inline-flex shrink-0 text-text-muted transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] ' + (open() ? 'rotate-180' : '')"
+  />
+</button>
+
+<ng-template
+  cdkConnectedOverlay
+  [cdkConnectedOverlayOrigin]="origin"
+  [cdkConnectedOverlayOpen]="open()"
+  [cdkConnectedOverlayMinWidth]="minWidth()"
+  [cdkConnectedOverlayOffsetY]="6"
+  [cdkConnectedOverlayHasBackdrop]="true"
+  cdkConnectedOverlayBackdropClass="cdk-overlay-transparent-backdrop"
+  (overlayOutsideClick)="close()"
+  (attach)="onAttached()"
+  (detach)="close()"
+>
+  <div class="glass w-full max-w-[calc(100vw-2rem)] origin-top animate-[select-pop_180ms_cubic-bezier(0.22,1,0.36,1)] p-1.5 text-sm">
+    <div class="glass-highlight"></div>
+    <div class="relative flex flex-col gap-1.5">
+      <input
+        #search
+        type="text"
+        role="combobox"
+        autocomplete="off"
+        spellcheck="false"
+        aria-expanded="true"
+        [attr.aria-label]="'Buscar en ' + label()"
+        [attr.aria-controls]="uid + '-listbox'"
+        [attr.aria-activedescendant]="activeId()"
+        [placeholder]="searchPlaceholder()"
+        [value]="query()"
+        (input)="onQuery($event)"
+        (keydown)="onKeydown($event)"
+        class="w-full rounded-lg border border-control-border bg-control-track px-3 py-2 text-text placeholder:text-text-faint focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+      />
+      <p role="status" class="sr-only">{{ resultsText() }}</p>
+      <ul [id]="uid + '-listbox'" role="listbox" [attr.aria-label]="label()" class="flex max-h-64 flex-col gap-0.5 overflow-auto">
+        @for (option of visible(); track option.value; let index = $index) {
+          <li
+            [id]="optionId(index)"
+            role="option"
+            [attr.aria-selected]="option.value === value()"
+            [attr.aria-disabled]="option.disabled ? true : null"
+            (mousedown)="$event.preventDefault()"
+            (click)="choose(index)"
+            (mouseenter)="option.disabled || activeIndex.set(index)"
+            [class]="
+              'flex items-center gap-3 rounded-lg px-3 py-2 transition-colors duration-100 ' +
+              (option.disabled ? 'cursor-not-allowed text-text-muted ' : 'cursor-pointer text-text ') +
+              (index === activeIndex() ? 'bg-control-track ' : '') +
+              (option.value === value() ? 'font-semibold' : '')
+            "
+          >
+            <span class="min-w-0 flex-1 truncate">{{ option.label }}</span>
+            @if (option.hint) {
+              <span class="shrink-0 text-xs font-semibold tracking-wide text-text-muted">{{ option.hint }}</span>
+            }
+            @if (option.value === value()) {
+              <app-icon name="check" class="shrink-0 text-primary-500" />
+            }
+          </li>
+        } @empty {
+          <li role="presentation" class="px-3 py-2 text-text-muted">{{ emptyText() }}</li>
+        }
+      </ul>
+    </div>
+  </div>
+</ng-template>

@@ -1,6 +1,10 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
-import { VelocityHistory as History } from '../../../projects/models/project.models';
+import { VelocityHistory as History, Sprint } from '../../../projects/models/project.models';
+import { BarChart, BarChartGroup } from '../../../shared/ui/bar-chart/bar-chart';
+import { DataTable, DataTableCell, DataTableColumn } from '../../../shared/ui/data-table/data-table';
+import { Disclosure } from '../../../shared/ui/disclosure/disclosure';
+import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 
 /**
  * What the last closed sprints completed, oldest first, and their average: what a team can plan the next sprint with. The
@@ -8,16 +12,26 @@ import { VelocityHistory as History } from '../../../projects/models/project.mod
  */
 @Component({
   selector: 'app-velocity-history',
-  imports: [DatePipe, DecimalPipe],
+  imports: [DatePipe, DecimalPipe, BarChart, DataTable, DataTableCell, Disclosure, EmptyState],
   templateUrl: './velocity-history.html',
 })
 export class VelocityHistory {
   readonly history = input.required<History>();
 
-  /** The longest bar is the largest number shown, planned or completed. */
-  private readonly scale = computed(() => Math.max(1, ...this.history().sprints.flatMap((sprint) => [sprint.plannedVelocity, sprint.velocity])));
+  protected readonly columns: readonly DataTableColumn<Sprint>[] = [
+    { header: 'Sprint' },
+    { header: 'Cerró el' },
+    { header: 'Planificados', numeric: true },
+    { header: 'Completados', numeric: true },
+  ];
 
-  protected percent(points: number): number {
-    return Math.round((points / this.scale()) * 100);
-  }
+  /** Planned first, completed second, labelled by the number in the sprint's name ("Sprint 14" → "S14"). */
+  protected readonly groups = computed<BarChartGroup[]>(() =>
+    this.history().sprints.map((sprint) => ({
+      label: sprint.name.replace(/^Sprint\s+/i, 'S'),
+      values: [sprint.plannedVelocity, sprint.velocity],
+    })),
+  );
+
+  protected readonly trackBySprint = (sprint: Sprint) => sprint.sprintCode;
 }

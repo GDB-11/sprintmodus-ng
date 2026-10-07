@@ -1,3 +1,5 @@
+import type { ChipTone } from '../../shared/ui/chip/chip';
+
 export interface Project {
   projectCode: string;
   name: string;
@@ -12,6 +14,13 @@ export const SPRINT_STATUS_LABELS: Record<SprintStatus, string> = {
   PLANNED: 'Planificado',
   ACTIVE: 'Activo',
   CLOSED: 'Cerrado',
+};
+
+/** How a sprint's state looks as a chip (the word is always shown too). */
+export const SPRINT_STATUS_TONES: Record<SprintStatus, ChipTone> = {
+  PLANNED: 'info',
+  ACTIVE: 'success',
+  CLOSED: 'neutral',
 };
 
 export interface Sprint {

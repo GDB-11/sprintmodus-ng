@@ -1,17 +1,24 @@
-import { Component, inject, linkedSignal, signal } from '@angular/core';
+import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { valueOf } from '../../../shared/resource-value';
-import { Page } from '../../../shared/ui/page/page';
+import { Permissions } from '../../../auth/services/permissions.service';
+import { Button } from '../../../shared/ui/button/button';
+import { Chip } from '../../../shared/ui/chip/chip';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
+import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
+import { DataTable, DataTableCell, DataTableColumn } from '../../../shared/ui/data-table/data-table';
+import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
+import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { NotAllowed } from '../../../shared/ui/not-allowed/not-allowed';
+import { PageHeader } from '../../../shared/ui/page-header/page-header';
+import { Panel } from '../../../shared/ui/panel/panel';
+import { TextLink } from '../../../shared/ui/text-link/text-link';
 import { ITEM_TYPE_LABELS, ITEM_TYPES, ItemType } from '../../models/work-item.models';
 import { Workflow, WorkItemService } from '../../services/work-item.service';
-
-const SELECT_CLASSES =
-  'rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-2 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400';
-const CELL_INPUT_CLASSES =
-  'rounded-md border border-neutral-700 bg-light-surface-tertiary px-2 py-1 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400';
 
 interface StatusRow {
   code: string;
@@ -33,17 +40,31 @@ interface TransitionRow {
  */
 @Component({
   selector: 'app-workflow-admin',
-  imports: [Page],
+  imports: [
+    PageHeader,
+    Panel,
+    Button,
+    Chip,
+    Banner,
+    SelectMenu,
+    Checkbox,
+    DataTable,
+    DataTableCell,
+    EmptyState,
+    ErrorState,
+    NotAllowed,
+    TextLink,
+  ],
   templateUrl: './workflow-admin.html',
+  host: { class: 'mx-auto flex max-w-5xl flex-col gap-4' },
 })
 export class WorkflowAdmin {
   private readonly workItems = inject(WorkItemService);
   private readonly notifications = inject(NotificationService);
 
-  protected readonly selectClasses = SELECT_CLASSES;
-  protected readonly cellInputClasses = CELL_INPUT_CLASSES;
-  protected readonly itemTypes = ITEM_TYPES;
+  protected readonly permissions = inject(Permissions);
   protected readonly typeLabels = ITEM_TYPE_LABELS;
+  protected readonly typeOptions: readonly SelectMenuOption[] = ITEM_TYPES.map((type) => ({ value: type, label: ITEM_TYPE_LABELS[type] }));
 
   protected readonly itemType = signal<ItemType>('EPIC');
   protected readonly errorMessage = signal<string | null>(null);
@@ -62,8 +83,56 @@ export class WorkflowAdmin {
     (valueOf(this.workflow)?.transitions ?? []).map((transition) => ({ ...transition })),
   );
 
-  protected selectType(event: Event): void {
-    this.itemType.set((event.target as HTMLSelectElement).value as ItemType);
+  protected readonly statusColumns: readonly DataTableColumn<StatusRow>[] = [
+    { header: 'Código' },
+    { header: 'Nombre para mostrar' },
+    { header: 'Orden' },
+    { header: 'Final' },
+    { header: 'Acciones' },
+  ];
+  protected readonly transitionColumns: readonly DataTableColumn<TransitionRow>[] = [
+    { header: 'De' },
+    { header: 'A' },
+    { header: 'Permite retroceder' },
+    { header: 'Acciones' },
+  ];
+  protected readonly previewStatusColumns: readonly DataTableColumn<StatusRow>[] = [
+    { header: 'Nombre' },
+    { header: 'Orden', numeric: true },
+    { header: 'Terminal' },
+  ];
+
+  /** Rows are tracked by position, so typing in one does not rebuild it (and lose the caret). */
+  protected readonly trackStatus = (row: StatusRow) => this.statuses().indexOf(row);
+  protected readonly trackTransition = (row: TransitionRow) => this.transitions().indexOf(row);
+  protected readonly trackPreviewStatus = (row: StatusRow) => row.code;
+
+  protected readonly statusOptions = computed<SelectMenuOption[]>(() => this.statuses().map((status) => ({ value: status.code, label: status.code })));
+
+  /** The read-only preview a member sees: statuses in order, transitions named by display name. */
+  protected readonly orderedStatuses = computed(() => [...this.statuses()].sort((a, b) => a.order - b.order));
+  protected readonly previewTransitions = computed(() =>
+    this.transitions().map((transition) => ({
+      from: this.statusName(transition.from),
+      to: this.statusName(transition.to),
+      allowedBackward: transition.allowedBackward,
+    })),
+  );
+
+  protected indexOfStatus(row: StatusRow): number {
+    return this.statuses().indexOf(row);
+  }
+
+  protected indexOfTransition(row: TransitionRow): number {
+    return this.transitions().indexOf(row);
+  }
+
+  private statusName(code: string): string {
+    return this.statuses().find((status) => status.code === code)?.displayName || code;
+  }
+
+  protected selectType(value: string): void {
+    this.itemType.set(value as ItemType);
     this.errorMessage.set(null);
   }
 
@@ -91,8 +160,8 @@ export class WorkflowAdmin {
     this.updateStatus(index, { order: Number.isFinite(value) && value > 0 ? value : 1 });
   }
 
-  protected onStatusTerminal(index: number, event: Event): void {
-    this.updateStatus(index, { isTerminal: (event.target as HTMLInputElement).checked });
+  protected onStatusTerminal(index: number, checked: boolean): void {
+    this.updateStatus(index, { isTerminal: checked });
   }
 
   private updateStatus(index: number, patch: Partial<StatusRow>): void {
@@ -108,16 +177,16 @@ export class WorkflowAdmin {
     this.transitions.update((rows) => rows.filter((_, i) => i !== index));
   }
 
-  protected onTransitionFrom(index: number, event: Event): void {
-    this.updateTransition(index, { from: (event.target as HTMLSelectElement).value });
+  protected onTransitionFrom(index: number, value: string): void {
+    this.updateTransition(index, { from: value });
   }
 
-  protected onTransitionTo(index: number, event: Event): void {
-    this.updateTransition(index, { to: (event.target as HTMLSelectElement).value });
+  protected onTransitionTo(index: number, value: string): void {
+    this.updateTransition(index, { to: value });
   }
 
-  protected onTransitionBackward(index: number, event: Event): void {
-    this.updateTransition(index, { allowedBackward: (event.target as HTMLInputElement).checked });
+  protected onTransitionBackward(index: number, checked: boolean): void {
+    this.updateTransition(index, { allowedBackward: checked });
   }
 
   private updateTransition(index: number, patch: Partial<TransitionRow>): void {

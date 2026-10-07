@@ -6,6 +6,7 @@ import { environment } from '../../../../environments/environment';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { summary, workItem } from '../../work-items.testing';
 import { WorkItemCreate } from './work-item-create';
+import { chooseOption, openSelect, selectedText } from '../../../testing/select-menu';
 import { expectNoAxeViolations } from '../../../testing/axe';
 
 const API = environment.apiUrl;
@@ -69,19 +70,22 @@ describe('WorkItemCreate', () => {
   it('preselects the project from the URL and offers every type', async () => {
     await open();
 
-    expect(control<HTMLSelectElement>('projectCode').value).toBe('p2');
-    const types = [...control<HTMLSelectElement>('type').options].map((option) => option.textContent?.trim());
-    expect(types).toEqual(['Épica', 'Característica', 'Elemento del backlog', 'Error', 'Tarea']);
-    const parents = [...control<HTMLSelectElement>('parentCode').options].map((option) => option.textContent?.trim());
-    expect(parents).toEqual(['Sin elemento superior', 'MOB-1000 · Checkout (Épica)']);
+    expect(selectedText(control('projectCode'))).toContain('Mobile');
+    const detect = () => fixture.detectChanges();
+    expect(openSelect(control('type'), detect)).toEqual(['Épica', 'Característica', 'Elemento del backlog', 'Error', 'Tarea']);
+    document.querySelector<HTMLElement>('[role="option"]')!.click();
+    detect();
+    expect(openSelect(control('parentCode'), detect)).toEqual(['Sin elemento superior', 'MOB-1000 · Checkout (Épica)']);
+    document.querySelector<HTMLElement>('[role="option"]')!.click();
+    detect();
   });
 
   it('creates the item and opens it', async () => {
     await open();
-    await fill('type', 'TASK');
+    chooseOption(control('type'), 'Tarea', () => fixture.detectChanges());
     await fill('title', '  Call the gateway ');
     await fill('effortPoints', '3');
-    await fill('parentCode', 'epic-1');
+    chooseOption(control('parentCode'), 'MOB-1000', () => fixture.detectChanges());
     submit();
 
     const request = await vi.waitFor(() => http.expectOne(`${API}/api/work-items`));

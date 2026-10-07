@@ -3,7 +3,10 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { environment } from '../../../../environments/environment';
+import { FakeAuth, provideFakeAuth } from '../../../auth/auth.testing';
+import { AuthService } from '../../../auth/services/auth.service';
 import { NotificationService } from '../../../shared/notifications/notification.service';
+import { chooseOption, selectedText, selectTrigger } from '../../../testing/select-menu';
 import { expectNoAxeViolations } from '../../../testing/axe';
 import { WorkflowAdmin } from './workflow-admin';
 
@@ -25,7 +28,7 @@ describe('WorkflowAdmin', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [WorkflowAdmin],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting(), provideFakeAuth()],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
   });
@@ -43,10 +46,8 @@ describe('WorkflowAdmin', () => {
     root().querySelector<HTMLInputElement>(`input[aria-label="Nombre para mostrar, fila ${row}"]`)!;
   const terminalInput = (row: number) =>
     root().querySelector<HTMLInputElement>(`input[aria-label="Final, fila ${row}"]`)!;
-  const fromSelect = (row: number) =>
-    root().querySelector<HTMLSelectElement>(`select[aria-label="De, fila ${row}"]`)!;
-  const toSelect = (row: number) =>
-    root().querySelector<HTMLSelectElement>(`select[aria-label="A, fila ${row}"]`)!;
+  const fromSelect = (row: number) => selectTrigger(root(), `De, fila ${row}`);
+  const toSelect = (row: number) => selectTrigger(root(), `A, fila ${row}`);
   const backwardInput = (row: number) =>
     root().querySelector<HTMLInputElement>(`input[aria-label="Permite retroceder, fila ${row}"]`)!;
 
@@ -65,18 +66,15 @@ describe('WorkflowAdmin', () => {
     expect(nameInput(1).value).toBe('Backlog');
     expect(terminalInput(1).checked).toBe(false);
     expect(terminalInput(2).checked).toBe(true);
-    expect(fromSelect(1).value).toBe('BACKLOG');
-    expect(toSelect(1).value).toBe('CLOSED');
+    expect(selectedText(fromSelect(1))).toBe('BACKLOG');
+    expect(selectedText(toSelect(1))).toBe('CLOSED');
     expect(backwardInput(1).checked).toBe(true);
   });
 
   it('reloads the workflow when the item type changes', async () => {
     await open();
 
-    const select = root().querySelector<HTMLSelectElement>('#item-type')!;
-    select.value = 'TASK';
-    select.dispatchEvent(new Event('change'));
-    fixture.detectChanges();
+    chooseOption(root().querySelector<HTMLButtonElement>('button#item-type')!, 'Tarea', () => fixture.detectChanges());
 
     http.expectOne(`${API}/api/status-workflows/TASK`).flush({ itemType: 'TASK', statuses: [], transitions: [] });
     await fixture.whenStable();
@@ -128,6 +126,27 @@ describe('WorkflowAdmin', () => {
     fixture.detectChanges();
 
     expect(alerts()).toContain('Mark at least one status as terminal (a final status).');
+  });
+
+  describe('for a regular member', () => {
+    beforeEach(() => (TestBed.inject(AuthService) as unknown as FakeAuth).becomes('MEMBER'));
+
+    it('says access is restricted and why, and previews the workflow read-only', async () => {
+      await open();
+
+      expect(root().textContent).toContain('Acceso restringido');
+      expect(root().textContent).toContain('Tu rol actual es MEMBER.');
+      expect(root().textContent).toContain('Vista previa para OWNER / ADMIN');
+      expect(root().textContent).toContain('Backlog');
+      expect(root().textContent).toContain('Retroceso');
+      expect(root().querySelector('input')).toBeNull();
+      expect(buttonWithText('Guardar flujo de trabajo')).toBeUndefined();
+    });
+
+    it('has no accessibility violations', async () => {
+      await open();
+      await expectNoAxeViolations(root());
+    });
   });
 
   it('has no accessibility violations', async () => {

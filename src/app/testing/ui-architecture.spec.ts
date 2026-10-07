@@ -32,20 +32,11 @@ const EXEMPT_PREFIXES = [
 const ALLOW_LIST = new Set<string>([
   'app.html',
   'auth/pages/register-organization/register-organization.html',
-  'board/components/kanban-board/kanban-board.html',
-  'board/components/kanban-card/kanban-card.html',
-  'board/components/sprint-filter/sprint-filter.html',
   'notifications/components/notification-list/notification-list.html',
   'notifications/components/notifications-bell/notifications-bell.html',
   'shared/notifications/notification-outlet/notification-outlet.html',
   'sprints/components/burndown-chart/burndown-chart.html',
-  'sprints/components/burndown-page/burndown-page.html',
-  'sprints/components/sprint-create/sprint-create.html',
-  'sprints/components/sprint-management/sprint-management.html',
-  'sprints/components/sprint-settings/sprint-settings.html',
-  'sprints/components/velocity-history/velocity-history.html',
   // Phase 19's job (Configuración de flujo): the workflow editor itself, not touched by Phase 17.
-  'work-items/components/workflow-admin/workflow-admin.html',
 ]);
 
 function walk(dir: string, suffix: string): string[] {

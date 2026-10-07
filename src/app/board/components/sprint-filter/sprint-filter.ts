@@ -1,5 +1,7 @@
 import { Component, computed, input, model } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
+import { FilterChip } from '../../../shared/ui/filter-chip/filter-chip';
 import { SPRINT_STATUS_LABELS, Sprint } from '../../../projects/models/project.models';
 
 /** `all`, `backlog` (items in no sprint) or a sprint code. */
@@ -11,11 +13,6 @@ export const BACKLOG = 'backlog';
 const NEAR_SPRINTS = 2;
 
 
-const BUTTON_CLASSES =
-  'rounded-md px-3 py-1.5 text-sm font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400';
-const PRESSED_CLASSES = 'bg-primary-500 font-semibold text-neutral-900 hover:bg-primary-400';
-const IDLE_CLASSES = 'border border-neutral-700 dark:border-neutral-400';
-
 /**
  * Which sprint a board shows. The sprints people reach for are one click away: the ones that ended most recently, the
  * current one and the next ones, then the backlog and everything at once; older or later sprints are in a list. The
@@ -23,7 +20,7 @@ const IDLE_CLASSES = 'border border-neutral-700 dark:border-neutral-400';
  */
 @Component({
   selector: 'app-sprint-filter',
-  imports: [DatePipe],
+  imports: [DatePipe, FilterChip, SelectMenu],
   templateUrl: './sprint-filter.html',
 })
 export class SprintFilter {
@@ -63,14 +60,12 @@ export class SprintFilter {
       .filter((sprint) => !shown.has(sprint.sprintCode))
       .sort((a, b) => b.startDate.localeCompare(a.startDate));
   });
+  protected readonly otherOptions = computed<SelectMenuOption[]>(() =>
+    this.others().map((sprint) => ({ value: sprint.sprintCode, label: `${sprint.name} · ${this.statusLabels[sprint.status]}` })),
+  );
   protected readonly otherSelected = computed(() => this.others().some((sprint) => sprint.sprintCode === this.selected()));
 
-  protected classes(selection: SprintSelection): string {
-    return `${BUTTON_CLASSES} ${this.selected() === selection ? PRESSED_CLASSES : IDLE_CLASSES}`;
-  }
-
-  protected chooseOther(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
+  protected chooseOther(value: string): void {
     if (value) {
       this.selected.set(value);
     }

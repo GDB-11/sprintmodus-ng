@@ -8,6 +8,13 @@ import { ProjectService } from '../../../projects/services/project.service';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { valueOf } from '../../../shared/resource-value';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Button } from '../../../shared/ui/button/button';
+import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
+import { DisabledReason } from '../../../shared/ui/disabled-reason/disabled-reason';
+import { Disclosure } from '../../../shared/ui/disclosure/disclosure';
+import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { Panel } from '../../../shared/ui/panel/panel';
 import { SelectField, SelectOption } from '../../../shared/ui/select-field/select-field';
 import { TextField } from '../../../shared/ui/text-field/text-field';
 import { optionalNumber } from '../../../work-items/models/number-fields';
@@ -27,7 +34,7 @@ interface SettingsModel {
  */
 @Component({
   selector: 'app-sprint-settings',
-  imports: [FormRoot, FormField, TextField, SelectField],
+  imports: [FormRoot, FormField, TextField, SelectField, Panel, Checkbox, Disclosure, Banner, Button, DisabledReason, ErrorState],
   templateUrl: './sprint-settings.html',
 })
 export class SprintSettings {

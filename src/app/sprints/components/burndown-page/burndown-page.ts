@@ -7,14 +7,18 @@ import { SPRINT_STATUS_LABELS } from '../../../projects/models/project.models';
 import { ProjectService } from '../../../projects/services/project.service';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { valueOf } from '../../../shared/resource-value';
-import { Page } from '../../../shared/ui/page/page';
+import { Button } from '../../../shared/ui/button/button';
+import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { PageHeader } from '../../../shared/ui/page-header/page-header';
+import { Panel } from '../../../shared/ui/panel/panel';
 import { BurndownChart } from '../burndown-chart/burndown-chart';
 
 /** The burndown of one sprint: its facts and the chart. Anyone in the organization may read it. */
 @Component({
   selector: 'app-burndown-page',
-  imports: [Page, BurndownChart, DatePipe, DecimalPipe],
+  imports: [PageHeader, Panel, Button, ErrorState, BurndownChart, DatePipe, DecimalPipe],
   templateUrl: './burndown-page.html',
+  host: { class: 'flex flex-col gap-4' },
 })
 export class BurndownPage {
   private readonly route = inject(ActivatedRoute);

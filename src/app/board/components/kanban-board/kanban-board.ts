@@ -10,11 +10,23 @@ import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-int
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, auditTime, filter, merge } from 'rxjs';
 import { Permissions } from '../../../auth/services/permissions.service';
+import { ProjectContextService } from '../../../projects/services/project-context.service';
 import { ProjectService } from '../../../projects/services/project.service';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { valueOf } from '../../../shared/resource-value';
-import { Page } from '../../../shared/ui/page/page';
+import { Button } from '../../../shared/ui/button/button';
+import { BoardColumn } from '../../../shared/ui/board-column/board-column';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Control } from '../../../shared/ui/control/control';
+import { DropPlaceholder } from '../../../shared/ui/drop-placeholder/drop-placeholder';
+import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
+import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { PageHeader } from '../../../shared/ui/page-header/page-header';
+import { SearchableSelect } from '../../../shared/ui/searchable-select/searchable-select';
+import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
+import { TextLink } from '../../../shared/ui/text-link/text-link';
 import { StatusLabel } from '../../../work-items/components/status-label/status-label';
 import {
   AssignmentRole,
@@ -32,7 +44,9 @@ import { ItemMovedEvent, StatusChangedEvent } from '../../models/board.models';
 import { compareForBoard, placeBefore, rankGroupOf } from '../../models/board-order';
 import { BoardWebSocketService } from '../../services/board-websocket.service';
 import { ConnectionIndicator } from '../../../shared/layout/connection-indicator/connection-indicator';
+import { ColumnTabs } from '../column-tabs/column-tabs';
 import { KanbanCard, MoveOption } from '../kanban-card/kanban-card';
+import { SprintSummary } from '../sprint-summary/sprint-summary';
 import { ALL_SPRINTS, BACKLOG, SprintFilter } from '../sprint-filter/sprint-filter';
 
 /** The most cards the board loads for one project, type and sprint; a notice says so when there are more. */
@@ -46,9 +60,6 @@ const DEFAULT_TYPE: ItemType = 'PBI';
 /** The value of the assignee filter for cards nobody works on. */
 export const UNASSIGNED = 'none';
 const NO_MOVES: readonly MoveOption[] = [];
-
-const FIELD_CLASSES =
-  'rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-2 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400';
 
 interface Column {
   status: WorkItemStatus;
@@ -85,8 +96,21 @@ interface PendingMove {
 @Component({
   selector: 'app-kanban-board',
   imports: [
-    Page,
+    PageHeader,
     RouterLink,
+    Button,
+    BoardColumn,
+    Banner,
+    Control,
+    DropPlaceholder,
+    EmptyState,
+    ErrorState,
+    Skeleton,
+    SelectMenu,
+    SearchableSelect,
+    TextLink,
+    ColumnTabs,
+    SprintSummary,
     StatusLabel,
     ConnectionIndicator,
     SprintFilter,
@@ -97,6 +121,9 @@ interface PendingMove {
     CdkDragPlaceholder,
   ],
   templateUrl: './kanban-board.html',
+  // From `lg` the board fills the screen under the top bar (3.5rem) and the shell's padding (3rem on each axis, x2 on y),
+  // and each column scrolls on its own; below that the page just flows.
+  host: { class: 'flex flex-col gap-4 lg:h-[calc(100dvh-6.5rem)]' },
 })
 export class KanbanBoard {
   private readonly route = inject(ActivatedRoute);
@@ -109,26 +136,21 @@ export class KanbanBoard {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
 
-  protected readonly fieldClasses = FIELD_CLASSES;
-  protected readonly itemTypes = ITEM_TYPES;
-  protected readonly typeLabels = ITEM_TYPE_LABELS;
-  protected readonly priorities = PRIORITIES;
-  protected readonly priorityLabels = PRIORITY_LABELS;
+  protected readonly typeOptions: readonly SelectMenuOption[] = ITEM_TYPES.map((type) => ({ value: type, label: ITEM_TYPE_LABELS[type] }));
+  protected readonly priorityOptions: readonly SelectMenuOption[] = [
+    { value: '', label: 'Todas las prioridades' },
+    ...PRIORITIES.map((priority) => ({ value: priority, label: PRIORITY_LABELS[priority] })),
+  ];
   protected readonly pageSize = BOARD_PAGE_SIZE;
   protected readonly unassigned = UNASSIGNED;
   protected readonly canReorder = this.permissions.canAdminister;
 
   private readonly queryParams = toSignal(this.route.queryParamMap, { requireSync: true });
 
-  protected readonly projects = rxResource({ stream: () => this.projectService.list() });
-  protected readonly loadedProjects = computed(() => valueOf(this.projects) ?? []);
-
-  /** The project in the URL, or the first one when the URL names none (or one that no longer exists). */
-  protected readonly selectedProject = computed(() => {
-    const projects = this.loadedProjects();
-    const code = this.queryParams().get('project');
-    return projects.find((project) => project.projectCode === code) ?? projects[0] ?? null;
-  });
+  protected readonly projectContext = inject(ProjectContextService);
+  protected readonly projects = this.projectContext.projects;
+  /** The shell's project: `?project=`, else the one remembered for this user, else the first. */
+  protected readonly selectedProject = this.projectContext.current;
   private readonly projectCode = computed(() => this.selectedProject()?.projectCode);
 
   protected readonly type = computed<ItemType>(() => {
@@ -151,6 +173,10 @@ export class KanbanBoard {
     }
     return sprints.find((sprint) => sprint.status === 'ACTIVE')?.sprintCode ?? ALL_SPRINTS;
   });
+  /** The sprint whose summary heads the board, when one specific sprint is selected. */
+  protected readonly selectedSprintInfo = computed(
+    () => this.loadedSprints().find((sprint) => sprint.sprintCode === this.selectedSprint()) ?? null,
+  );
   /** Sprints are known (or failed to load) before items are asked for, so the first request is already the right one. */
   private readonly sprintsSettled = computed(() => this.sprints.status() === 'resolved' || this.sprints.status() === 'error');
 
@@ -222,6 +248,12 @@ export class KanbanBoard {
     return [...byCode].map(([userCode, fullName]) => ({ userCode, fullName })).sort((a, b) => a.fullName.localeCompare(b.fullName));
   });
 
+  protected readonly assigneeChoices = computed<SelectMenuOption[]>(() => [
+    { value: '', label: 'Todos los asignados' },
+    { value: this.unassigned, label: 'Sin asignar' },
+    ...this.assigneeOptions().map((option) => ({ value: option.userCode, label: option.fullName })),
+  ]);
+
   /** The cards the filters let through. */
   protected readonly visibleCards = computed(() => {
     const priority = this.priorityFilter();
@@ -247,6 +279,19 @@ export class KanbanBoard {
       return { status, cards: inColumn, points: inColumn.reduce((sum, card) => sum + card.effortPoints, 0) };
     });
   });
+
+  /** Below `lg` one column is shown at a time: the one picked, else the first. */
+  private readonly pickedColumn = signal<string | null>(null);
+  protected readonly activeColumn = computed(() => {
+    const columns = this.columns();
+    return columns.find((column) => column.status.code === this.pickedColumn())?.status.code ?? columns[0]?.status.code ?? '';
+  });
+  protected readonly columnTabs = computed(() =>
+    this.columns().map((column) => ({ code: column.status.code, label: column.status.displayName, count: column.cards.length })),
+  );
+  protected pickColumn(code: string): void {
+    this.pickedColumn.set(code);
+  }
 
   /** Where an item may go from each status: forward along a transition, or back along one that allows it. */
   private readonly targets = computed(() => {
@@ -326,24 +371,20 @@ export class KanbanBoard {
     inject(DestroyRef).onDestroy(() => this.pendingTimers.forEach((timer) => clearTimeout(timer)));
   }
 
-  protected selectProject(event: Event): void {
-    this.navigate({ project: (event.target as HTMLSelectElement).value, sprint: null, priority: null, assignee: null });
-  }
-
-  protected selectType(event: Event): void {
-    this.navigate({ type: (event.target as HTMLSelectElement).value });
+  protected selectType(value: string): void {
+    this.navigate({ type: value });
   }
 
   protected selectSprint(sprint: string): void {
     this.navigate({ sprint });
   }
 
-  protected selectPriority(event: Event): void {
-    this.navigate({ priority: (event.target as HTMLSelectElement).value || null });
+  protected selectPriority(value: string): void {
+    this.navigate({ priority: value || null });
   }
 
-  protected selectAssignee(event: Event): void {
-    this.navigate({ assignee: (event.target as HTMLSelectElement).value || null });
+  protected selectAssignee(value: string): void {
+    this.navigate({ assignee: value || null });
   }
 
   protected onSearch(event: Event): void {
@@ -450,7 +491,7 @@ export class KanbanBoard {
     this.setPending(code, { from: card.status, to: target.code });
     this.setStatus(code, target);
     if (refocus) {
-      afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(`[data-move-for="${code}"]`)?.focus(), {
+      afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(`[data-move-for="${code}"] button`)?.focus(), {
         injector: this.injector,
       });
     }

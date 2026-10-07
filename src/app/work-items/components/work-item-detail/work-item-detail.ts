@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { filter, map, merge, Observable } from 'rxjs';
@@ -14,12 +14,13 @@ import { NotificationService } from '../../../shared/notifications/notification.
 import { valueOf } from '../../../shared/resource-value';
 import { Button } from '../../../shared/ui/button/button';
 import { ConfirmInline } from '../../../shared/ui/confirm-inline/confirm-inline';
-import { Control } from '../../../shared/ui/control/control';
 import { DisabledReason } from '../../../shared/ui/disabled-reason/disabled-reason';
 import { Disclosure } from '../../../shared/ui/disclosure/disclosure';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { Panel } from '../../../shared/ui/panel/panel';
+import { SearchableSelect } from '../../../shared/ui/searchable-select/searchable-select';
+import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
 import { TextLink } from '../../../shared/ui/text-link/text-link';
 import {
   ASSIGNMENT_ROLE_LABELS,
@@ -51,7 +52,8 @@ import { WorkItemRow } from '../work-item-row/work-item-row';
     DatePipe,
     Button,
     ConfirmInline,
-    Control,
+    SelectMenu,
+    SearchableSelect,
     DisabledReason,
     Disclosure,
     EmptyState,
@@ -200,6 +202,26 @@ export class WorkItemDetail {
     return (valueOf(this.parents)?.items ?? []).filter((candidate) => candidate.workItemCode !== self);
   });
 
+  /** What the sprint and parent pickers show: the item's own value, until the user picks (and again if the change fails). */
+  protected readonly sprintChoice = linkedSignal(() => this.loadedItem()?.sprintCode ?? '');
+  protected readonly parentChoice = linkedSignal(() => this.loadedItem()?.parentCode ?? '');
+
+  protected readonly statusOptions = computed<SelectMenuOption[]>(() =>
+    (this.loadedItem()?.allowedStatuses ?? []).map((status) => ({ value: status.code, label: status.displayName })),
+  );
+  protected readonly sprintOptions = computed<SelectMenuOption[]>(() => [
+    { value: '', label: 'Backlog (sin sprint)' },
+    ...this.sprintChoices().map((sprint) => ({ value: sprint.sprintCode, label: sprint.name })),
+  ]);
+  protected readonly parentOptions = computed<SelectMenuOption[]>(() => [
+    { value: '', label: 'Sin elemento superior' },
+    ...this.parentChoices().map((candidate) => ({
+      value: candidate.workItemCode,
+      label: `${candidate.displayKey} · ${candidate.title}`,
+      hint: this.typeLabels[candidate.type],
+    })),
+  ]);
+
   /** Set when the item changed elsewhere while it was being edited; it is reloaded as soon as the edit ends. */
   private changedWhileEditing = false;
 
@@ -219,29 +241,22 @@ export class WorkItemDetail {
     });
   }
 
-  protected changeStatus(event: Event): void {
-    const select = event.target as HTMLSelectElement;
-    const status = select.value;
-    select.value = '';
+  protected changeStatus(status: string): void {
     if (status) {
       this.run(this.workItems.changeStatus(this.loadedItem()!.workItemCode, status));
     }
   }
 
-  protected moveToSprint(event: Event, item: WorkItem): void {
-    const select = event.target as HTMLSelectElement;
+  protected moveToSprint(value: string, item: WorkItem): void {
     const previous = item.sprintCode ?? '';
-    this.run(this.workItems.moveToSprint(item.workItemCode, select.value || null), () => {
-      select.value = previous;
-    });
+    this.sprintChoice.set(value);
+    this.run(this.workItems.moveToSprint(item.workItemCode, value || null), () => this.sprintChoice.set(previous));
   }
 
-  protected changeParent(event: Event, item: WorkItem): void {
-    const select = event.target as HTMLSelectElement;
+  protected changeParent(value: string, item: WorkItem): void {
     const previous = item.parentCode ?? '';
-    this.run(this.workItems.updateParent(item.workItemCode, select.value || null), () => {
-      select.value = previous;
-    });
+    this.parentChoice.set(value);
+    this.run(this.workItems.updateParent(item.workItemCode, value || null), () => this.parentChoice.set(previous));
   }
 
   protected onRelationsChanged(): void {

@@ -31,11 +31,7 @@
     <div class="flex flex-col gap-3">
       <div class="flex flex-col gap-1.5">
         <label for="link-type" class="text-sm font-medium">Tipo de relación</label>
-        <select id="link-type" appControl (change)="onType($event)">
-          @for (option of linkTypes; track option) {
-            <option [value]="option" [selected]="option === type()">{{ linkTypeLabels[option] }}</option>
-          }
-        </select>
+        <app-select-menu inputId="link-type" label="Tipo de relación" [options]="linkTypeOptions" [value]="type()" (valueChange)="onType($event)" />
       </div>
 
       @if (picked(); as target) {

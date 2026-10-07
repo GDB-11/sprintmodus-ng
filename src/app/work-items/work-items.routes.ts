@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { adminGuard } from '../auth/guards/auth.guard';
 
 export const WORK_ITEM_ROUTES: Routes = [
   {
@@ -17,7 +16,6 @@ export const WORK_ITEM_ROUTES: Routes = [
   },
   {
     path: 'admin/workflows',
-    canActivate: [adminGuard],
     loadComponent: () =>
       import('./components/workflow-admin/workflow-admin').then((m) => m.WorkflowAdmin),
   },

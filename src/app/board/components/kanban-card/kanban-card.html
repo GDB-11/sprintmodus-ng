@@ -1,40 +1,37 @@
-<article
-  class="flex flex-col gap-2 rounded-md border border-neutral-700 bg-light-surface-secondary p-3 text-sm text-neutral-900 dark:border-neutral-400 dark:bg-dark-surface-secondary dark:text-neutral-100"
-  [class.opacity-60]="pending()"
->
+<article appCard [pending]="pending()">
   <div cdkDragHandle class="flex flex-col gap-1.5" [class.cursor-grab]="!pending()">
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <a
-        [routerLink]="['/work-items', card().workItemCode]"
-        class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
-        >{{ card().displayKey }}</a
-      >
-      <span class="rounded-sm px-1.5 py-0.5 font-medium" [class]="priorityClasses()">
-        <span class="sr-only">Prioridad: </span>{{ priorityLabels[card().priority] }}
-      </span>
+      <a appTextLink [routerLink]="['/work-items', card().workItemCode]">{{ card().displayKey }}</a>
+      <app-priority-chip [priority]="card().priority" />
     </div>
     <h3 class="font-semibold">{{ card().title }}</h3>
-    <p class="text-neutral-800 dark:text-neutral-300">
-      {{ card().effortPoints }} pts@if (sprintLabel()) {
-        · {{ sprintLabel() }}
+    <div class="flex items-center justify-between gap-2">
+      @if (assigneeNames().length > 0) {
+        <app-avatar-group [names]="assigneeNames()" [max]="3" />
+      } @else {
+        <span class="text-text-muted">Sin asignar</span>
       }
-    </p>
+      <span class="text-text-muted">
+        {{ card().effortPoints }} pts@if (sprintLabel()) {
+          · {{ sprintLabel() }}
+        }
+      </span>
+    </div>
   </div>
 
-  <p><span class="font-medium">Asignados:</span> {{ assigneesText(card().assignees) }}</p>
+  <p class="sr-only"><span>Asignados:</span> {{ assigneesText(card().assignees) }}</p>
 
   @if (card().childCount > 0) {
     <div class="flex flex-col gap-2">
       <button
         type="button"
+        appTextLink
+        class="flex w-fit items-center gap-1.5"
         [attr.aria-expanded]="expanded()"
         [attr.aria-controls]="'children-' + card().workItemCode"
         (click)="expanded.set(!expanded())"
-        class="flex w-fit items-center gap-1.5 rounded-sm font-medium text-secondary-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:text-secondary-400 dark:focus-visible:outline-secondary-400"
       >
-        <svg aria-hidden="true" viewBox="0 0 16 16" class="size-4" [class.rotate-90]="expanded()">
-          <path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <app-icon name="chevron-right" class="transition-transform duration-150" [class.rotate-90]="expanded()" />
         {{ expanded() ? 'Ocultar' : 'Mostrar' }} {{ childrenText(card().childCount) }}
       </button>
       <div [id]="'children-' + card().workItemCode">
@@ -45,50 +42,46 @@
     </div>
   }
 
-  <div class="flex flex-wrap items-center gap-2">
+  <div class="flex items-center gap-2">
     @if (moves().length > 0) {
-      <select
-        [attr.aria-label]="'Mover ' + card().displayKey + ' a'"
+      <app-select-menu
+        class="min-w-0 flex-1"
         [attr.data-move-for]="card().workItemCode"
         [attr.aria-busy]="pending()"
+        [label]="'Mover ' + card().displayKey + ' a'"
+        placeholder="Mover a…"
+        [action]="true"
+        [options]="moveOptions()"
         [disabled]="!hasAllowedMove()"
-        (change)="onMoveSelected($event)"
-        class="rounded-md border border-neutral-700 bg-light-surface-tertiary px-3 py-1.5 text-neutral-900 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:bg-dark-bg dark:text-neutral-100 dark:focus-visible:outline-secondary-400"
-      >
-        <option value="">Mover a…</option>
-        @for (move of moves(); track move.status.code) {
-          <option [value]="move.status.code" [disabled]="!move.allowed">
-            {{ move.status.displayName }}@if (!move.allowed) {
-              (requiere rol: {{ roleLabel(move.requiredRole) }})
-            }
-          </option>
-        }
-      </select>
+        (valueChange)="onMoveSelected($event)"
+      />
     }
     <button
       type="button"
-      [class]="compactButtonClasses"
+      appButton
+      variant="secondary"
+      size="compact"
       [disabled]="!canReorder() || !canMoveUp() || pending()"
       [attr.title]="canReorder() ? null : reorderHint"
       [attr.aria-label]="'Subir ' + card().displayKey + ' dentro de su prioridad'"
       (click)="reorder.emit('up')"
     >
-      Subir
+      <app-icon name="arrow-up" />
     </button>
     <button
       type="button"
-      [class]="compactButtonClasses"
+      appButton
+      variant="secondary"
+      size="compact"
       [disabled]="!canReorder() || !canMoveDown() || pending()"
       [attr.title]="canReorder() ? null : reorderHint"
       [attr.aria-label]="'Bajar ' + card().displayKey + ' dentro de su prioridad'"
       (click)="reorder.emit('down')"
     >
-      Bajar
+      <app-icon name="arrow-down" />
     </button>
   </div>
   @if (moves().length > 0 && !hasAllowedMove()) {
-    <p class="text-neutral-800 dark:text-neutral-300">
-      Solo alguien asignado como {{ missingRole() }} o un administrador puede mover esta tarjeta.
-    </p>
+    <p class="text-text-muted">Solo alguien asignado como {{ missingRole() }} o un administrador puede mover esta tarjeta.</p>
   }
 </article>
