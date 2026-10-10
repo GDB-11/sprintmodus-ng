@@ -4,8 +4,7 @@
   <app-error-state message="No se pudieron cargar tus proyectos." (retry)="projects.reload()" />
 } @else if (!selectedProject()) {
   <app-empty-state message="Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo." />
-} @else {
-  <app-connection-indicator [projectCode]="selectedProject()!.projectCode" />
+} @else {  
   <app-page-header heading="Tablero">
     <div pageHeaderActions class="flex flex-wrap items-center gap-3">
       <a appTextLink routerLink="/sprints" [queryParams]="{ project: selectedProject()?.projectCode }">Gestionar sprints</a>

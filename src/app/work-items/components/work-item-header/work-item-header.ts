@@ -26,6 +26,7 @@ export interface WorkItemHeaderData {
   selector: 'app-work-item-header',
   imports: [RouterLink, TextLink, Chip, WorkItemTypeIcon, StatusLabel, PriorityChip],
   templateUrl: './work-item-header.html',
+  host: { class: 'flex flex-col gap-3' },
 })
 export class WorkItemHeader {
   readonly item = input.required<WorkItemHeaderData>();

@@ -337,11 +337,11 @@ describe('WorkItemDetail', () => {
     const button = (label: string) =>
       [...root().querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === label)!;
 
-    it("follows the live board of the item's project and shows where the connection stands", async () => {
+    it("follows the live board of the item's project and leaves showing the connection to the top bar", async () => {
       await open();
 
       expect(board.connect).toHaveBeenCalledWith('project-1');
-      expect(root().querySelector('app-connection-indicator [role="status"]')?.textContent).toContain('Conectado');
+      expect(root().querySelector('app-connection-indicator')).toBeNull(); // the top bar shows it
     });
 
     it('tells who changed the status and reloads the item when someone else does', async () => {

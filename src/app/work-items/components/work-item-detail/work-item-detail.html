@@ -1,84 +1,107 @@
 @if (item.isLoading() && !loadedItem()) {
-  <p role="status">Cargando elemento de trabajo…</p>
+  <div role="status" class="flex flex-col gap-4">
+    <span class="sr-only">Cargando elemento de trabajo…</span>
+    <app-skeleton width="40%" height="1rem" />
+    <app-skeleton width="70%" height="2rem" />
+    <app-skeleton height="8rem" />
+    <app-skeleton height="6rem" />
+  </div>
 } @else if (item.error() && !loadedItem()) {
-  <app-error-state message="No se pudo cargar este elemento de trabajo. Puede que haya sido eliminado." (retry)="item.reload()" />
+  <app-error-state
+    message="No se pudo cargar este elemento de trabajo. Puede que haya sido eliminado."
+    (retry)="item.reload()"
+  />
 } @else if (loadedItem(); as current) {
-  <app-connection-indicator [projectCode]="current.projectCode" />
-
-  @if (headerData(); as header) {
-    <app-work-item-header [item]="header" [ancestors]="ancestors()" />
-  }
-
-  @if (editing()) {
-    <app-work-item-edit [item]="current" (saved)="onSaved($event)" (cancelled)="editing.set(false)" />
-  } @else {
-    <div class="flex flex-wrap items-end gap-4">
-      <div class="flex flex-col gap-1.5">
-        @if (current.allowedStatuses.length > 0) {
-          <label for="change-status" class="text-sm font-medium">Mover a</label>
-          <app-select-menu
-            inputId="change-status"
-            label="Mover a"
-            placeholder="Elige un estado"
-            [action]="true"
-            [options]="statusOptions()"
-            [disabled]="busy()"
-            (valueChange)="changeStatus($event)"
-          />
-        } @else {
-          <span class="text-sm font-medium">Mover a</span>
-          <span class="py-2 text-sm text-text-muted">Sin más estados</span>
-        }
-      </div>
-      <div class="ml-auto flex flex-col items-end gap-1.5">
-        <div class="flex gap-3">
-          <button type="button" appButton variant="secondary" (click)="editing.set(true)">Editar</button>
-          @if (!confirmingDelete()) {
-            <button
-              type="button"
-              appButton
-              variant="secondary"
-              [disabled]="!canDelete(current)"
-              [attr.aria-describedby]="canDelete(current) ? null : 'delete-hint'"
-              (click)="confirmingDelete.set(true)"
-            >
-              Eliminar
-            </button>
-          }
-        </div>
-        @if (!canDelete(current)) {
-          <app-disabled-reason id="delete-hint" reason="Solo quien lo creó, un propietario o un administrador puede eliminarlo." />
-        }
-      </div>
-    </div>
-
-    @if (confirmingDelete()) {
-      <app-confirm-inline
-        [question]="'¿Eliminar ' + current.displayKey + '?'"
-        confirmLabel="Sí, eliminar"
-        cancelLabel="Conservar"
-        [busy]="busy()"
-        (confirm)="delete(current)"
-        (cancel)="confirmingDelete.set(false)"
-      />
+  <div class="flex flex-col gap-6">
+    @if (headerData(); as header) {
+      <app-work-item-header [item]="header" [ancestors]="ancestors()" />
     }
 
-    <div class="grid gap-4 xl:grid-cols-[1fr_280px] xl:items-start">
-      <div class="flex flex-col gap-4">
-        @if (current.description) {
-          <app-panel heading="Descripción">
-            <p class="text-sm whitespace-pre-wrap text-text">{{ current.description }}</p>
-          </app-panel>
-        }
-        @if (current.acceptanceCriteria) {
-          <app-panel heading="Criterios de aceptación">
-            <app-criteria-list [text]="current.acceptanceCriteria" />
-          </app-panel>
-        }
+    @if (!editing()) {
+      <div class="flex flex-wrap items-end gap-4">
+        <div class="flex flex-col gap-1.5">
+          @if (current.allowedStatuses.length > 0) {
+            <label for="change-status" class="text-sm font-medium">Mover a</label>
+            <app-select-menu
+              inputId="change-status"
+              label="Mover a"
+              placeholder="Elige un estado"
+              [action]="true"
+              [options]="statusOptions()"
+              [disabled]="busy()"
+              (valueChange)="changeStatus($event)"
+            />
+          } @else {
+            <span class="text-sm font-medium">Mover a</span>
+            <span class="py-2 text-sm text-text-muted">Sin más estados</span>
+          }
+        </div>
+        <div class="ml-auto flex flex-col items-end gap-1.5">
+          <div class="flex gap-3">
+            <button type="button" appButton variant="secondary" (click)="editing.set(true)">
+              Editar
+            </button>
+            @if (!confirmingDelete()) {
+              <button
+                type="button"
+                appButton
+                variant="secondary"
+                [disabled]="!canDelete(current)"
+                [attr.aria-describedby]="canDelete(current) ? null : 'delete-hint'"
+                (click)="confirmingDelete.set(true)"
+              >
+                Eliminar
+              </button>
+            }
+          </div>
+          @if (!canDelete(current)) {
+            <app-disabled-reason
+              id="delete-hint"
+              reason="Solo quien lo creó, un propietario o un administrador puede eliminarlo."
+            />
+          }
+        </div>
+      </div>
 
-        <details appDisclosure [summary]="'Secundarios (' + current.children.length + ')'">
-          <div class="flex flex-col gap-3">
-            <a appTextLink routerLink="/work-items/new" [queryParams]="{ project: current.projectCode, parent: current.workItemCode }">
+      @if (confirmingDelete()) {
+        <app-confirm-inline
+          [question]="'¿Eliminar ' + current.displayKey + '?'"
+          confirmLabel="Sí, eliminar"
+          cancelLabel="Conservar"
+          [busy]="busy()"
+          (confirm)="delete(current)"
+          (cancel)="confirmingDelete.set(false)"
+        />
+      }
+    }
+
+    <div class="grid gap-6 xl:items-start" [class.xl:grid-cols-[1fr_280px]]="!editing()">
+      <div class="flex min-w-0 flex-col gap-6">
+        @if (editing()) {
+          <app-work-item-edit
+            [item]="current"
+            (saved)="onSaved($event)"
+            (cancelled)="editing.set(false)"
+          />
+        } @else {
+          @if (current.description) {
+            <app-panel heading="Descripción">
+              <p class="text-sm whitespace-pre-wrap text-text">{{ current.description }}</p>
+            </app-panel>
+          }
+          @if (current.acceptanceCriteria) {
+            <app-panel heading="Criterios de aceptación">
+              <app-criteria-list [text]="current.acceptanceCriteria" />
+            </app-panel>
+          }
+
+          <app-panel [heading]="'Secundarios (' + current.children.length + ')'">
+            <a
+              panelActions
+              appTextLink
+              routerLink="/work-items/new"
+              [queryParams]="{ project: current.projectCode, parent: current.workItemCode }"
+            >
               Agregar un secundario
             </a>
             @if (current.children.length === 0) {
@@ -90,68 +113,62 @@
                 }
               </ul>
             }
-          </div>
-        </details>
+          </app-panel>
 
-        <app-work-item-links [workItemCode]="current.workItemCode" [links]="current.links" (changed)="onRelationsChanged()" />
+          <app-work-item-links
+            [workItemCode]="current.workItemCode"
+            [links]="current.links"
+            (changed)="onRelationsChanged()"
+          />
+        }
+
+        <app-work-item-comments [workItemCode]="current.workItemCode" (posted)="bumpHistory()" />
+        <app-work-item-history
+          [workItemCode]="current.workItemCode"
+          [version]="historyVersion()"
+          [sprintNames]="sprintNames()"
+        />
       </div>
 
-      <app-panel heading="Metadatos">
-        <app-meta-list [rows]="metaRows()" />
-        <dl class="flex flex-col gap-2 text-sm">
-          <div class="flex justify-between gap-3">
-            <dt class="text-text-muted">Puntos de esfuerzo</dt>
-            <dd class="text-right text-text">
-              {{ current.effortPoints }}
-              @if (current.childrenEffortPoints > 0) {
-                <span class="text-text-muted"> (tareas secundarias: {{ current.childrenEffortPoints }})</span>
+      @if (!editing()) {
+        <div class="xl:sticky xl:top-4">
+          <app-panel heading="Metadatos">
+            <app-meta-list [rows]="metaRows()" />
+            <div class="flex flex-col gap-1.5">
+              @if (canPlanSprints()) {
+                <label for="sprint" class="text-sm font-medium">Sprint</label>
+                <app-select-menu
+                  inputId="sprint"
+                  label="Sprint"
+                  [options]="sprintOptions()"
+                  [value]="sprintChoice()"
+                  [disabled]="busy() || sprints.isLoading()"
+                  (valueChange)="moveToSprint($event, current)"
+                />
+              } @else {
+                <span class="text-sm font-medium">Sprint</span>
+                <span class="text-sm text-text">{{ sprintName() }}</span>
+                <app-disabled-reason
+                  reason="Solo los propietarios y administradores planifican los sprints."
+                />
               }
-            </dd>
-          </div>
-          <div class="flex justify-between gap-3">
-            <dt class="text-text-muted">Horas est. / restantes</dt>
-            <dd class="text-right text-text">{{ current.estimatedHours ?? '—' }} / {{ current.remainingHours ?? '—' }}</dd>
-          </div>
-          <div class="flex justify-between gap-3">
-            <dt class="text-text-muted">Última actualización</dt>
-            <dd class="text-right text-text">{{ current.updatedAt | date: 'medium' }}</dd>
-          </div>
-        </dl>
+            </div>
 
-        <div class="flex flex-col gap-1.5">
-          @if (canPlanSprints()) {
-            <label for="sprint" class="text-sm font-medium">Sprint</label>
-            <app-select-menu
-              inputId="sprint"
-              label="Sprint"
-              [options]="sprintOptions()"
-              [value]="sprintChoice()"
-              [disabled]="busy() || sprints.isLoading()"
-              (valueChange)="moveToSprint($event, current)"
-            />
-          } @else {
-            <span class="text-sm font-medium">Sprint</span>
-            <span class="text-sm text-text">{{ sprintName() }}</span>
-            <app-disabled-reason reason="Solo los propietarios y administradores planifican los sprints." />
-          }
+            <div class="flex flex-col gap-1.5">
+              <label for="parent" class="text-sm font-medium">Elemento superior</label>
+              <app-searchable-select
+                inputId="parent"
+                label="Elemento superior"
+                searchPlaceholder="Buscar por clave o título…"
+                [options]="parentOptions()"
+                [value]="parentChoice()"
+                [disabled]="busy() || parents.isLoading()"
+                (valueChange)="changeParent($event, current)"
+              />
+            </div>
+          </app-panel>
         </div>
-
-        <div class="flex flex-col gap-1.5">
-          <label for="parent" class="text-sm font-medium">Elemento superior</label>
-          <app-searchable-select
-            inputId="parent"
-            label="Elemento superior"
-            searchPlaceholder="Buscar por clave o título…"
-            [options]="parentOptions()"
-            [value]="parentChoice()"
-            [disabled]="busy() || parents.isLoading()"
-            (valueChange)="changeParent($event, current)"
-          />
-        </div>
-      </app-panel>
+      }
     </div>
-  }
-
-  <app-work-item-comments [workItemCode]="current.workItemCode" (posted)="bumpHistory()" />
-  <app-work-item-history [workItemCode]="current.workItemCode" [version]="historyVersion()" [sprintNames]="sprintNames()" />
+  </div>
 }

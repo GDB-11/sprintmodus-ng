@@ -1,11 +1,20 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, effect, inject, linkedSignal, signal, untracked } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  LOCALE_ID,
+  computed,
+  effect,
+  inject,
+  linkedSignal,
+  signal,
+  untracked,
+} from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { filter, map, merge, Observable } from 'rxjs';
 import { AuthService } from '../../../auth/services/auth.service';
 import { Permissions } from '../../../auth/services/permissions.service';
-import { ConnectionIndicator } from '../../../shared/layout/connection-indicator/connection-indicator';
 import { ItemMovedEvent, StatusChangedEvent } from '../../../board/models/board.models';
 import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
 import { ProjectService } from '../../../projects/services/project.service';
@@ -15,11 +24,11 @@ import { valueOf } from '../../../shared/resource-value';
 import { Button } from '../../../shared/ui/button/button';
 import { ConfirmInline } from '../../../shared/ui/confirm-inline/confirm-inline';
 import { DisabledReason } from '../../../shared/ui/disabled-reason/disabled-reason';
-import { Disclosure } from '../../../shared/ui/disclosure/disclosure';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { Panel } from '../../../shared/ui/panel/panel';
 import { SearchableSelect } from '../../../shared/ui/searchable-select/searchable-select';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
 import { TextLink } from '../../../shared/ui/text-link/text-link';
 import {
@@ -49,16 +58,15 @@ import { WorkItemRow } from '../work-item-row/work-item-row';
   selector: 'app-work-item-detail',
   imports: [
     RouterLink,
-    DatePipe,
     Button,
     ConfirmInline,
     SelectMenu,
     SearchableSelect,
     DisabledReason,
-    Disclosure,
     EmptyState,
     ErrorState,
     Panel,
+    Skeleton,
     TextLink,
     CriteriaList,
     MetaList,
@@ -68,7 +76,6 @@ import { WorkItemRow } from '../work-item-row/work-item-row';
     WorkItemLinks,
     WorkItemComments,
     WorkItemHistory,
-    ConnectionIndicator,
   ],
   templateUrl: './work-item-detail.html',
 })
@@ -81,6 +88,7 @@ export class WorkItemDetail {
   private readonly board = inject(BoardWebSocketService);
   private readonly auth = inject(AuthService);
   private readonly permissions = inject(Permissions);
+  private readonly dates = new DatePipe(inject(LOCALE_ID));
 
   protected readonly typeLabels = ITEM_TYPE_LABELS;
   protected readonly priorityLabels = PRIORITY_LABELS;
@@ -121,7 +129,9 @@ export class WorkItemDetail {
 
   /** Sprint names by code, so the history can say where an item came from. */
   protected readonly sprintNames = computed(() =>
-    Object.fromEntries((valueOf(this.sprints) ?? []).map((sprint) => [sprint.sprintCode, sprint.name])),
+    Object.fromEntries(
+      (valueOf(this.sprints) ?? []).map((sprint) => [sprint.sprintCode, sprint.name]),
+    ),
   );
 
   /** Planning work into sprints is for owners and admins; everyone else sees the sprint but cannot change it. */
@@ -133,7 +143,9 @@ export class WorkItemDetail {
     if (!code) {
       return 'Backlog (sin sprint)';
     }
-    return (valueOf(this.sprints) ?? []).find((sprint) => sprint.sprintCode === code)?.name ?? 'Sprint';
+    return (
+      (valueOf(this.sprints) ?? []).find((sprint) => sprint.sprintCode === code)?.name ?? 'Sprint'
+    );
   });
 
   protected canDelete(item: WorkItem): boolean {
@@ -143,7 +155,9 @@ export class WorkItemDetail {
   /** Root first, immediate parent last; built from `parents` (already loaded for the "Elemento superior" picker), not a
    * separate request. Stops at the first code that page doesn't have (truncated, or an item in another project). */
   protected readonly ancestors = computed<WorkItemSummary[]>(() => {
-    const byCode = new Map((valueOf(this.parents)?.items ?? []).map((item) => [item.workItemCode, item]));
+    const byCode = new Map(
+      (valueOf(this.parents)?.items ?? []).map((item) => [item.workItemCode, item]),
+    );
     const chain: WorkItemSummary[] = [];
     const seen = new Set<string>();
     let code = this.loadedItem()?.parentCode;
@@ -183,8 +197,23 @@ export class WorkItemDetail {
         : item.assignees.map((a) => `${a.fullName} (${this.roleLabels[a.role]})`).join(', ');
     return [
       { label: 'Asignado', value: assignedText },
-      { label: 'Relaciones', value: item.links.length === 0 ? 'Sin relaciones' : `${item.links.length}` },
-      { label: 'Creado', value: item.createdBy?.fullName ?? 'Usuario desconocido' },
+      {
+        label: 'Relaciones',
+        value: item.links.length === 0 ? 'Sin relaciones' : `${item.links.length}`,
+      },
+      { label: 'Creado por', value: item.createdBy?.fullName ?? 'Usuario desconocido' },
+      {
+        label: 'Puntos de esfuerzo',
+        value: `${item.effortPoints}${item.childrenEffortPoints > 0 ? ` (tareas secundarias: ${item.childrenEffortPoints})` : ''}`,
+      },
+      {
+        label: 'Horas est. / restantes',
+        value: `${item.estimatedHours ?? '—'} / ${item.remainingHours ?? '—'}`,
+      },
+      {
+        label: 'Última actualización',
+        value: this.dates.transform(item.updatedAt, 'medium') ?? '',
+      },
     ];
   });
 
@@ -199,7 +228,9 @@ export class WorkItemDetail {
   /** Every other item of the project; the backend refuses a cycle or another project's item with a clear message. */
   protected readonly parentChoices = computed(() => {
     const self = this.loadedItem()?.workItemCode;
-    return (valueOf(this.parents)?.items ?? []).filter((candidate) => candidate.workItemCode !== self);
+    return (valueOf(this.parents)?.items ?? []).filter(
+      (candidate) => candidate.workItemCode !== self,
+    );
   });
 
   /** What the sprint and parent pickers show: the item's own value, until the user picks (and again if the change fails). */
@@ -207,7 +238,10 @@ export class WorkItemDetail {
   protected readonly parentChoice = linkedSignal(() => this.loadedItem()?.parentCode ?? '');
 
   protected readonly statusOptions = computed<SelectMenuOption[]>(() =>
-    (this.loadedItem()?.allowedStatuses ?? []).map((status) => ({ value: status.code, label: status.displayName })),
+    (this.loadedItem()?.allowedStatuses ?? []).map((status) => ({
+      value: status.code,
+      label: status.displayName,
+    })),
   );
   protected readonly sprintOptions = computed<SelectMenuOption[]>(() => [
     { value: '', label: 'Backlog (sin sprint)' },
@@ -226,6 +260,13 @@ export class WorkItemDetail {
   private changedWhileEditing = false;
 
   constructor() {
+    effect(() => {
+      const projectCode = this.projectCode();
+      if (projectCode) {
+        untracked(() => this.board.connect(projectCode));
+      }
+    });
+    inject(DestroyRef).onDestroy(() => this.board.release());
     merge(this.board.statusChanged$, this.board.itemMoved$)
       .pipe(
         filter((event) => event.workItemCode === this.code()),
@@ -250,13 +291,17 @@ export class WorkItemDetail {
   protected moveToSprint(value: string, item: WorkItem): void {
     const previous = item.sprintCode ?? '';
     this.sprintChoice.set(value);
-    this.run(this.workItems.moveToSprint(item.workItemCode, value || null), () => this.sprintChoice.set(previous));
+    this.run(this.workItems.moveToSprint(item.workItemCode, value || null), () =>
+      this.sprintChoice.set(previous),
+    );
   }
 
   protected changeParent(value: string, item: WorkItem): void {
     const previous = item.parentCode ?? '';
     this.parentChoice.set(value);
-    this.run(this.workItems.updateParent(item.workItemCode, value || null), () => this.parentChoice.set(previous));
+    this.run(this.workItems.updateParent(item.workItemCode, value || null), () =>
+      this.parentChoice.set(previous),
+    );
   }
 
   protected onRelationsChanged(): void {
@@ -285,7 +330,9 @@ export class WorkItemDetail {
       error: (error: unknown) => {
         this.busy.set(false);
         this.confirmingDelete.set(false);
-        this.notifications.error(apiErrorMessage(error, 'No se pudo eliminar el elemento de trabajo.'));
+        this.notifications.error(
+          apiErrorMessage(error, 'No se pudo eliminar el elemento de trabajo.'),
+        );
       },
     });
   }
