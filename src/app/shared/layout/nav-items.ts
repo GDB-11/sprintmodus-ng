@@ -9,7 +9,7 @@ export interface NavItem {
   tone: NavTone;
   icon: IconName;
   route: string;
-  /** Shown disabled with the reason "Requiere rol propietario o administrador" for anyone `Permissions.canAdminister()` refuses. */
+  /** Left out of the sidebar, drawer and search palette for anyone `Permissions.canAdminister()` refuses. */
   adminOnly?: boolean;
   /** Which live count, if any, decorates this item. */
   badge?: 'notifications';
@@ -30,5 +30,3 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Suscripción', tone: 'success', icon: 'star', route: '/billing', adminOnly: true },
   { label: 'Configuración de flujo', tone: 'neutral', icon: 'settings', route: '/work-items/admin/workflows', adminOnly: true },
 ];
-
-export const ADMIN_ONLY_REASON = 'Requiere rol propietario o administrador.';

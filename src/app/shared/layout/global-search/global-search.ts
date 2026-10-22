@@ -16,6 +16,7 @@ import { WorkItemSummary } from '../../../work-items/models/work-item.models';
 import { WorkItemService } from '../../../work-items/services/work-item.service';
 import { valueOf } from '../../resource-value';
 import { Icon } from '../../ui/icon/icon';
+import { Permissions } from '../../../auth/services/permissions.service';
 import { NAV_ITEMS, NavItem } from '../nav-items';
 
 const SEARCH_DEBOUNCE_MS = 250;
@@ -41,6 +42,7 @@ type SearchOption =
 export class GlobalSearch {
   private readonly workItems = inject(WorkItemService);
   private readonly router = inject(Router);
+  private readonly permissions = inject(Permissions);
 
   @ViewChild('dialogEl') private readonly dialogEl?: ElementRef<HTMLDialogElement>;
 
@@ -63,7 +65,9 @@ export class GlobalSearch {
 
   private readonly navOptions = computed<SearchOption[]>(() => {
     const text = this.query().trim().toLowerCase();
-    const items = text ? NAV_ITEMS.filter((item) => item.label.toLowerCase().includes(text)) : NAV_ITEMS;
+    const items = NAV_ITEMS.filter(
+      (item) => (!item.adminOnly || this.permissions.canAdminister()) && item.label.toLowerCase().includes(text),
+    );
     return items.map((item, index) => ({ kind: 'nav', id: `gs-nav-${index}`, navItem: item }) as const);
   });
   private readonly workItemOptions = computed<SearchOption[]>(() =>

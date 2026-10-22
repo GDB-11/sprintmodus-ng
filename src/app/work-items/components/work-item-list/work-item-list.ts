@@ -1,3 +1,4 @@
+import { AvatarGroup } from '../../../shared/ui/avatar-group/avatar-group';
 import { Component, computed, inject, linkedSignal } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -51,10 +52,13 @@ const VIEW_OPTIONS: SegmentedOption<View>[] = [
   { value: 'list', label: 'Lista' },
 ];
 
+const assigneeNames = (item: WorkItemSummary) =>
+  (item.assignees ?? []).map((assignee) => assignee.fullName);
+
 const LISTA_COLUMNS: DataTableColumn<WorkItemSummary>[] = [
   { header: 'Clave' },
   { header: 'Título', cell: (item) => item.title },
-  { header: 'Tipo', cell: (item) => ITEM_TYPE_LABELS[item.type] },
+  { header: 'Asignados', cell: (item) => assigneeNames(item).join(', ') },
   { header: 'Estado' },
   { header: 'Prioridad' },
   { header: 'Puntos', numeric: true, cell: (item) => `${item.effortPoints}` },
@@ -81,6 +85,7 @@ const LISTA_COLUMNS: DataTableColumn<WorkItemSummary>[] = [
     Skeleton,
     WorkItemTreeNode,
     WorkItemTypeIcon,
+    AvatarGroup,
     DataTable,
     DataTableCell,
     StatusLabel,
@@ -106,6 +111,7 @@ export class WorkItemList {
   ];
   protected readonly viewOptions = VIEW_OPTIONS;
   protected readonly listaColumns = LISTA_COLUMNS;
+  protected readonly assigneeNames = assigneeNames;
 
   private readonly queryParams = toSignal(this.route.queryParamMap, { requireSync: true });
 

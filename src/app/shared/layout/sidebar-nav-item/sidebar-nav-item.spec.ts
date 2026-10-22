@@ -5,8 +5,6 @@ import { NavItem } from '../nav-items';
 import { SidebarNavItem } from './sidebar-nav-item';
 
 const ITEM: NavItem = { label: 'Notificaciones', tone: 'warning', icon: 'bell', route: '/notifications', badge: 'notifications' };
-const ADMIN_ITEM: NavItem = { label: 'Configuración de flujo', tone: 'neutral', icon: 'settings', route: '/work-items/admin/workflows', adminOnly: true };
-const ADMIN_REASON = 'Requiere rol propietario o administrador.';
 
 describe('SidebarNavItem', () => {
   let fixture: ComponentFixture<SidebarNavItem>;
@@ -48,27 +46,10 @@ describe('SidebarNavItem', () => {
     expect(root().querySelector('a')?.getAttribute('aria-label')).toBe('Notificaciones, 3 sin leer');
   });
 
-  it('renders disabled with the visible reason, not hidden, when one is given', () => {
-    fixture.componentRef.setInput('item', ADMIN_ITEM);
-    fixture.componentRef.setInput('disabledReason', ADMIN_REASON);
-    fixture.detectChanges();
-
-    expect(root().querySelector('a')).toBeNull();
-    expect(root().querySelector('div[title]')?.getAttribute('title')).toBe(ADMIN_REASON);
-    expect(root().textContent).toContain('Configuración de flujo');
-    expect(root().textContent).toContain(ADMIN_REASON);
-  });
-
-  it('passes axe, enabled and disabled, expanded and railed', async () => {
+  it('passes axe, expanded and railed', async () => {
     await expectNoAxeViolations(root());
 
     fixture.componentRef.setInput('expanded', false);
-    fixture.detectChanges();
-    await expectNoAxeViolations(root());
-
-    fixture.componentRef.setInput('item', ADMIN_ITEM);
-    fixture.componentRef.setInput('disabledReason', ADMIN_REASON);
-    fixture.componentRef.setInput('expanded', true);
     fixture.detectChanges();
     await expectNoAxeViolations(root());
   });

@@ -44,7 +44,7 @@
     </div>
   </app-page-header>
 
-  <div class="flex flex-wrap items-center gap-3">
+  <div class="mt-4 mb-4 flex flex-wrap items-center gap-3">
     <app-chip tone="info">Proyecto: {{ selectedProject()!.name }}</app-chip>
     <app-select-menu
       label="Tipo"
@@ -66,7 +66,7 @@
     >
       Vista general
     </a>
-    <form (submit)="search($event)" class="ml-auto">
+    <form (submit)="search($event)" class="max-w-md min-w-56 flex-1 basis-64">
       <app-search-field
         inputId="work-items-search"
         label="Buscar"
@@ -94,7 +94,7 @@
           {{ treeTotal() }}.
         </p>
       }
-      <p class="text-sm text-text-muted">
+      <p class="mb-3 text-sm text-text-muted">
         {{ treeSummary() }} · jerarquía Épica → Feature → Historia/Bug → Tarea
       </p>
       <div class="flex flex-col gap-3">
@@ -145,11 +145,17 @@
               item.displayKey
             }}</a>
           </ng-template>
-          <ng-template appDataTableCell let-item>{{ item.title }}</ng-template>
           <ng-template appDataTableCell let-item>
-            <span class="inline-flex items-center gap-1.5"
-              ><app-work-item-type-icon [type]="item.type" />{{ typeLabel(item.type) }}</span
+            <span class="inline-flex items-center gap-2"
+              ><app-work-item-type-icon [type]="item.type" /><span class="sr-only"
+                >{{ typeLabel(item.type) }}:</span
+              >{{ item.title }}</span
             >
+          </ng-template>
+          <ng-template appDataTableCell let-item>
+            @if (item.assignees?.length) {
+              <app-avatar-group [names]="assigneeNames(item)" [max]="3" />
+            }
           </ng-template>
           <ng-template appDataTableCell let-item>
             <app-status-label [status]="item.status" />

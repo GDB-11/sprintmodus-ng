@@ -26,12 +26,14 @@ describe('ShellNavList', () => {
     expect(links.length).toBe(NAV_ITEMS.length);
   });
 
-  it('shows the admin-only item disabled with its reason for a member', () => {
+  it('leaves the admin-only items out for a member', () => {
     (TestBed.inject(AuthService) as unknown as { becomes(role: 'MEMBER'): void }).becomes('MEMBER');
     fixture.detectChanges();
 
-    const disabled = Array.from(root().querySelectorAll('div[title]')).find((el) => el.textContent?.includes('Configuración de flujo'));
-    expect(disabled?.getAttribute('title')).toBe('Requiere rol propietario o administrador.');
+    const adminCount = NAV_ITEMS.filter((item) => item.adminOnly).length;
+    expect(root().querySelectorAll('a').length).toBe(NAV_ITEMS.length - adminCount);
+    expect(root().textContent).not.toContain('Configuración de flujo');
+    expect(root().querySelector('div[title]')).toBeNull();
   });
 
   it('lets an owner or admin use the admin-only item', () => {
