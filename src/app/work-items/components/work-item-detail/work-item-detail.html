@@ -37,22 +37,27 @@
           }
         </div>
         <div class="ml-auto flex flex-col items-end gap-1.5">
-          <div class="flex gap-3">
+          <div class="flex flex-wrap justify-end gap-3">
+            <app-markdown-export [workItemCodes]="[current.workItemCode]" [fileName]="current.displayKey" />
+            <app-markdown-import
+              [projectCode]="current.projectCode"
+              [parent]="{ workItemCode: current.workItemCode, type: current.type }"
+              (imported)="item.reload()"
+            />
             <button type="button" appButton variant="secondary" (click)="editing.set(true)">
               Editar
             </button>
-            @if (!confirmingDelete()) {
-              <button
-                type="button"
-                appButton
-                variant="secondary"
-                [disabled]="!canDelete(current)"
-                [attr.aria-describedby]="canDelete(current) ? null : 'delete-hint'"
-                (click)="confirmingDelete.set(true)"
-              >
-                Eliminar
-              </button>
-            }
+            <button
+              type="button"
+              appButton
+              variant="secondary"
+              aria-haspopup="dialog"
+              [disabled]="!canDelete(current)"
+              [attr.aria-describedby]="canDelete(current) ? null : 'delete-hint'"
+              (click)="confirmingDelete.set(true)"
+            >
+              Eliminar
+            </button>
           </div>
           @if (!canDelete(current)) {
             <app-disabled-reason
@@ -63,19 +68,28 @@
         </div>
       </div>
 
-      @if (confirmingDelete()) {
-        <app-confirm-inline
-          [question]="'¿Eliminar ' + current.displayKey + '?'"
-          confirmLabel="Sí, eliminar"
-          cancelLabel="Conservar"
-          [busy]="busy()"
-          (confirm)="delete(current)"
-          (cancel)="confirmingDelete.set(false)"
-        />
-      }
+      <app-confirm-dialog
+        [heading]="'¿Eliminar ' + current.displayKey + '?'"
+        confirmLabel="Sí, eliminar"
+        cancelLabel="Conservar"
+        [busy]="busy()"
+        [(open)]="confirmingDelete"
+        (confirm)="delete(current)"
+      >
+        <p>{{ current.displayKey }} · {{ current.title }}</p>
+        @if (current.children.length > 0) {
+          <p class="font-semibold">
+            Tiene {{ current.children.length }}
+            {{ current.children.length === 1 ? 'elemento secundario' : 'elementos secundarios' }}.
+            También se eliminarán, junto con todo lo que cuelgue de
+            {{ current.children.length === 1 ? 'él' : 'ellos' }}.
+          </p>
+        }
+        <p>Podrás ver su historial, pero el elemento dejará de aparecer en listas y tableros.</p>
+      </app-confirm-dialog>
     }
 
-    <div class="grid gap-6 xl:items-start" [class.xl:grid-cols-[1fr_280px]]="!editing()">
+    <div class="grid grid-cols-[minmax(0,1fr)] gap-6 xl:items-start" [class.xl:grid-cols-[minmax(0,1fr)_280px]]="!editing()">
       <div class="flex min-w-0 flex-col gap-6">
         @if (editing()) {
           <app-work-item-edit
@@ -114,6 +128,12 @@
               </ul>
             }
           </app-panel>
+
+          <app-work-item-assignees
+            [workItemCode]="current.workItemCode"
+            [assignees]="current.assignees"
+            (changed)="onRelationsChanged()"
+          />
 
           <app-work-item-links
             [workItemCode]="current.workItemCode"

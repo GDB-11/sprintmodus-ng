@@ -8,6 +8,7 @@ import {
   LoginRequest,
   LoginResponse,
   RegisterOrganizationRequest,
+  SubscriptionPlan,
 } from '../models/auth.models';
 import { normalizeOrganizationCode } from '../models/organization-code';
 import { isJwtExpired } from '../utils/jwt';
@@ -52,6 +53,20 @@ export class AuthService {
   organizationCodeAvailabilityUrl(code: string): string {
     const query = new URLSearchParams({ code: normalizeOrganizationCode(code) });
     return `${this.authUrl}/organization-code-available?${query}`;
+  }
+
+  /** Swaps the token for a fresh one: the plan, limits and role are read again from the backend. Failures leave the session as it is. */
+  refreshSession(): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.authUrl}/refresh-token`, null).pipe(
+      tap(({ token, ...session }) => this.startSession(token, session)),
+    );
+  }
+
+  /** Owner only: moves the organization to `plan` (stored in the backend) and starts the session the backend returns. */
+  changePlan(plan: SubscriptionPlan): Observable<LoginResponse> {
+    return this.http.put<LoginResponse>(`${this.authUrl}/subscription`, { plan }).pipe(
+      tap(({ token, ...session }) => this.startSession(token, session)),
+    );
   }
 
   logout(): void {

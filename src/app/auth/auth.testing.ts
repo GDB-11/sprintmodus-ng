@@ -1,4 +1,5 @@
 import { signal } from '@angular/core';
+import { Observable, of } from 'rxjs';
 import { AuthSession, OrganizationRole } from './models/auth.models';
 import { AuthService } from './services/auth.service';
 
@@ -16,6 +17,18 @@ export class FakeAuth {
 
   getCurrentUser(): AuthSession['user'] | null {
     return this.currentUser()?.user ?? null;
+  }
+
+  /** Calls made to `refreshSession()`, so a spec can tell the session was read again from the backend. */
+  refreshes = 0;
+
+  isAuthenticated(): boolean {
+    return this.currentUser() !== null;
+  }
+
+  refreshSession(): Observable<void> {
+    this.refreshes++;
+    return of(undefined);
   }
 
   logout(): void {

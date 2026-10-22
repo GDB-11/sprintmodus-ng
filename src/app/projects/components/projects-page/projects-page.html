@@ -1,0 +1,99 @@
+<app-page-header heading="Proyectos">
+  <button
+    pageHeaderActions
+    appButton
+    type="button"
+    [attr.aria-expanded]="creating()"
+    (click)="creating.set(!creating())"
+  >
+    <app-icon name="plus" />
+    Nuevo proyecto
+  </button>
+</app-page-header>
+
+@if (creating()) {
+  <app-project-create (created)="onCreated($event)" />
+}
+
+@if (context.projects.isLoading() && list().length === 0) {
+  <div role="status" class="flex flex-col gap-2">
+    <span class="sr-only">Cargando proyectos…</span><app-skeleton height="2rem" />
+  </div>
+} @else if (context.projects.error()) {
+  <app-error-state
+    message="No se pudieron cargar tus proyectos."
+    (retry)="context.projects.reload()"
+  />
+} @else if (list().length === 0) {
+  <app-empty-state message="Todavía no tienes proyectos. Crea el primero." />
+} @else {
+  <app-panel>
+    <app-data-table
+      caption="Proyectos de la organización"
+      [columns]="columns"
+      [rows]="list()"
+      [trackBy]="trackByProject"
+    >
+      <ng-template appDataTableCell let-project
+        ><span class="font-semibold">{{ project.name }}</span></ng-template
+      >
+      <ng-template appDataTableCell let-project>{{ project.key }}</ng-template>
+      <ng-template appDataTableCell let-project>{{ project.description }}</ng-template>
+      <ng-template appDataTableCell let-project>
+        @if (isCurrent(project)) {
+          <app-chip tone="success">Actual</app-chip>
+        } @else {
+          <button
+            appButton
+            variant="secondary"
+            size="compact"
+            type="button"
+            (click)="context.select(project.projectCode)"
+          >
+            Usar<span class="sr-only"> {{ project.name }}</span>
+          </button>
+        }
+      </ng-template>
+      <ng-template appDataTableCell let-project>
+        <div class="flex flex-wrap gap-2">
+          <button
+            appButton
+            variant="secondary"
+            size="compact"
+            type="button"
+            aria-haspopup="dialog"
+            (click)="askEdit(project)"
+          >
+            Editar<span class="sr-only"> {{ project.name }}</span>
+          </button>
+          <button
+            appButton
+            variant="secondary"
+            size="compact"
+            type="button"
+            aria-haspopup="dialog"
+            [disabled]="!canAdminister()"
+            [attr.title]="canAdminister() ? null : 'Solo un propietario o un administrador puede eliminar proyectos.'"
+            (click)="askDelete(project)"
+          >
+            Eliminar<span class="sr-only"> {{ project.name }}</span>
+          </button>
+        </div>
+      </ng-template>
+    </app-data-table>
+  </app-panel>
+}
+
+<app-project-edit [project]="editTarget()" [(open)]="editOpen" (saved)="context.projects.reload()" />
+
+<app-confirm-dialog
+  [heading]="'¿Eliminar ' + (deleteTarget()?.name ?? 'el proyecto') + '?'"
+  confirmLabel="Sí, eliminar proyecto"
+  cancelLabel="Conservar"
+  [busy]="deleting()"
+  [(open)]="deleteOpen"
+  (confirm)="confirmDelete()"
+>
+  <p>Se eliminarán el proyecto ({{ deleteTarget()?.key }}) y todos sus sprints.</p>
+  <p>La clave seguirá reservada, y el proyecto dejará de contar en el límite de tu plan.</p>
+</app-confirm-dialog>

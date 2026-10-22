@@ -1,0 +1,71 @@
+<app-page-header heading="Suscripción" />
+@if (!canManage()) {
+  <app-not-allowed message="Solo el propietario de la organización puede cambiar o cancelar la suscripción." />
+} @else {
+  <p class="text-sm text-text-muted">
+    Modo de prueba: los pagos son simulados y el plan se recuerda solo en este navegador.
+  </p>
+  <div class="grid gap-4 md:grid-cols-3">
+    @for (item of plans; track item.plan) {
+      <app-panel [heading]="item.label">
+        <div class="flex flex-col gap-3">
+          @if (item.plan === current()) {
+            <div><app-chip tone="info">Plan actual</app-chip></div>
+          }
+          <p class="text-2xl font-bold text-text">
+            {{ item.offer.priceUsd === 0 ? 'Gratis' : '$' + item.offer.priceUsd }}
+            @if (item.offer.priceUsd > 0) {
+              <span class="text-sm font-normal text-text-muted">/ mes</span>
+            }
+          </p>
+          <ul class="flex list-disc flex-col gap-1 pl-5 text-sm text-text">
+            @for (line of item.offer.highlights; track line) {
+              <li>{{ line }}</li>
+            }
+          </ul>
+          @if (item.plan !== current()) {
+            <div>
+              <button
+                appButton
+                [variant]="changeFor(item.plan) === 'upgrade' ? 'primary' : 'secondary'"
+                type="button"
+                [disabled]="busy()"
+                (click)="choose(item.plan)"
+              >
+                {{ actionLabel(item.plan, item.label) }}
+              </button>
+            </div>
+          }
+        </div>
+      </app-panel>
+    }
+  </div>
+
+  @if (paying()) {
+    <app-payment-form
+      [planLabel]="payingLabel()"
+      [priceUsd]="payingPrice()"
+      [busy]="busy()"
+      [errorMessage]="paymentError()"
+      (paid)="pay($event)"
+      (cancel)="closeDialogs()"
+    />
+  }
+  @if (confirming()) {
+    <app-confirm-inline
+      [question]="confirmQuestion()"
+      [confirmLabel]="confirming() === 'CANCEL' ? 'Sí, cancelar suscripción' : 'Sí, cambiar de plan'"
+      cancelLabel="Volver"
+      [busy]="busy()"
+      (confirm)="confirm()"
+      (cancel)="closeDialogs()"
+    />
+  }
+  @if (current() !== 'FREE' && !confirming() && !paying()) {
+    <div>
+      <button appButton variant="secondary" type="button" [disabled]="busy()" (click)="askCancel()">
+        Cancelar suscripción
+      </button>
+    </div>
+  }
+}

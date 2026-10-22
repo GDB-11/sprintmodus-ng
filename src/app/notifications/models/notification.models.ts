@@ -1,7 +1,7 @@
 import { UserRef } from '../../work-items/models/work-item.models';
 
 /** What a notification is about: a machine code, never text. The backend stores none, so the sentence is built here. */
-export type InboxNotificationType = 'MENTIONED';
+export type InboxNotificationType = 'MENTIONED' | 'ASSIGNED';
 
 export interface InboxWorkItemRef {
   workItemCode: string;

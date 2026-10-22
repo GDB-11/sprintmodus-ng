@@ -1,0 +1,18 @@
+<app-dialog [heading]="'Editar ' + (project()?.name ?? 'proyecto')" [(open)]="open">
+  <form [formRoot]="editForm" class="flex flex-col gap-4">
+    @if (errorMessage(); as message) {
+      <app-banner kind="error">{{ message }}</app-banner>
+    }
+    <app-text-field [field]="editForm.name" inputId="project-edit-name" label="Nombre" />
+    <app-textarea-field
+      [field]="editForm.description"
+      inputId="project-edit-description"
+      label="Descripción"
+      hint="Opcional. La clave del proyecto ({{ project()?.key }}) no se puede cambiar."
+    />
+    <div class="flex flex-wrap gap-3">
+      <button appButton type="submit">Guardar cambios</button>
+      <button appButton variant="secondary" type="button" (click)="open.set(false)">Cancelar</button>
+    </div>
+  </form>
+</app-dialog>

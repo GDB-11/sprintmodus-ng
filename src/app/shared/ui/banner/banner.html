@@ -1,4 +1,13 @@
 <div [attr.role]="role()" [class]="classes()">
-  <app-icon [name]="icon()" class="mt-0.5 shrink-0" />
+  <app-icon [name]="icon()" class="shrink-0" [class.mt-0.5]="!dismissible()" />
   <div class="flex-1"><ng-content /></div>
+  @if (dismissible()) {
+    <button
+      type="button"
+      (click)="dismissed.emit()"
+      class="shrink-0 rounded-md border border-current px-3 py-1.5 text-sm font-semibold hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
+    >
+      Cerrar<span class="sr-only"> notificación</span>
+    </button>
+  }
 </div>

@@ -8,12 +8,19 @@ import { valueOf } from '../../../shared/resource-value';
 import { Chip } from '../../../shared/ui/chip/chip';
 import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
 import { Button } from '../../../shared/ui/button/button';
-import { DataTable, DataTableCell, DataTableColumn } from '../../../shared/ui/data-table/data-table';
+import {
+  DataTable,
+  DataTableCell,
+  DataTableColumn,
+} from '../../../shared/ui/data-table/data-table';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { PageHeader } from '../../../shared/ui/page-header/page-header';
 import { SearchField } from '../../../shared/ui/search-field/search-field';
-import { SegmentedControl, SegmentedOption } from '../../../shared/ui/segmented-control/segmented-control';
+import {
+  SegmentedControl,
+  SegmentedOption,
+} from '../../../shared/ui/segmented-control/segmented-control';
 import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { TextLink } from '../../../shared/ui/text-link/text-link';
 import {
@@ -24,6 +31,8 @@ import {
   WorkItemSummary,
 } from '../../models/work-item.models';
 import { WorkItemService } from '../../services/work-item.service';
+import { MarkdownExport } from '../markdown-export/markdown-export';
+import { MarkdownImport } from '../markdown-import/markdown-import';
 import { PriorityChip } from '../priority-chip/priority-chip';
 import { StatusLabel } from '../status-label/status-label';
 import { WorkItemTreeNode } from '../work-item-tree-node/work-item-tree-node';
@@ -76,6 +85,8 @@ const LISTA_COLUMNS: DataTableColumn<WorkItemSummary>[] = [
     DataTableCell,
     StatusLabel,
     PriorityChip,
+    MarkdownExport,
+    MarkdownImport,
   ],
   templateUrl: './work-item-list.html',
 })
@@ -128,7 +139,12 @@ export class WorkItemList {
     params: () => {
       const project = this.selectedProject();
       return project && this.view() === 'list'
-        ? { projectCode: project.projectCode, type: this.type() ?? undefined, q: this.query() || undefined, page: this.page() }
+        ? {
+            projectCode: project.projectCode,
+            type: this.type() ?? undefined,
+            q: this.query() || undefined,
+            page: this.page(),
+          }
         : undefined;
     },
     stream: ({ params }) => this.workItems.list({ ...params, size: PAGE_SIZE }),
@@ -145,14 +161,19 @@ export class WorkItemList {
     stream: ({ params }) => this.workItems.list(params),
   });
 
-  protected readonly roots = computed(() => (valueOf(this.treeSource)?.items ?? []).filter((item) => item.type === 'EPIC'));
+  protected readonly roots = computed(() =>
+    (valueOf(this.treeSource)?.items ?? []).filter((item) => item.type === 'EPIC'),
+  );
   protected readonly orphans = computed(() =>
-    (valueOf(this.treeSource)?.items ?? []).filter((item) => item.type !== 'EPIC' && !item.parentCode),
+    (valueOf(this.treeSource)?.items ?? []).filter(
+      (item) => item.type !== 'EPIC' && !item.parentCode,
+    ),
   );
   /** "2 épicas · 2 features · 3 historias/bugs · 2 tareas", from the loaded items. */
   protected readonly treeSummary = computed(() => {
     const items = valueOf(this.treeSource)?.items ?? [];
-    const count = (...types: ItemType[]) => items.filter((item) => types.includes(item.type)).length;
+    const count = (...types: ItemType[]) =>
+      items.filter((item) => types.includes(item.type)).length;
     const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
     return [
       plural(count('EPIC'), 'épica', 'épicas'),
@@ -161,13 +182,23 @@ export class WorkItemList {
       plural(count('TASK'), 'tarea', 'tareas'),
     ].join(' · ');
   });
+  /** What the export slot writes: the roots of the Árbol, or exactly the rows of Lista's page. */
+  protected readonly exportCodes = computed(() =>
+    this.view() === 'tree'
+      ? [...this.roots(), ...this.orphans()].map((item) => item.workItemCode)
+      : (this.loadedItems()?.items ?? []).map((item) => item.workItemCode),
+  );
   protected readonly treeTotal = computed(() => valueOf(this.treeSource)?.total ?? 0);
   protected readonly treeTruncated = computed(() => this.treeTotal() > TREE_SOURCE_SIZE);
 
   protected readonly loadedItems = computed(() => valueOf(this.items));
-  protected readonly totalPages = computed(() => Math.max(1, Math.ceil((valueOf(this.items)?.total ?? 0) / PAGE_SIZE)));
+  protected readonly totalPages = computed(() =>
+    Math.max(1, Math.ceil((valueOf(this.items)?.total ?? 0) / PAGE_SIZE)),
+  );
   protected readonly firstShown = computed(() => this.page() * PAGE_SIZE + 1);
-  protected readonly lastShown = computed(() => Math.min((this.page() + 1) * PAGE_SIZE, valueOf(this.items)?.total ?? 0));
+  protected readonly lastShown = computed(() =>
+    Math.min((this.page() + 1) * PAGE_SIZE, valueOf(this.items)?.total ?? 0),
+  );
 
   constructor() {
     // A burst of changes (a card dragged across three columns) is one reload
@@ -177,6 +208,11 @@ export class WorkItemList {
         this.items.reload();
         this.treeSource.reload();
       });
+  }
+
+  protected reloadAll(): void {
+    this.items.reload();
+    this.treeSource.reload();
   }
 
   protected selectType(type: string | null): void {

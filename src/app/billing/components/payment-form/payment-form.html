@@ -1,0 +1,23 @@
+<app-panel [heading]="heading()" class="max-w-2xl">
+  <form [formRoot]="paymentForm" class="flex flex-col gap-4">
+    <app-banner kind="info">
+      Pago simulado: no se cobra nada ni se guarda la tarjeta. Usa {{ approvedCard }} para aprobar o
+      {{ declinedCard }} para ver un rechazo.
+    </app-banner>
+    @if (errorMessage(); as message) {
+      <app-banner kind="error">{{ message }}</app-banner>
+    }
+    <app-text-field [field]="paymentForm.cardName" inputId="card-name" label="Nombre en la tarjeta" autocomplete="cc-name" />
+    <app-text-field [field]="paymentForm.cardNumber" inputId="card-number" label="Número de tarjeta" autocomplete="cc-number" />
+    <div class="grid grid-cols-2 gap-4">
+      <app-text-field [field]="paymentForm.expiry" inputId="card-expiry" label="Vencimiento (MM/AA)" autocomplete="cc-exp" />
+      <app-text-field [field]="paymentForm.cvc" inputId="card-cvc" label="Código de seguridad" autocomplete="cc-csc" />
+    </div>
+    <div class="flex flex-wrap gap-2">
+      <button appButton type="submit" [disabled]="busy()">
+        {{ busy() ? 'Procesando pago…' : 'Pagar $' + priceUsd() + ' al mes' }}
+      </button>
+      <button appButton variant="secondary" type="button" [disabled]="busy()" (click)="cancel.emit()">Cancelar</button>
+    </div>
+  </form>
+</app-panel>

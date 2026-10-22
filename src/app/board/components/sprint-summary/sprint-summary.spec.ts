@@ -1,3 +1,4 @@
+import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -31,7 +32,7 @@ describe('SprintSummary', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SprintSummary],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
   });
@@ -57,6 +58,8 @@ describe('SprintSummary', () => {
     expect(root().textContent).toContain('Sprint 1 · Activo');
     expect(root().textContent).toContain('3 días restantes');
     expect(root().textContent).toContain('Por detrás del ritmo ideal');
+    expect(root().textContent).toContain('35 h restantes de 40 h planificadas');
+    expect(root().querySelector('a')?.getAttribute('href')).toBe('/sprints/s1/burndown');
     expect(root().querySelector('svg[role="img"]')).not.toBeNull();
     await expectNoAxeViolations(root());
   });
@@ -65,6 +68,7 @@ describe('SprintSummary', () => {
     await open('ACTIVE', 28);
 
     expect(root().textContent).toContain('Al día');
+    await expectNoAxeViolations(root());
   });
 
   it('asks for no burndown for a sprint that is not running', async () => {
@@ -72,5 +76,32 @@ describe('SprintSummary', () => {
 
     expect(root().textContent).toContain('Sprint 1 · Planificado');
     expect(root().querySelector('svg')).toBeNull();
+    expect(root().textContent).toContain('El burndown empieza cuando se inicia el sprint');
+    await expectNoAxeViolations(root());
+  });
+
+  it('offers a retry when the burndown cannot be loaded', async () => {
+    fixture = TestBed.createComponent(SprintSummary);
+    fixture.componentRef.setInput('sprint', sprint({ sprintCode: 's1', status: 'ACTIVE' }));
+    fixture.detectChanges();
+    http.expectOne(`${environment.apiUrl}/api/sprints/s1/burndown`).flush('x', { status: 500, statusText: 'Error' });
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(root().textContent).toContain('No se pudo cargar el burndown.');
+    await expectNoAxeViolations(root());
+  });
+
+  it('has no accessibility violations in dark mode, behind or on track', async () => {
+    document.documentElement.classList.add('dark');
+    try {
+      await open('ACTIVE', 35);
+      await expectNoAxeViolations(root());
+      fixture.destroy();
+      await open('ACTIVE', 28);
+      await expectNoAxeViolations(root());
+    } finally {
+      document.documentElement.classList.remove('dark');
+    }
   });
 });

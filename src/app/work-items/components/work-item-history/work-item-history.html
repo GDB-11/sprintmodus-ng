@@ -1,6 +1,14 @@
 <app-panel heading="Historial">
   <ng-container panelActions>
-    <button type="button" appButton variant="secondary" size="compact" [attr.aria-expanded]="open()" aria-controls="history-content" (click)="toggle()">
+    <button
+      type="button"
+      appButton
+      variant="secondary"
+      size="compact"
+      [attr.aria-expanded]="open()"
+      aria-controls="history-content"
+      (click)="toggle()"
+    >
       {{ open() ? 'Ocultar historial' : 'Mostrar historial' }}
     </button>
   </ng-container>
@@ -10,11 +18,17 @@
       <app-error-state message="No se pudo cargar el historial." (retry)="retry()" />
     }
     @if (loading() && entries().length === 0) {
-      <p role="status">Cargando historial…</p>
+      <div role="status" class="flex flex-col gap-2">
+        <span class="sr-only">Cargando historial…</span><app-skeleton height="2rem" />
+      </div>
     } @else if (!failed() && entries().length === 0) {
       <p class="text-sm text-text-muted">Este elemento aún no tiene cambios registrados.</p>
     } @else if (entries().length > 0) {
-      <ol aria-label="Cambios del elemento, del más reciente al más antiguo" [attr.aria-busy]="loading()" class="flex flex-col gap-3">
+      <ol
+        aria-label="Cambios del elemento, del más reciente al más antiguo"
+        [attr.aria-busy]="loading()"
+        class="flex flex-col gap-3"
+      >
         @for (entry of entries(); track $index) {
           <li>
             <app-history-entry [entry]="entry" [sprintNames]="sprintNames()" />
@@ -22,9 +36,20 @@
         }
       </ol>
       <div class="flex flex-wrap items-center gap-3">
-        <p class="text-sm text-text-muted">Mostrando {{ entries().length }} de {{ total() }} cambios</p>
+        <p class="text-sm text-text-muted">
+          Mostrando {{ entries().length }} de {{ total() }} cambios
+        </p>
         @if (hasMore()) {
-          <button type="button" appButton variant="secondary" size="compact" [disabled]="loading()" (click)="showMore()">Mostrar más</button>
+          <button
+            type="button"
+            appButton
+            variant="secondary"
+            size="compact"
+            [disabled]="loading()"
+            (click)="showMore()"
+          >
+            Mostrar más
+          </button>
         }
       </div>
     }

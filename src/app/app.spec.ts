@@ -35,6 +35,16 @@ describe('App', () => {
     expect(inbox.stop).toHaveBeenCalledTimes(1);
   });
 
+  it('reads the session again from the backend at the start and when the window regains focus', async () => {
+    const auth = TestBed.inject(AuthService) as unknown as FakeAuth;
+    const fixture = TestBed.createComponent(App);
+    await fixture.whenStable();
+    expect(auth.refreshes).toBe(1);
+
+    window.dispatchEvent(new Event('focus'));
+    expect(auth.refreshes).toBe(2);
+  });
+
   it('does not poll while nobody is signed in', async () => {
     const auth = TestBed.inject(AuthService) as unknown as FakeAuth;
     auth.currentUser.set(null);

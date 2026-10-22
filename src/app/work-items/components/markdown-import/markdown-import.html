@@ -1,0 +1,147 @@
+@if (root()) {
+  <button type="button" appButton variant="secondary" size="compact" aria-haspopup="dialog" (click)="show()">
+    <app-icon name="plus" />
+    Importar desde Markdown
+  </button>
+
+  <app-dialog heading="Importar desde Markdown" [(open)]="open">
+    @if (done(); as result) {
+      <app-banner kind="success">
+        Se {{ result.total === 1 ? 'creó 1 elemento' : 'crearon ' + result.total + ' elementos' }} ({{ doneSummary() }}).
+      </app-banner>
+      @if (result.created.length > 0) {
+        <ul class="flex flex-col gap-1 text-sm">
+          @for (root of result.created; track root.workItemCode) {
+            <li>
+              <a appTextLink [routerLink]="['/work-items', root.workItemCode]" (click)="open.set(false)"
+                >{{ root.displayKey }} · {{ root.title }}</a
+              >
+            </li>
+          }
+        </ul>
+      }
+      <div class="flex justify-end">
+        <button type="button" appButton (click)="open.set(false)">Cerrar</button>
+      </div>
+    } @else if (preview(); as result) {
+      <p class="text-sm text-text-muted">Revisa lo que se va a crear. Aún no se ha guardado nada.</p>
+
+      @if (errors().length > 0) {
+        <app-banner kind="error">
+          <p class="font-semibold">
+            {{ errors().length === 1 ? 'Hay 1 error' : 'Hay ' + errors().length + ' errores' }} en el archivo. Corrígelos y vuelve a revisar.
+          </p>
+          <ul class="mt-1 flex list-disc flex-col gap-1 pl-5 font-normal">
+            @for (diagnostic of errors(); track $index) {
+              <li>{{ message(diagnostic) }}</li>
+            }
+          </ul>
+        </app-banner>
+      } @else {
+        <p class="text-base font-semibold text-text">Se crearán {{ result.total }} elementos: {{ summary() }}.</p>
+      }
+
+      @if (warningMessages().length > 0) {
+        <app-banner kind="warning">
+          <p class="font-semibold">Avisos (no impiden importar)</p>
+          <ul class="mt-1 flex list-disc flex-col gap-1 pl-5 font-normal">
+            @for (text of warningMessages(); track $index) {
+              <li>{{ text }}</li>
+            }
+          </ul>
+        </app-banner>
+      }
+
+      @if (result.items.length > 0) {
+        <ng-container *ngTemplateOutlet="nodes; context: { $implicit: result.items }" />
+      }
+
+      @if (failure()) {
+        <app-banner kind="error">{{ failure() }}</app-banner>
+      }
+
+      <div class="flex flex-wrap items-center justify-end gap-3">
+        @if (errors().length > 0) {
+          <app-disabled-reason reason="Corrige los errores y vuelve a revisar para poder importar." />
+        }
+        <button type="button" appButton variant="secondary" [disabled]="busy()" (click)="backToEditing()">
+          Volver a editar
+        </button>
+        <button type="button" appButton [disabled]="busy() || errors().length > 0" (click)="confirm()">
+          {{ busy() ? 'Importando…' : 'Importar ' + result.total + ' elementos' }}
+        </button>
+      </div>
+    } @else {
+      <div class="flex flex-col gap-1.5">
+        <label for="import-levels" class="text-sm font-medium">¿Qué incluye tu archivo?</label>
+        <app-select-menu
+          inputId="import-levels"
+          label="¿Qué incluye tu archivo?"
+          [options]="levelOptions()"
+          [value]="levels()"
+          (valueChange)="setLevels($event)"
+        />
+      </div>
+
+      <div class="flex flex-wrap gap-3">
+        <button type="button" appButton variant="secondary" size="compact" (click)="downloadTemplate()">
+          <app-icon name="download" />
+          Descargar plantilla
+        </button>
+        <button type="button" appButton variant="secondary" size="compact" (click)="copyInstructions()">
+          Copiar instrucciones para IA
+        </button>
+      </div>
+      @if (helperStatus(); as status) {
+        <app-banner [kind]="status.failed ? 'error' : 'success'">{{ status.message }}</app-banner>
+      }
+
+      <div class="flex flex-col gap-1.5">
+        <label for="import-file" class="text-sm font-medium">Sube un archivo .md</label>
+        <input
+          id="import-file"
+          type="file"
+          appControl
+          accept=".md,.markdown,text/markdown,text/plain"
+          (change)="onFile($event)"
+        />
+      </div>
+      <div class="flex flex-col gap-1.5">
+        <label for="import-text" class="text-sm font-medium">…o pega el texto aquí</label>
+        <textarea id="import-text" appControl rows="10" [value]="text()" (input)="onText($event)"></textarea>
+      </div>
+
+      @if (failure()) {
+        <app-banner kind="error">{{ failure() }}</app-banner>
+      }
+
+      <div class="flex justify-end gap-3">
+        <button type="button" appButton variant="secondary" (click)="open.set(false)">Cancelar</button>
+        <button type="button" appButton [disabled]="!canReview()" (click)="review()">
+          {{ busy() ? 'Revisando…' : 'Revisar' }}
+        </button>
+      </div>
+    }
+  </app-dialog>
+}
+
+<ng-template #nodes let-items>
+  <ul class="flex flex-col gap-1.5 text-sm" [attr.aria-label]="'Elementos a crear'">
+    @for (item of items; track item.line) {
+      <li class="flex flex-col gap-1.5">
+        <div class="flex flex-wrap items-center gap-2">
+          <app-work-item-type-icon [type]="item.type" />
+          <span class="font-semibold text-text">{{ item.title }}</span>
+          @if (metadata(item)) {
+            <span class="text-text-muted">{{ metadata(item) }}</span>
+          }
+        </div>
+        @if (item.children.length > 0) {
+          <div class="ml-5">
+            <ng-container *ngTemplateOutlet="nodes; context: { $implicit: item.children }" />
+          </div>
+        }
+      </li>
+    }
+  </ul>
+</ng-template>

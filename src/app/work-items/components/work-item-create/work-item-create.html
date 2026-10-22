@@ -1,4 +1,10 @@
-<app-page heading="Nuevo elemento de trabajo" backLink="/work-items" backLabel="Elementos de trabajo">
+<div class="mx-auto flex max-w-5xl flex-col gap-4">
+  <app-page-header
+    heading="Nuevo elemento de trabajo"
+    backLink="/work-items"
+    backLabel="Elementos de trabajo"
+  />
+
   <form [formRoot]="createForm" class="flex max-w-2xl flex-col gap-4">
     @if (errorMessage(); as message) {
       <app-banner kind="error">{{ message }}</app-banner>
@@ -41,6 +47,9 @@
       [searchable]="true"
       [options]="parentOptions()"
     />
+    @if (isEpic()) {
+      <app-disabled-reason reason="Una épica no puede tener elemento superior." />
+    }
     <div class="grid gap-4 sm:grid-cols-2">
       <app-text-field
         [field]="createForm.effortPoints"
@@ -56,9 +65,13 @@
       />
     </div>
     <div>
-      <button type="submit" appButton [disabled]="createForm().submitting() || !createForm.projectCode().value()">
+      <button
+        type="submit"
+        appButton
+        [disabled]="createForm().submitting() || !createForm.projectCode().value()"
+      >
         {{ createForm().submitting() ? 'Creando…' : 'Crear elemento de trabajo' }}
       </button>
     </div>
   </form>
-</app-page>
+</div>

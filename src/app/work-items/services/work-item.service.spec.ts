@@ -158,4 +158,50 @@ describe('WorkItemService', () => {
     expect(request.request.params.get('sort')).toBe('board');
     request.flush({ items: [], total: 0, page: 0, size: 50 });
   });
+  describe('Markdown interchange', () => {
+    it('exports each item with the chosen parts, one after the other', () => {
+      let result = '';
+      service.exportMarkdown(['a', 'b'], ['children', 'links']).subscribe((markdown) => (result = markdown));
+
+      const first = http.expectOne((req) => req.url === `${BASE}/a/export`);
+      expect(first.request.params.get('include')).toBe('children,links');
+      expect(first.request.params.get('format')).toBe('markdown');
+      first.flush('# Épica: A\n');
+      http.expectOne((req) => req.url === `${BASE}/b/export`).flush('# Épica: B\n');
+
+      expect(result).toBe('# Épica: A\n\n# Épica: B\n');
+    });
+
+    it('asks for the template and the AI prompt of a context', () => {
+      service.importTemplate('FEATURE', 2).subscribe();
+      const template = http.expectOne((req) => req.url === `${BASE}/import/template`);
+      expect(template.request.params.get('root')).toBe('FEATURE');
+      expect(template.request.params.get('levels')).toBe('2');
+      expect(template.request.params.has('format')).toBe(false);
+      template.flush('# Característica: …');
+
+      service.importAiInstructions('FEATURE', 2).subscribe();
+      const prompt = http.expectOne((req) => req.url === `${BASE}/import/template`);
+      expect(prompt.request.params.get('format')).toBe('ai-instructions');
+      prompt.flush('Eres…');
+    });
+
+    it('posts the file as markdown under the project, or under a parent, previewing or not', () => {
+      service.importMarkdown('p1', 'e1', '# Característica: A\n', true).subscribe();
+      const dry = http.expectOne((req) => req.url === `${BASE}/import`);
+      expect(dry.request.method).toBe('POST');
+      expect(dry.request.body).toBe('# Característica: A\n');
+      expect(dry.request.headers.get('Content-Type')).toContain('text/markdown');
+      expect(dry.request.params.get('projectCode')).toBe('p1');
+      expect(dry.request.params.get('parentCode')).toBe('e1');
+      expect(dry.request.params.get('dryRun')).toBe('true');
+      dry.flush({});
+
+      service.importMarkdown('p1', null, '# Épica: A\n', false).subscribe();
+      const real = http.expectOne((req) => req.url === `${BASE}/import`);
+      expect(real.request.params.has('parentCode')).toBe(false);
+      expect(real.request.params.get('dryRun')).toBe('false');
+      real.flush({});
+    });
+  });
 });

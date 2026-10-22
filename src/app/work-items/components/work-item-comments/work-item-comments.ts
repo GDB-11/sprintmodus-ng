@@ -1,3 +1,4 @@
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { DatePipe } from '@angular/common';
 import { Component, DestroyRef, computed, inject, input, output, signal } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -32,7 +33,17 @@ const TYPING_SHOWN_MS = 3500;
  */
 @Component({
   selector: 'app-work-item-comments',
-  imports: [DatePipe, FormRoot, MentionField, MentionText, Banner, Button, ErrorState, Panel],
+  imports: [
+    Skeleton,
+    DatePipe,
+    FormRoot,
+    MentionField,
+    MentionText,
+    Banner,
+    Button,
+    ErrorState,
+    Panel,
+  ],
   templateUrl: './work-item-comments.html',
 })
 export class WorkItemComments {
@@ -79,7 +90,10 @@ export class WorkItemComments {
           this.errorMessage.set(null);
           try {
             const added = await firstValueFrom(
-              this.commentService.add(this.workItemCode(), toMentionTokens(this.model().content.trim(), this.mentions())),
+              this.commentService.add(
+                this.workItemCode(),
+                toMentionTokens(this.model().content.trim(), this.mentions()),
+              ),
             );
             this.append(added);
             this.model.set({ content: '' });
@@ -96,14 +110,17 @@ export class WorkItemComments {
   );
 
   constructor() {
-    const forThisItem = <T extends { workItemCode: string }>(event: T) => event.workItemCode === this.workItemCode();
+    const forThisItem = <T extends { workItemCode: string }>(event: T) =>
+      event.workItemCode === this.workItemCode();
 
-    this.board.commentAdded$.pipe(filter(forThisItem), takeUntilDestroyed()).subscribe(({ comment }) => {
-      this.append(comment);
-      if (comment.author) {
-        this.stopTyping(comment.author.userCode);
-      }
-    });
+    this.board.commentAdded$
+      .pipe(filter(forThisItem), takeUntilDestroyed())
+      .subscribe(({ comment }) => {
+        this.append(comment);
+        if (comment.author) {
+          this.stopTyping(comment.author.userCode);
+        }
+      });
     this.board.userTyping$
       .pipe(
         filter(forThisItem),
@@ -125,14 +142,19 @@ export class WorkItemComments {
   /** Adds a comment unless it is already listed: the one this user posts comes back as a broadcast too. */
   private append(comment: WorkItemComment): void {
     this.comments.update((comments) =>
-      (comments ?? []).some((known) => known.commentCode === comment.commentCode) ? comments : [...(comments ?? []), comment],
+      (comments ?? []).some((known) => known.commentCode === comment.commentCode)
+        ? comments
+        : [...(comments ?? []), comment],
     );
   }
 
   private showTyping(user: OnlineUser): void {
     clearTimeout(this.typingTimers.get(user.userCode));
     this.typing.update((typing) => ({ ...typing, [user.userCode]: user.email }));
-    this.typingTimers.set(user.userCode, setTimeout(() => this.stopTyping(user.userCode), TYPING_SHOWN_MS));
+    this.typingTimers.set(
+      user.userCode,
+      setTimeout(() => this.stopTyping(user.userCode), TYPING_SHOWN_MS),
+    );
   }
 
   private stopTyping(userCode: string): void {

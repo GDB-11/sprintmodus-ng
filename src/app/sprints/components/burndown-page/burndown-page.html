@@ -1,6 +1,8 @@
 <app-page-header [heading]="heading()" backLink="/sprints" backLabel="Sprints" />
 @if (burndown.status() === 'loading') {
-  <p role="status">Cargando el burndown…</p>
+  <div role="status" class="flex flex-col gap-2">
+    <span class="sr-only">Cargando el burndown…</span><app-skeleton height="2rem" />
+  </div>
 } @else if (errorMessage(); as message) {
   <app-error-state [message]="message" (retry)="burndown.reload()" />
 } @else if (loaded(); as sprint) {
@@ -12,7 +14,10 @@
       </div>
       <div>
         <dt class="font-medium text-text-muted">Fechas</dt>
-        <dd>{{ sprint.startDate | date: 'mediumDate' }} – {{ sprint.endDate | date: 'mediumDate' }} ({{ sprint.days }} días)</dd>
+        <dd>
+          {{ sprint.startDate | date: 'mediumDate' }} –
+          {{ sprint.endDate | date: 'mediumDate' }} ({{ sprint.days }} días)
+        </dd>
       </div>
       <div>
         <dt class="font-medium text-text-muted">Horas al empezar</dt>
@@ -33,7 +38,15 @@
   <app-panel [heading]="'Burndown · ' + sprint.sprintName">
     <app-burndown-chart [burndown]="sprint" />
     <div>
-      <button appButton variant="secondary" size="compact" type="button" (click)="burndown.reload()">Actualizar</button>
+      <button
+        appButton
+        variant="secondary"
+        size="compact"
+        type="button"
+        (click)="burndown.reload()"
+      >
+        Actualizar
+      </button>
     </div>
   </app-panel>
 }

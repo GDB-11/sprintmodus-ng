@@ -11,6 +11,8 @@ import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { TextLink } from '../../../shared/ui/text-link/text-link';
 import { WorkItemSummary } from '../../models/work-item.models';
 import { WorkItemService } from '../../services/work-item.service';
+import { MarkdownExport } from '../markdown-export/markdown-export';
+import { MarkdownImport } from '../markdown-import/markdown-import';
 import { StatusLabel } from '../status-label/status-label';
 import { WorkItemTypeIcon } from '../work-item-type-icon/work-item-type-icon';
 
@@ -50,7 +52,7 @@ const COLUMNS: DataTableColumn<FlatRow>[] = [{ header: 'Estado' }, { header: 'El
 /** The whole backlog of one project as a single indented table (Decision 3: `/work-items/overview`). */
 @Component({
   selector: 'app-work-item-overview',
-  imports: [RouterLink, PageHeader, TextLink, DataTable, DataTableCell, StatusLabel, WorkItemTypeIcon, EmptyState, ErrorState, Skeleton],
+  imports: [RouterLink, PageHeader, TextLink, DataTable, DataTableCell, StatusLabel, WorkItemTypeIcon, EmptyState, ErrorState, Skeleton, MarkdownExport, MarkdownImport],
   templateUrl: './work-item-overview.html',
 })
 export class WorkItemOverview {
@@ -69,6 +71,8 @@ export class WorkItemOverview {
   });
 
   protected readonly rows = computed(() => flatten(valueOf(this.source)?.items ?? []));
+  /** The roots of the table: their exports already carry every descendant. */
+  protected readonly exportCodes = computed(() => this.rows().filter((row) => row.depth === 0).map((row) => row.item.workItemCode));
   protected readonly total = computed(() => valueOf(this.source)?.total ?? 0);
   protected readonly truncated = computed(() => this.total() > SOURCE_SIZE);
 

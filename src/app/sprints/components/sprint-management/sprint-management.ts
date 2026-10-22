@@ -1,3 +1,6 @@
+import { RouterLink } from '@angular/router';
+import { TextLink } from '../../../shared/ui/text-link/text-link';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs';
@@ -16,7 +19,11 @@ import { valueOf } from '../../../shared/resource-value';
 import { Button } from '../../../shared/ui/button/button';
 import { Chip, ChipTone } from '../../../shared/ui/chip/chip';
 import { ConfirmInline } from '../../../shared/ui/confirm-inline/confirm-inline';
-import { DataTable, DataTableCell, DataTableColumn } from '../../../shared/ui/data-table/data-table';
+import {
+  DataTable,
+  DataTableCell,
+  DataTableColumn,
+} from '../../../shared/ui/data-table/data-table';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { Icon } from '../../../shared/ui/icon/icon';
@@ -30,7 +37,11 @@ import { VelocityHistory } from '../velocity-history/velocity-history';
 /** How many closed sprints the velocity history looks back over. */
 export const HISTORY_SPRINTS = 6;
 
-const MONTH_DAY = new Intl.DateTimeFormat('es', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+const MONTH_DAY = new Intl.DateTimeFormat('es', {
+  day: 'numeric',
+  month: 'short',
+  timeZone: 'UTC',
+});
 const DAY = new Intl.DateTimeFormat('es', { day: 'numeric', timeZone: 'UTC' });
 const MONTH = new Intl.DateTimeFormat('es', { month: 'short', timeZone: 'UTC' });
 
@@ -52,6 +63,9 @@ function dateRange(start: string, end: string): string {
 @Component({
   selector: 'app-sprint-management',
   imports: [
+    RouterLink,
+    TextLink,
+    Skeleton,
     PageHeader,
     Panel,
     Button,
@@ -112,8 +126,13 @@ export class SprintManagement {
   );
   protected readonly loadedHistory = computed(() => valueOf(this.history));
   /** A project has one active sprint at a time, so starting another is refused until it is closed. */
-  protected readonly hasActiveSprint = computed(() => this.loadedSprints().some((sprint) => sprint.status === 'ACTIVE'));
-  protected readonly closing = computed(() => this.loadedSprints().find((sprint) => sprint.sprintCode === this.confirmingClose()) ?? null);
+  protected readonly hasActiveSprint = computed(() =>
+    this.loadedSprints().some((sprint) => sprint.status === 'ACTIVE'),
+  );
+  protected readonly closing = computed(
+    () =>
+      this.loadedSprints().find((sprint) => sprint.sprintCode === this.confirmingClose()) ?? null,
+  );
 
   /** The sprint whose burndown is shown: the one picked, else the active one, else the latest that has begun. */
   protected readonly burndownSprint = computed(() => {
@@ -163,7 +182,11 @@ export class SprintManagement {
   }
 
   protected start(sprint: Sprint): void {
-    this.run(this.projectService.startSprint(sprint.sprintCode), `${sprint.name} está en marcha.`, 'No se pudo iniciar el sprint.');
+    this.run(
+      this.projectService.startSprint(sprint.sprintCode),
+      `${sprint.name} está en marcha.`,
+      'No se pudo iniciar el sprint.',
+    );
   }
 
   protected close(sprint: Sprint): void {
@@ -176,7 +199,9 @@ export class SprintManagement {
   }
 
   private latestPoint(burndown: Burndown | undefined) {
-    return [...(burndown?.points ?? [])].reverse().find((point) => point.day >= 1 && point.remainingHours != null);
+    return [...(burndown?.points ?? [])]
+      .reverse()
+      .find((point) => point.day >= 1 && point.remainingHours != null);
   }
 
   private run(change: Observable<unknown>, success: string, failure: string): void {

@@ -3,7 +3,7 @@ import { DOCUMENT } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { describeNotification } from '../../../notifications/models/notification-description';
+import { NotificationRow } from '../../../notifications/components/notification-row/notification-row';
 import { InboxService } from '../../../notifications/services/inbox.service';
 import { valueOf } from '../../resource-value';
 import { Badge } from '../../ui/badge/badge';
@@ -17,7 +17,7 @@ const PHONE_BREAKPOINT_QUERY = '(max-width: 767px)';
 /** The latest five notifications, from the top bar. Straight to `/notifications` on phone instead of a popover. */
 @Component({
   selector: 'app-notifications-popover',
-  imports: [OverlayModule, Icon, Badge, Popover],
+  imports: [OverlayModule, Icon, Badge, Popover, NotificationRow],
   templateUrl: './notifications-popover.html',
 })
 export class NotificationsPopover {
@@ -27,9 +27,12 @@ export class NotificationsPopover {
 
   protected readonly open = signal(false);
   protected readonly count = computed(() => this.inbox.unreadCount() ?? 0);
-  protected readonly badge = computed(() => (this.count() > BADGE_CAP ? `${BADGE_CAP}+` : `${this.count()}`));
-  protected readonly label = computed(() => (this.count() > 0 ? `Notificaciones, ${this.count()} sin leer` : 'Notificaciones'));
-  protected readonly describe = describeNotification;
+  protected readonly badge = computed(() =>
+    this.count() > BADGE_CAP ? `${BADGE_CAP}+` : `${this.count()}`,
+  );
+  protected readonly label = computed(() =>
+    this.count() > 0 ? `Notificaciones, ${this.count()} sin leer` : 'Notificaciones',
+  );
 
   private readonly recent = rxResource({
     params: () => (this.open() ? {} : undefined),
@@ -40,7 +43,8 @@ export class NotificationsPopover {
   protected readonly hasError = computed(() => !!this.recent.error());
 
   protected toggle(): void {
-    const isPhone = this.document.defaultView?.matchMedia?.(PHONE_BREAKPOINT_QUERY).matches ?? false;
+    const isPhone =
+      this.document.defaultView?.matchMedia?.(PHONE_BREAKPOINT_QUERY).matches ?? false;
     if (isPhone) {
       void this.router.navigateByUrl('/notifications');
       return;

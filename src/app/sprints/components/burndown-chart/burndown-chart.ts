@@ -1,7 +1,11 @@
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { Component, DestroyRef, ElementRef, InjectionToken, afterNextRender, computed, effect, inject, input, signal, untracked, viewChild } from '@angular/core';
 import { Chart, ChartConfiguration, Filler, LineController, LineElement, LinearScale, PointElement, Tooltip } from 'chart.js';
-import { Burndown } from '../../../projects/models/project.models';
+import { Burndown, BurndownPoint } from '../../../projects/models/project.models';
+import { ChartKey } from '../../../shared/ui/chart-key/chart-key';
+import { ChartProbe } from '../../../shared/ui/chart-probe/chart-probe';
+import { DataTable, DataTableCell, DataTableColumn } from '../../../shared/ui/data-table/data-table';
+import { Disclosure } from '../../../shared/ui/disclosure/disclosure';
 import { ChartColors, ACTUAL_LABEL, IDEAL_LABEL, PROJECTION_LABEL, burndownChartConfig, crosshairPlugin } from '../../models/burndown-chart-config';
 import { projectCompletion } from '../../models/burndown-projection';
 
@@ -43,7 +47,7 @@ const isDark = () => document.documentElement.classList.contains('dark');
  */
 @Component({
   selector: 'app-burndown-chart',
-  imports: [DecimalPipe, DatePipe],
+  imports: [DecimalPipe, DatePipe, ChartKey, ChartProbe, Disclosure, DataTable, DataTableCell],
   templateUrl: './burndown-chart.html',
 })
 export class BurndownChart {
@@ -52,12 +56,20 @@ export class BurndownChart {
   readonly burndown = input.required<Burndown>();
 
   private readonly canvas = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
-  private readonly idealKey = viewChild.required<ElementRef<SVGElement>>('idealKey');
-  private readonly actualKey = viewChild.required<ElementRef<SVGElement>>('actualKey');
-  private readonly inkProbe = viewChild.required<ElementRef<HTMLElement>>('inkProbe');
-  private readonly gridProbe = viewChild.required<ElementRef<HTMLElement>>('gridProbe');
-  private readonly surfaceProbe = viewChild.required<ElementRef<HTMLElement>>('surfaceProbe');
-  private readonly projectionKey = viewChild<ElementRef<SVGElement>>('projectionKey');
+  private readonly idealKey = viewChild.required('idealKey', { read: ElementRef<HTMLElement> });
+  private readonly actualKey = viewChild.required('actualKey', { read: ElementRef<HTMLElement> });
+  private readonly inkProbe = viewChild.required('inkProbe', { read: ElementRef<HTMLElement> });
+  private readonly gridProbe = viewChild.required('gridProbe', { read: ElementRef<HTMLElement> });
+  private readonly surfaceProbe = viewChild.required('surfaceProbe', { read: ElementRef<HTMLElement> });
+  private readonly projectionKey = viewChild('projectionKey', { read: ElementRef<HTMLElement> });
+
+  protected readonly columns: readonly DataTableColumn<BurndownPoint>[] = [
+    { header: 'Día' },
+    { header: 'Fecha' },
+    { header: 'Ideal (h)', numeric: true },
+    { header: 'Real (h)', numeric: true },
+  ];
+  protected readonly trackByDay = (point: BurndownPoint) => point.day;
 
   protected readonly labels = { ideal: IDEAL_LABEL, actual: ACTUAL_LABEL, projection: PROJECTION_LABEL };
   protected readonly projection = computed(() => projectCompletion(this.burndown()));

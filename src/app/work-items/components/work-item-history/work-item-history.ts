@@ -1,3 +1,4 @@
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { catchError, EMPTY, filter, forkJoin, map, merge, Subject, switchMap } from 'rxjs';
@@ -19,7 +20,7 @@ const PAGE_SIZE = 20;
  */
 @Component({
   selector: 'app-work-item-history',
-  imports: [HistoryEntryView, Button, ErrorState, Panel],
+  imports: [Skeleton, HistoryEntryView, Button, ErrorState, Panel],
   templateUrl: './work-item-history.html',
 })
 export class WorkItemHistory {

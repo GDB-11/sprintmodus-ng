@@ -5,7 +5,17 @@ import {
   CdkDropList,
   CdkDropListGroup,
 } from '@angular/cdk/drag-drop';
-import { Component, DestroyRef, ElementRef, Injector, afterNextRender, computed, inject, linkedSignal, signal } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  ElementRef,
+  Injector,
+  afterNextRender,
+  computed,
+  inject,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subject, auditTime, filter, merge } from 'rxjs';
@@ -43,7 +53,6 @@ import { WorkItemService } from '../../../work-items/services/work-item.service'
 import { ItemMovedEvent, StatusChangedEvent } from '../../models/board.models';
 import { compareForBoard, placeBefore, rankGroupOf } from '../../models/board-order';
 import { BoardWebSocketService } from '../../services/board-websocket.service';
-import { ConnectionIndicator } from '../../../shared/layout/connection-indicator/connection-indicator';
 import { ColumnTabs } from '../column-tabs/column-tabs';
 import { KanbanCard, MoveOption } from '../kanban-card/kanban-card';
 import { SprintSummary } from '../sprint-summary/sprint-summary';
@@ -112,7 +121,6 @@ interface PendingMove {
     ColumnTabs,
     SprintSummary,
     StatusLabel,
-    ConnectionIndicator,
     SprintFilter,
     KanbanCard,
     CdkDropListGroup,
@@ -136,7 +144,10 @@ export class KanbanBoard {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   private readonly injector = inject(Injector);
 
-  protected readonly typeOptions: readonly SelectMenuOption[] = ITEM_TYPES.map((type) => ({ value: type, label: ITEM_TYPE_LABELS[type] }));
+  protected readonly typeOptions: readonly SelectMenuOption[] = ITEM_TYPES.map((type) => ({
+    value: type,
+    label: ITEM_TYPE_LABELS[type],
+  }));
   protected readonly priorityOptions: readonly SelectMenuOption[] = [
     { value: '', label: 'Todas las prioridades' },
     ...PRIORITIES.map((priority) => ({ value: priority, label: PRIORITY_LABELS[priority] })),
@@ -168,17 +179,24 @@ export class KanbanBoard {
   protected readonly selectedSprint = computed(() => {
     const wanted = this.queryParams().get('sprint');
     const sprints = this.loadedSprints();
-    if (wanted === ALL_SPRINTS || wanted === BACKLOG || sprints.some((sprint) => sprint.sprintCode === wanted)) {
+    if (
+      wanted === ALL_SPRINTS ||
+      wanted === BACKLOG ||
+      sprints.some((sprint) => sprint.sprintCode === wanted)
+    ) {
       return wanted!;
     }
     return sprints.find((sprint) => sprint.status === 'ACTIVE')?.sprintCode ?? ALL_SPRINTS;
   });
   /** The sprint whose summary heads the board, when one specific sprint is selected. */
   protected readonly selectedSprintInfo = computed(
-    () => this.loadedSprints().find((sprint) => sprint.sprintCode === this.selectedSprint()) ?? null,
+    () =>
+      this.loadedSprints().find((sprint) => sprint.sprintCode === this.selectedSprint()) ?? null,
   );
   /** Sprints are known (or failed to load) before items are asked for, so the first request is already the right one. */
-  private readonly sprintsSettled = computed(() => this.sprints.status() === 'resolved' || this.sprints.status() === 'error');
+  private readonly sprintsSettled = computed(
+    () => this.sprints.status() === 'resolved' || this.sprints.status() === 'error',
+  );
 
   protected readonly priorityFilter = computed<Priority | null>(() => {
     const priority = this.queryParams().get('priority');
@@ -204,7 +222,8 @@ export class KanbanBoard {
       this.workItems.list({
         projectCode: params.projectCode,
         type: params.type,
-        sprintCode: params.sprint === ALL_SPRINTS || params.sprint === BACKLOG ? undefined : params.sprint,
+        sprintCode:
+          params.sprint === ALL_SPRINTS || params.sprint === BACKLOG ? undefined : params.sprint,
         backlog: params.sprint === BACKLOG ? true : undefined,
         sort: 'board',
         size: BOARD_PAGE_SIZE,
@@ -245,7 +264,9 @@ export class KanbanBoard {
         byCode.set(assignee.userCode, assignee.fullName);
       }
     }
-    return [...byCode].map(([userCode, fullName]) => ({ userCode, fullName })).sort((a, b) => a.fullName.localeCompare(b.fullName));
+    return [...byCode]
+      .map(([userCode, fullName]) => ({ userCode, fullName }))
+      .sort((a, b) => a.fullName.localeCompare(b.fullName));
   });
 
   protected readonly assigneeChoices = computed<SelectMenuOption[]>(() => [
@@ -263,7 +284,9 @@ export class KanbanBoard {
       (card) =>
         (!priority || card.priority === priority) &&
         (!assignee ||
-          (assignee === UNASSIGNED ? card.assignees.length === 0 : card.assignees.some((a) => a.userCode === assignee))) &&
+          (assignee === UNASSIGNED
+            ? card.assignees.length === 0
+            : card.assignees.some((a) => a.userCode === assignee))) &&
         (!text ||
           card.title.toLowerCase().includes(text) ||
           card.displayKey.toLowerCase().includes(text) ||
@@ -276,7 +299,11 @@ export class KanbanBoard {
     const cards = [...this.visibleCards()].sort(compareForBoard);
     return this.statuses().map((status) => {
       const inColumn = cards.filter((card) => card.status.code === status.code);
-      return { status, cards: inColumn, points: inColumn.reduce((sum, card) => sum + card.effortPoints, 0) };
+      return {
+        status,
+        cards: inColumn,
+        points: inColumn.reduce((sum, card) => sum + card.effortPoints, 0),
+      };
     });
   });
 
@@ -284,10 +311,18 @@ export class KanbanBoard {
   private readonly pickedColumn = signal<string | null>(null);
   protected readonly activeColumn = computed(() => {
     const columns = this.columns();
-    return columns.find((column) => column.status.code === this.pickedColumn())?.status.code ?? columns[0]?.status.code ?? '';
+    return (
+      columns.find((column) => column.status.code === this.pickedColumn())?.status.code ??
+      columns[0]?.status.code ??
+      ''
+    );
   });
   protected readonly columnTabs = computed(() =>
-    this.columns().map((column) => ({ code: column.status.code, label: column.status.displayName, count: column.cards.length })),
+    this.columns().map((column) => ({
+      code: column.status.code,
+      label: column.status.displayName,
+      count: column.cards.length,
+    })),
   );
   protected pickColumn(code: string): void {
     this.pickedColumn.set(code);
@@ -310,7 +345,9 @@ export class KanbanBoard {
                 (t.from === status.code && t.to === candidate.code) ||
                 (t.allowedBackward && t.from === candidate.code && t.to === status.code),
             );
-            return transition ? [{ status: candidate, requiredRole: transition.requiredRole ?? undefined }] : [];
+            return transition
+              ? [{ status: candidate, requiredRole: transition.requiredRole ?? undefined }]
+              : [];
           }),
       );
     }
@@ -352,8 +389,12 @@ export class KanbanBoard {
       this.workflow.status() === 'loading' ||
       this.items.status() === 'loading',
   );
-  protected readonly failed = computed(() => !!(this.projects.error() || this.workflow.error() || this.items.error()));
-  protected readonly notShownCount = computed(() => Math.max(0, (valueOf(this.items)?.total ?? 0) - BOARD_PAGE_SIZE));
+  protected readonly failed = computed(
+    () => !!(this.projects.error() || this.workflow.error() || this.items.error()),
+  );
+  protected readonly notShownCount = computed(() =>
+    Math.max(0, (valueOf(this.items)?.total ?? 0) - BOARD_PAGE_SIZE),
+  );
 
   constructor() {
     merge(this.board.refresh$, this.board.itemsReordered$, this.unknownItems)
@@ -417,16 +458,27 @@ export class KanbanBoard {
     if (this.selectedSprint() !== ALL_SPRINTS) {
       return null;
     }
-    return this.loadedSprints().find((sprint) => sprint.sprintCode === card.sprintCode)?.name ?? 'Backlog';
+    return (
+      this.loadedSprints().find((sprint) => sprint.sprintCode === card.sprintCode)?.name ??
+      'Backlog'
+    );
   }
 
   /** Whether the dragged card may be dropped in a column: any move this user may make, or staying where it is. */
-  protected readonly canEnter = (drag: CdkDrag<WorkItemSummary>, drop: CdkDropList<string>): boolean =>
-    drag.data.status.code === drop.data || this.movesOf(drag.data).some((move) => move.allowed && move.status.code === drop.data);
+  protected readonly canEnter = (
+    drag: CdkDrag<WorkItemSummary>,
+    drop: CdkDropList<string>,
+  ): boolean =>
+    drag.data.status.code === drop.data ||
+    this.movesOf(drag.data).some((move) => move.allowed && move.status.code === drop.data);
 
   protected isDropTarget(column: Column): boolean {
     const card = this.dragged();
-    return !!card && card.status.code !== column.status.code && this.movesOf(card).some((m) => m.allowed && m.status.code === column.status.code);
+    return (
+      !!card &&
+      card.status.code !== column.status.code &&
+      this.movesOf(card).some((m) => m.allowed && m.status.code === column.status.code)
+    );
   }
 
   protected onDrop(event: CdkDragDrop<string, string, WorkItemSummary>): void {
@@ -437,9 +489,16 @@ export class KanbanBoard {
     } else if (this.canReorder() && event.previousIndex !== event.currentIndex) {
       // Dropped between two cards of the column. A card only moves inside its own priority, so it goes before the first card of
       // its priority that now follows it, or last in its priority if none does.
-      const column = this.columns().find((candidate) => candidate.status.code === event.container.data);
-      const following = (column?.cards ?? []).filter((other) => other !== card).slice(event.currentIndex);
-      this.reorderBefore(card, following.find((other) => other.priority === card.priority)?.workItemCode ?? null);
+      const column = this.columns().find(
+        (candidate) => candidate.status.code === event.container.data,
+      );
+      const following = (column?.cards ?? [])
+        .filter((other) => other !== card)
+        .slice(event.currentIndex);
+      this.reorderBefore(
+        card,
+        following.find((other) => other.priority === card.priority)?.workItemCode ?? null,
+      );
     }
   }
 
@@ -472,7 +531,9 @@ export class KanbanBoard {
       error: (error: unknown) => {
         this.reordering.set(false);
         this.setRanks(previous);
-        this.notifications.error(apiErrorMessage(error, `No se pudo reordenar ${card.displayKey}.`));
+        this.notifications.error(
+          apiErrorMessage(error, `No se pudo reordenar ${card.displayKey}.`),
+        );
         this.items.reload();
       },
     });
@@ -483,7 +544,9 @@ export class KanbanBoard {
    * `refocus` is for moves made from the card's own list: the card reappears in another column and focus would be lost.
    */
   protected moveTo(card: WorkItemSummary, statusCode: string, refocus: boolean): void {
-    const target = this.movesOf(card).find((move) => move.allowed && move.status.code === statusCode)?.status;
+    const target = this.movesOf(card).find(
+      (move) => move.allowed && move.status.code === statusCode,
+    )?.status;
     if (!target || this.isPending(card)) {
       return; // the workflow does not allow it, this user may not, or an earlier move of this card is still unanswered
     }
@@ -491,9 +554,15 @@ export class KanbanBoard {
     this.setPending(code, { from: card.status, to: target.code });
     this.setStatus(code, target);
     if (refocus) {
-      afterNextRender(() => this.host.nativeElement.querySelector<HTMLElement>(`[data-move-for="${code}"] button`)?.focus(), {
-        injector: this.injector,
-      });
+      afterNextRender(
+        () =>
+          this.host.nativeElement
+            .querySelector<HTMLElement>(`[data-move-for="${code}"] button`)
+            ?.focus(),
+        {
+          injector: this.injector,
+        },
+      );
     }
 
     if (this.board.moveItem(code, target.code)) {
@@ -503,7 +572,9 @@ export class KanbanBoard {
         setTimeout(() => {
           if (this.pending().has(code)) {
             this.clearPending(code);
-            this.notifications.warning(`No se confirmó el cambio de ${card.displayKey}. Se actualizó el tablero.`);
+            this.notifications.warning(
+              `No se confirmó el cambio de ${card.displayKey}. Se actualizó el tablero.`,
+            );
             this.items.reload();
           }
         }, MOVE_TIMEOUT_MS),
@@ -518,14 +589,19 @@ export class KanbanBoard {
           this.announce(`${card.displayKey} movido a ${updated.status.displayName}.`);
         }
       },
-      error: (error: unknown) => this.revert(code, apiErrorMessage(error, `No se pudo mover ${card.displayKey}.`)),
+      error: (error: unknown) =>
+        this.revert(code, apiErrorMessage(error, `No se pudo mover ${card.displayKey}.`)),
     });
   }
 
   /** Whether this user may make a move that asks for `role`: nothing asked, an owner/admin, or assigned to the card in that role. */
   private mayUse(role: AssignmentRole | undefined, card: WorkItemSummary): boolean {
     const me = this.permissions.userCode();
-    return !role || this.permissions.canAdminister() || card.assignees.some((a) => a.role === role && a.userCode === me);
+    return (
+      !role ||
+      this.permissions.canAdminister() ||
+      card.assignees.some((a) => a.role === role && a.userCode === me)
+    );
   }
 
   /** What the server says happened to an item, from anyone (this user's own moves come back as well). It is the truth. */
@@ -577,7 +653,11 @@ export class KanbanBoard {
   }
 
   private setRanks(ranks: ReadonlyMap<string, number | undefined>): void {
-    this.cards.update((cards) => cards.map((card) => (ranks.has(card.workItemCode) ? { ...card, boardRank: ranks.get(card.workItemCode) } : card)));
+    this.cards.update((cards) =>
+      cards.map((card) =>
+        ranks.has(card.workItemCode) ? { ...card, boardRank: ranks.get(card.workItemCode) } : card,
+      ),
+    );
   }
 
   private setPending(workItemCode: string, move: PendingMove): void {
@@ -599,6 +679,10 @@ export class KanbanBoard {
   }
 
   private navigate(queryParams: Record<string, string | null>): void {
-    void this.router.navigate([], { relativeTo: this.route, queryParams, queryParamsHandling: 'merge' });
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams,
+      queryParamsHandling: 'merge',
+    });
   }
 }

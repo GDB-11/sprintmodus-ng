@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
-import { form, FormRoot, maxLength, required } from '@angular/forms/signals';
+import { disabled, form, FormRoot, maxLength, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { ProjectService } from '../../../projects/services/project.service';
@@ -9,7 +9,8 @@ import { notBlank } from '../../../shared/not-blank';
 import { valueOf } from '../../../shared/resource-value';
 import { Banner } from '../../../shared/ui/banner/banner';
 import { Button } from '../../../shared/ui/button/button';
-import { Page } from '../../../shared/ui/page/page';
+import { DisabledReason } from '../../../shared/ui/disabled-reason/disabled-reason';
+import { PageHeader } from '../../../shared/ui/page-header/page-header';
 import { SelectField, SelectOption } from '../../../shared/ui/select-field/select-field';
 import { TextareaField } from '../../../shared/ui/textarea-field/textarea-field';
 import { TextField } from '../../../shared/ui/text-field/text-field';
@@ -54,7 +55,16 @@ const PRIORITY_OPTIONS: SelectOption[] = PRIORITIES.map((priority) => ({
 /** Creates a work item of any type in a project. A non-standard parent is accepted; the backend's warning is shown. */
 @Component({
   selector: 'app-work-item-create',
-  imports: [Page, FormRoot, TextField, TextareaField, SelectField, Banner, Button],
+  imports: [
+    PageHeader,
+    FormRoot,
+    TextField,
+    TextareaField,
+    SelectField,
+    Banner,
+    Button,
+    DisabledReason,
+  ],
   templateUrl: './work-item-create.html',
 })
 export class WorkItemCreate {
@@ -86,6 +96,8 @@ export class WorkItemCreate {
   protected readonly createForm = form(
     this.model,
     (path) => {
+      // An Epic never has a parent (the backend refuses it too)
+      disabled(path.parentCode, ({ valueOf }) => valueOf(path.type) === 'EPIC');
       required(path.projectCode, { message: 'Elige el proyecto.' });
       required(path.title, { message: 'Ingresa un título.' });
       notBlank(path.title, 'Ingresa un título.');
@@ -101,7 +113,9 @@ export class WorkItemCreate {
             const created = await firstValueFrom(this.workItems.create(this.toRequest()));
             await this.router.navigate(['/work-items', created.workItemCode]);
           } catch (error) {
-            this.errorMessage.set(apiErrorMessage(error, 'No se pudo crear el elemento de trabajo.'));
+            this.errorMessage.set(
+              apiErrorMessage(error, 'No se pudo crear el elemento de trabajo.'),
+            );
           }
           return undefined;
         },
@@ -125,6 +139,8 @@ export class WorkItemCreate {
     stream: ({ params }) => this.workItems.list({ projectCode: params, size: 200 }),
   });
 
+  protected readonly isEpic = computed(() => this.model().type === 'EPIC');
+
   protected readonly parentOptions = computed<SelectOption[]>(() => [
     { value: '', label: 'Sin elemento superior' },
     ...(valueOf(this.parentCandidates)?.items ?? []).map((item) => ({
@@ -134,6 +150,13 @@ export class WorkItemCreate {
   ]);
 
   constructor() {
+    // The parent is disabled for an Epic, so a value chosen before switching the type must not be sent
+    effect(() => {
+      if (this.isEpic() && this.model().parentCode) {
+        this.model.update((model) => ({ ...model, parentCode: '' }));
+      }
+    });
+
     // Preselect the project from the URL, or the first one, and the parent when arriving from an item.
     effect(() => {
       const projects = valueOf(this.projects);

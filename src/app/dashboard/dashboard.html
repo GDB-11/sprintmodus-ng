@@ -18,7 +18,7 @@
         <app-line-sparkline [ideal]="chart.ideal" [actual]="chart.actual" [label]="chart.label" />
         <div class="flex flex-wrap items-center justify-between gap-2">
           <app-chip [tone]="chart.pace.behind ? 'warning' : 'success'">
-            {{ chart.pace.behind ? 'Por detrás del ritmo' : 'En ritmo' }}
+            {{ chart.pace.behind ? 'Por detrás del ritmo ideal' : 'Al día' }}
           </app-chip>
           <a appTextLink [routerLink]="['/sprints', activeSprint()!.sprintCode, 'burndown']">Ver burndown</a>
         </div>
@@ -49,6 +49,9 @@
         <app-meter label="Proyectos" [value]="projectsUsed()" [max]="org.maxProjects" />
         <app-meter label="Usuarios" [value]="usersUsed()" [max]="org.maxUsers" />
         <p>Plan: <strong>{{ planLabel() }}</strong></p>
+        @if (canAddUsers()) {
+          <a appTextLink routerLink="/members" class="w-fit">Administrar miembros</a>
+        }
       }
     </app-panel>
   </div>

@@ -1,25 +1,50 @@
 @if (projects.isLoading()) {
-  <p role="status">Cargando proyectos…</p>
+  <div role="status" class="flex flex-col gap-2">
+    <span class="sr-only">Cargando proyectos…</span><app-skeleton height="2rem" />
+  </div>
 } @else if (projects.error()) {
   <app-error-state message="No se pudieron cargar tus proyectos." (retry)="projects.reload()" />
 } @else if (!selectedProject()) {
-  <app-empty-state message="Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo." />
-} @else {  
+  <app-empty-state
+    message="Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo."
+  >
+    <a appTextLink routerLink="/projects">Crear un proyecto</a>
+  </app-empty-state>
+} @else {
   <app-page-header heading="Tablero">
     <div pageHeaderActions class="flex flex-wrap items-center gap-3">
-      <a appTextLink routerLink="/sprints" [queryParams]="{ project: selectedProject()?.projectCode }">Gestionar sprints</a>
-      <a appTextLink routerLink="/work-items" [queryParams]="{ project: selectedProject()?.projectCode, type: type() }">
+      <a
+        appTextLink
+        routerLink="/sprints"
+        [queryParams]="{ project: selectedProject()?.projectCode }"
+        >Gestionar sprints</a
+      >
+      <a
+        appTextLink
+        routerLink="/work-items"
+        [queryParams]="{ project: selectedProject()?.projectCode, type: type() }"
+      >
         Ver como lista
       </a>
     </div>
   </app-page-header>
 
   @if (loadedSprints().length > 0) {
-    <app-sprint-filter [sprints]="loadedSprints()" [selected]="selectedSprint()" (selectedChange)="selectSprint($event)" />
+    <app-sprint-filter
+      [sprints]="loadedSprints()"
+      [selected]="selectedSprint()"
+      (selectedChange)="selectSprint($event)"
+    />
   }
 
   <div class="flex flex-wrap items-center gap-3">
-    <app-select-menu inputId="type" label="Tipo" [options]="typeOptions" [value]="type()" (valueChange)="selectType($event)" />
+    <app-select-menu
+      inputId="type"
+      label="Tipo"
+      [options]="typeOptions"
+      [value]="type()"
+      (valueChange)="selectType($event)"
+    />
     <app-select-menu
       inputId="priority"
       label="Prioridad"
@@ -48,7 +73,9 @@
       placeholder="Clave, título o persona…"
     />
     @if (filtering() || search()) {
-      <button type="button" appButton variant="secondary" size="compact" (click)="clearFilters()">Quitar filtros</button>
+      <button type="button" appButton variant="secondary" size="compact" (click)="clearFilters()">
+        Quitar filtros
+      </button>
     }
   </div>
 
@@ -57,13 +84,14 @@
   }
 
   <p class="text-xs text-text-muted">
-    Arrastra una tarjeta a otra columna, o usa la lista «Mover a…» de la tarjeta. Solo se ofrecen los cambios de estado
-    permitidos por el flujo de trabajo.
+    Arrastra una tarjeta a otra columna, o usa la lista «Mover a…» de la tarjeta. Solo se ofrecen
+    los cambios de estado permitidos por el flujo de trabajo.
     @if (canReorder()) {
-      Dentro de una columna las tarjetas se ordenan por prioridad; arrástralas o usa «Subir» y «Bajar» para cambiar su orden
-      dentro de su prioridad.
+      Dentro de una columna las tarjetas se ordenan por prioridad; arrástralas o usa «Subir» y
+      «Bajar» para cambiar su orden dentro de su prioridad.
     } @else {
-      Dentro de una columna las tarjetas se ordenan por prioridad y luego por el orden que fijan los administradores.
+      Dentro de una columna las tarjetas se ordenan por prioridad y luego por el orden que fijan los
+      administradores.
     }
   </p>
   <p class="sr-only" role="status">{{ announcement() }}</p>
@@ -76,15 +104,28 @@
       <app-skeleton height="5rem" />
     </div>
   } @else if (failed()) {
-    <app-error-state message="No se pudo cargar el tablero." (retry)="workflow.reload(); items.reload()" />
+    <app-error-state
+      message="No se pudo cargar el tablero."
+      (retry)="workflow.reload(); items.reload()"
+    />
   } @else {
     @if (notShownCount() > 0) {
       <app-banner kind="warning">
-        El tablero muestra los primeros {{ pageSize }} elementos; hay {{ notShownCount() }} más. Usa la lista para verlos.
+        El tablero muestra los primeros {{ pageSize }} elementos; hay {{ notShownCount() }} más. Usa
+        la lista para verlos.
       </app-banner>
     }
-    <app-column-tabs [tabs]="columnTabs()" [selected]="activeColumn()" (selectedChange)="pickColumn($event)" />
-    <div role="region" aria-label="Tablero de estados" tabindex="0" class="overflow-x-auto pb-2 lg:min-h-0 lg:flex-1">
+    <app-column-tabs
+      [tabs]="columnTabs()"
+      [selected]="activeColumn()"
+      (selectedChange)="pickColumn($event)"
+    />
+    <div
+      role="region"
+      aria-label="Tablero de estados"
+      tabindex="0"
+      class="overflow-x-auto pb-2 lg:min-h-0 lg:flex-1"
+    >
       <div cdkDropListGroup class="flex items-start gap-4 lg:h-full lg:items-stretch">
         @for (column of columns(); track column.status.code) {
           <section
@@ -94,7 +135,10 @@
             [dropTarget]="isDropTarget(column)"
             [attr.aria-labelledby]="'column-' + column.status.code"
           >
-            <h2 [id]="'column-' + column.status.code" class="flex items-center justify-between gap-2 px-1 text-sm font-semibold">
+            <h2
+              [id]="'column-' + column.status.code"
+              class="flex items-center justify-between gap-2 px-1 text-sm font-semibold"
+            >
               <app-status-label [status]="column.status" />
               <span class="shrink-0 font-normal whitespace-nowrap text-text-muted">
                 {{ column.cards.length }} · {{ column.points }} pts

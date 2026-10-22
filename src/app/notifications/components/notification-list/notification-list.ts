@@ -1,18 +1,20 @@
-import { DatePipe } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterLink } from '@angular/router';
 import { catchError, EMPTY, map, Subject, switchMap } from 'rxjs';
 import { apiErrorMessage } from '../../../shared/http-errors';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Button } from '../../../shared/ui/button/button';
 import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
-import { Page } from '../../../shared/ui/page/page';
-import { describeNotification } from '../../models/notification-description';
+import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
+import { ErrorState } from '../../../shared/ui/error-state/error-state';
+import { PageHeader } from '../../../shared/ui/page-header/page-header';
+import { Panel } from '../../../shared/ui/panel/panel';
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
+import { NotificationRow } from '../notification-row/notification-row';
 import { InboxNotification } from '../../models/notification.models';
 import { InboxService } from '../../services/inbox.service';
 
 const PAGE_SIZE = 20;
-const SECONDARY_BUTTON_CLASSES =
-  'rounded-md border border-neutral-700 px-3 py-1.5 text-sm font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:border-neutral-400 dark:focus-visible:outline-secondary-400';
 
 /**
  * The signed-in user's notifications, newest first, twenty at a time. Each one is a link to its work item (opening it marks it
@@ -20,13 +22,22 @@ const SECONDARY_BUTTON_CLASSES =
  */
 @Component({
   selector: 'app-notification-list',
-  imports: [DatePipe, Page, RouterLink, Checkbox],
+  imports: [
+    PageHeader,
+    Checkbox,
+    Button,
+    Banner,
+    ErrorState,
+    EmptyState,
+    Skeleton,
+    Panel,
+    NotificationRow,
+  ],
   templateUrl: './notification-list.html',
 })
 export class NotificationList {
   private readonly inbox = inject(InboxService);
 
-  protected readonly buttonClasses = SECONDARY_BUTTON_CLASSES;
   protected readonly items = signal<readonly InboxNotification[]>([]);
   protected readonly total = signal(0);
   protected readonly unreadOnly = signal(false);
@@ -37,7 +48,9 @@ export class NotificationList {
   protected readonly errorMessage = signal<string | null>(null);
 
   protected readonly hasMore = computed(() => this.items().length < this.total());
-  protected readonly hasUnread = computed(() => this.items().some((item) => !item.isRead) || (this.inbox.unreadCount() ?? 0) > 0);
+  protected readonly hasUnread = computed(
+    () => this.items().some((item) => !item.isRead) || (this.inbox.unreadCount() ?? 0) > 0,
+  );
 
   private pages = 0;
   /** What to fetch: the first page again (a reload) or the next one; a newer request replaces an older one. */
@@ -62,7 +75,9 @@ export class NotificationList {
         takeUntilDestroyed(),
       )
       .subscribe(({ kind, result }) => {
-        this.items.update((shown) => (kind === 'more' ? [...shown, ...result.items] : result.items));
+        this.items.update((shown) =>
+          kind === 'more' ? [...shown, ...result.items] : result.items,
+        );
         this.pages = kind === 'more' ? this.pages + 1 : 1;
         this.total.set(result.total);
         this.loading.set(false);
@@ -70,13 +85,13 @@ export class NotificationList {
     this.reload();
   }
 
-  protected describe(notification: InboxNotification): string {
-    return describeNotification(notification);
-  }
-
   protected toggleUnreadOnly(): void {
     this.unreadOnly.update((only) => !only);
-    this.status.set(this.unreadOnly() ? 'Mostrando solo las notificaciones sin leer.' : 'Mostrando todas las notificaciones.');
+    this.status.set(
+      this.unreadOnly()
+        ? 'Mostrando solo las notificaciones sin leer.'
+        : 'Mostrando todas las notificaciones.',
+    );
     this.reload();
   }
 
@@ -104,7 +119,11 @@ export class NotificationList {
         this.items.update((items) =>
           this.unreadOnly()
             ? items.filter((item) => item.notificationCode !== notification.notificationCode)
-            : items.map((item) => (item.notificationCode === notification.notificationCode ? { ...item, isRead: true } : item)),
+            : items.map((item) =>
+                item.notificationCode === notification.notificationCode
+                  ? { ...item, isRead: true }
+                  : item,
+              ),
         );
         if (this.unreadOnly()) {
           this.total.update((total) => Math.max(0, total - 1));
@@ -113,7 +132,9 @@ export class NotificationList {
         this.working.set(false);
       },
       error: (error: unknown) => {
-        this.errorMessage.set(apiErrorMessage(error, 'No se pudo marcar la notificación como leída.'));
+        this.errorMessage.set(
+          apiErrorMessage(error, 'No se pudo marcar la notificación como leída.'),
+        );
         this.working.set(false);
       },
     });
@@ -129,7 +150,9 @@ export class NotificationList {
         this.reload();
       },
       error: (error: unknown) => {
-        this.errorMessage.set(apiErrorMessage(error, 'No se pudieron marcar las notificaciones como leídas.'));
+        this.errorMessage.set(
+          apiErrorMessage(error, 'No se pudieron marcar las notificaciones como leídas.'),
+        );
         this.working.set(false);
       },
     });

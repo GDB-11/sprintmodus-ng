@@ -1,5 +1,5 @@
 <header
-  class="glass sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 rounded-none border-x-0 border-t-0 px-3 [padding-top:env(safe-area-inset-top)]"
+  class="glass sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 rounded-none border-x-0 border-t-0 px-3 pt-[env(safe-area-inset-top)]"
 >
   <button
     type="button"
@@ -10,7 +10,7 @@
     <app-icon name="menu" />
   </button>
 
-  <app-project-switcher class="min-w-0" />
+  <app-project-switcher class="min-w-0 max-w-64 xl:shrink-0" />
   <app-shell-breadcrumb />
 
   <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
@@ -18,7 +18,7 @@
       type="button"
       (click)="searchOpen.set(true)"
       aria-label="Buscar (Ctrl+K)"
-      class="hidden w-64 items-center gap-2 rounded-[10px] border border-control-border bg-control-track px-3 py-2 text-left text-sm text-text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 lg:flex dark:focus-visible:outline-secondary-400"
+      class="hidden w-64 items-center gap-2 rounded-[10px] border border-control-border bg-control-track px-3 py-2 text-left text-sm text-text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 xl:flex dark:focus-visible:outline-secondary-400"
     >
       <app-icon name="search" />
       Buscar o Ctrl K…
@@ -27,7 +27,7 @@
       type="button"
       (click)="searchOpen.set(true)"
       aria-label="Buscar (Ctrl+K)"
-      class="hidden items-center justify-center rounded-md border border-control-border bg-control-track p-2 text-text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 sm:inline-flex lg:hidden dark:focus-visible:outline-secondary-400"
+      class="hidden items-center justify-center rounded-md border border-control-border bg-control-track p-2 text-text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 sm:inline-flex xl:hidden dark:focus-visible:outline-secondary-400"
     >
       <app-icon name="search" />
     </button>
@@ -35,8 +35,8 @@
 
     <a appButton size="compact" routerLink="/work-items/new">
       <app-icon name="plus" />
-      <span class="hidden lg:inline">Nuevo</span>
-      <span class="sr-only lg:hidden">Nuevo elemento de trabajo</span>
+      <span class="hidden xl:inline">Nuevo</span>
+      <span class="sr-only xl:hidden">Nuevo elemento de trabajo</span>
     </a>
 
     @if (context.current(); as project) {

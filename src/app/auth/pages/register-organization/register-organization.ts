@@ -13,6 +13,9 @@ import {
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthCard } from '../../components/auth-card/auth-card';
+import { Banner } from '../../../shared/ui/banner/banner';
+import { Button } from '../../../shared/ui/button/button';
+import { TextLink } from '../../../shared/ui/text-link/text-link';
 import { TextField } from '../../../shared/ui/text-field/text-field';
 import {
   OrganizationCodeAvailability,
@@ -49,7 +52,7 @@ function registrationErrorMessage(error: unknown): string {
 
 @Component({
   selector: 'app-register-organization',
-  imports: [AuthCard, TextField, FormRoot, RouterLink],
+  imports: [AuthCard, Banner, Button, TextField, TextLink, FormRoot, RouterLink],
   templateUrl: './register-organization.html',
 })
 export class RegisterOrganization {

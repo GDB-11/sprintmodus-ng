@@ -1,0 +1,42 @@
+<app-panel heading="Agregar usuario" class="max-w-2xl">
+  <form [formRoot]="memberForm" class="flex flex-col gap-4">
+    @if (addedName(); as name) {
+      <app-banner kind="success">
+        Se agregó a {{ name }}. Entrégale la contraseña inicial por un canal seguro: no se volverá a mostrar.
+      </app-banner>
+    }
+    @if (errorMessage(); as message) {
+      <app-banner kind="error">{{ message }}</app-banner>
+    }
+    <app-text-field [field]="memberForm.fullName" inputId="member-name" label="Nombre completo" autocomplete="off" />
+    <app-text-field [field]="memberForm.email" inputId="member-email" label="Correo" type="email" />
+    <app-select-field [field]="memberForm.role" inputId="member-role" label="Rol" [options]="roleOptions()" />
+    <app-text-field
+      [field]="memberForm.password"
+      inputId="member-password"
+      label="Contraseña inicial"
+      [type]="showPassword() ? 'text' : 'password'"
+      autocomplete="new-password"
+      hint="Al menos 8 caracteres. La persona podrá usarla para entrar; compártela fuera de la aplicación."
+    />
+    <div class="flex flex-wrap gap-2">
+      <button appButton variant="secondary" size="compact" type="button" (click)="generate()">Generar</button>
+      <button
+        appButton
+        variant="secondary"
+        size="compact"
+        type="button"
+        [attr.aria-pressed]="showPassword()"
+        (click)="toggleShowPassword()"
+      >
+        {{ showPassword() ? 'Ocultar contraseña' : 'Mostrar contraseña' }}
+      </button>
+    </div>
+    @if (atLimit()) {
+      <app-disabled-reason [reason]="limitReason()" />
+    }
+    <div>
+      <button appButton type="submit" [disabled]="atLimit()">Agregar usuario</button>
+    </div>
+  </form>
+</app-panel>

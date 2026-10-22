@@ -65,7 +65,13 @@ describe('WorkItemList', () => {
       request.flush({
         items: [
           summary({ workItemCode: 'epic-1', displayKey: 'WAR-1', title: 'Checkout', type: 'EPIC' }),
-          summary({ workItemCode: 'orphan-1', displayKey: 'WAR-2', title: 'Orphan bug', type: 'BUG', parentCode: undefined }),
+          summary({
+            workItemCode: 'orphan-1',
+            displayKey: 'WAR-2',
+            title: 'Orphan bug',
+            type: 'BUG',
+            parentCode: undefined,
+          }),
         ],
         total: 2,
         page: 0,
@@ -95,19 +101,26 @@ describe('WorkItemList', () => {
       expect(request.request.params.get('projectCode')).toBe('p1');
       expect(request.request.params.get('size')).toBe('25');
       request.flush({
-        items: [summary(), summary({ workItemCode: 'item-2', displayKey: 'WAR-1001', title: 'Refund', type: 'BUG' })],
+        items: [
+          summary(),
+          summary({ workItemCode: 'item-2', displayKey: 'WAR-1001', title: 'Refund', type: 'BUG' }),
+        ],
         total: 2,
         page: 0,
         size: 25,
       });
       await settle();
 
-      const rows = [...root().querySelectorAll('table tbody tr')].map((row) => row.textContent?.replace(/\s+/g, ' ').trim());
+      const rows = [...root().querySelectorAll('table tbody tr')].map((row) =>
+        row.textContent?.replace(/\s+/g, ' ').trim(),
+      );
       expect(rows).toHaveLength(2);
       expect(rows[0]).toContain('WAR-1000');
       expect(rows[0]).toContain('Pay by card');
       expect(rows[1]).toContain('Error');
-      expect(root().querySelector('a[href="/work-items/item-1"]')?.textContent).toContain('WAR-1000');
+      expect(root().querySelector('a[href="/work-items/item-1"]')?.textContent).toContain(
+        'WAR-1000',
+      );
       expect(root().textContent).toContain('Mostrando 1–2 de 2');
     });
 
@@ -130,7 +143,9 @@ describe('WorkItemList', () => {
 
       root().querySelector<HTMLButtonElement>('app-select-menu button[role="combobox"]')!.click();
       fixture.detectChanges();
-      const bugOption = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent?.trim() === 'Error')!;
+      const bugOption = [...document.querySelectorAll<HTMLElement>('[role="option"]')].find(
+        (o) => o.textContent?.trim() === 'Error',
+      )!;
       bugOption.click();
 
       const request = await nextItemsRequest();
@@ -160,7 +175,9 @@ describe('WorkItemList', () => {
       (await nextItemsRequest()).flush(null, { status: 500, statusText: 'Server Error' });
       await settle();
 
-      expect(root().querySelector('[role="alert"]')?.textContent).toContain('No se pudieron cargar los elementos de trabajo.');
+      expect(root().querySelector('[role="alert"]')?.textContent).toContain(
+        'No se pudieron cargar los elementos de trabajo.',
+      );
       root().querySelector<HTMLButtonElement>('[role="alert"] button')!.click();
       fixture.detectChanges();
 
@@ -179,7 +196,9 @@ describe('WorkItemList', () => {
       const search = root().querySelector<HTMLInputElement>('#work-items-search')!;
       search.value = 'checkout';
       search.dispatchEvent(new Event('input'));
-      root().querySelector('form')!.dispatchEvent(new Event('submit', { cancelable: true }));
+      root()
+        .querySelector('form')!
+        .dispatchEvent(new Event('submit', { cancelable: true }));
 
       const request = await nextItemsRequest();
       const params = router.parseUrl(router.url).queryParams;
@@ -203,7 +222,10 @@ describe('WorkItemList', () => {
   it('has no accessibility violations', async () => {
     await open('/work-items?view=list');
     (await nextItemsRequest()).flush({
-      items: [summary(), summary({ workItemCode: 'item-2', displayKey: 'WAR-1001', title: 'Refund', type: 'BUG' })],
+      items: [
+        summary(),
+        summary({ workItemCode: 'item-2', displayKey: 'WAR-1001', title: 'Refund', type: 'BUG' }),
+      ],
       total: 60,
       page: 0,
       size: 25,
@@ -215,7 +237,14 @@ describe('WorkItemList', () => {
 
   describe('live updates', () => {
     const PAGE = { items: [summary()], total: 1, page: 0, size: 25 };
-    const move = { workItemCode: 'item-1', displayKey: 'WAR-1000', status: { code: 'DONE', displayName: 'Done', isInitial: false, isTerminal: true }, allowedStatuses: [], fromStatus: 'NEW', updatedAt: 'now' };
+    const move = {
+      workItemCode: 'item-1',
+      displayKey: 'WAR-1000',
+      status: { code: 'DONE', displayName: 'Done', isInitial: false, isTerminal: true },
+      allowedStatuses: [],
+      fromStatus: 'NEW',
+      updatedAt: 'now',
+    };
 
     async function openList(): Promise<void> {
       await open('/work-items?view=list&project=p2');

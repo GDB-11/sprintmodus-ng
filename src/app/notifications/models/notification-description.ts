@@ -6,6 +6,8 @@ export function describeNotification(notification: InboxNotification): string {
   switch (notification.type) {
     case 'MENTIONED':
       return `${notification.actor.fullName} te mencionó en un comentario de ${item}`;
+    case 'ASSIGNED':
+      return `${notification.actor.fullName} te asignó ${item}`;
     default:
       // a type this version does not know yet still says where it points
       return `Tienes una notificación nueva en ${item}`;

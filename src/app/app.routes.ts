@@ -38,6 +38,12 @@ export const routes: Routes = [
         loadComponent: () => import('./dashboard/dashboard').then((m) => m.Dashboard),
       },
       {
+        path: 'projects',
+        data: { breadcrumb: 'Proyectos' },
+        loadComponent: () =>
+          import('./projects/components/projects-page/projects-page').then((m) => m.ProjectsPage),
+      },
+      {
         path: 'work-items',
         data: { breadcrumb: 'Elementos de trabajo' },
         loadChildren: () => import('./work-items/work-items.routes').then((m) => m.WORK_ITEM_ROUTES),
@@ -52,6 +58,23 @@ export const routes: Routes = [
         path: 'sprints',
         data: { breadcrumb: 'Sprints' },
         loadChildren: () => import('./sprints/sprints.routes').then((m) => m.SPRINT_ROUTES),
+      },
+      {
+        path: 'members',
+        data: { breadcrumb: 'Miembros' },
+        loadComponent: () =>
+          import('./members/components/members-page/members-page').then((m) => m.MembersPage),
+      },
+      {
+        path: 'account/password',
+        data: { breadcrumb: 'Cambiar contraseña' },
+        loadComponent: () =>
+          import('./account/components/change-password-page/change-password-page').then((m) => m.ChangePasswordPage),
+      },
+      {
+        path: 'billing',
+        data: { breadcrumb: 'Suscripción' },
+        loadComponent: () => import('./billing/components/billing-page/billing-page').then((m) => m.BillingPage),
       },
       {
         path: 'notifications',

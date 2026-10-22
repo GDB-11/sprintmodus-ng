@@ -8,6 +8,7 @@ import { FakeAuth, provideFakeAuth } from '../../../auth/auth.testing';
 import { AuthService } from '../../../auth/services/auth.service';
 import { FakeBoard, provideFakeBoard } from '../../../board/board.testing';
 import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
+import { UserService } from '../../../users/services/user.service';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { APPROVED_STATUS, NEW_STATUS, summary, workItem } from '../../work-items.testing';
 import { WorkItem } from '../../models/work-item.models';
@@ -42,6 +43,8 @@ describe('WorkItemDetail', () => {
         provideHttpClientTesting(),
         provideFakeBoard(),
         provideFakeAuth(),
+        // the assignees panel's people list is covered by its own spec
+        { provide: UserService, useValue: { search: () => of([]) } },
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
@@ -270,6 +273,9 @@ describe('WorkItemDetail', () => {
     expect(messages()).toEqual([['success', 'Cambios guardados.']]);
   });
 
+  const deleteDialog = () =>
+    [...root().querySelectorAll('dialog')].find((d) => d.textContent?.includes('¿Eliminar'))?.textContent ?? '';
+
   it('asks before deleting, then deletes and returns to the list', async () => {
     const navigate = vi.spyOn(router, 'navigate').mockResolvedValue(true);
     await open();
@@ -278,7 +284,8 @@ describe('WorkItemDetail', () => {
 
     button('Eliminar').click();
     fixture.detectChanges();
-    expect(root().querySelector('[role="alertdialog"]')?.textContent).toContain('¿Eliminar WAR-1000?');
+    expect(deleteDialog()).toContain('¿Eliminar WAR-1000?');
+    expect(deleteDialog()).not.toContain('elemento secundario');
     http.expectNone(ITEM_URL);
 
     button('Sí, eliminar').click();
@@ -289,6 +296,20 @@ describe('WorkItemDetail', () => {
 
     expect(navigate).toHaveBeenCalledWith(['/work-items'], { queryParams: { project: 'project-1' } });
     expect(messages()).toEqual([['success', 'WAR-1000 se eliminó.']]);
+  });
+
+  it('warns in the confirmation that a parent takes its children with it', async () => {
+    const child = (n: number) => ({ workItemCode: `c${n}`, workItemNumber: 1000 + n, displayKey: `WAR-100${n}`, type: 'TASK' as const, title: 'Child', status: NEW_STATUS });
+    await open(workItem({ children: [child(1), child(2)] }));
+    const button = (label: string) =>
+      [...root().querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent?.trim() === label)!;
+
+    button('Eliminar').click();
+    fixture.detectChanges();
+
+    const text = deleteDialog();
+    expect(text).toContain('Tiene 2 elementos secundarios');
+    expect(text).toContain('También se eliminarán');
   });
 
   it('shows the links section and reloads the item when a link changes', async () => {
@@ -355,6 +376,16 @@ describe('WorkItemDetail', () => {
       await settle();
       expect(root().textContent).toContain('Approved');
       expect(root().textContent).toContain('Sin más estados');
+    });
+
+    it('says nothing about my own change, even when its echo beats the HTTP answer, but keeps the page current', async () => {
+      await open();
+
+      board.statusChanged$.next(remoteMove({ changedBy: { userCode: 'u-me', fullName: 'Yo Mismo' } }));
+      fixture.detectChanges();
+
+      expect(messages()).toEqual([]);
+      (await vi.waitFor(() => http.expectOne(ITEM_URL))).flush(workItem({ status: APPROVED_STATUS }));
     });
 
     it('treats a card dropped on the board like any other status change', async () => {

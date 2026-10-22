@@ -1,0 +1,37 @@
+<app-panel [heading]="'Asignados (' + assignees().length + ')'">
+  @if (assignees().length === 0) {
+    <app-empty-state message="Nadie está asignado todavía." />
+  } @else {
+    <ul class="flex flex-col gap-2">
+      @for (assignee of assignees(); track assignee.assignmentCode) {
+        <li class="flex items-center gap-3 text-sm">
+          <span class="flex-1 font-medium text-text">{{ assignee.fullName }}</span>
+          <app-chip tone="info">{{ roleLabels[assignee.role] }}</app-chip>
+          <button appButton variant="secondary" size="compact" type="button" [disabled]="busy()" (click)="remove(assignee)">
+            Quitar<span class="sr-only"> a {{ assignee.fullName }} como {{ roleLabels[assignee.role] }}</span>
+          </button>
+        </li>
+      }
+    </ul>
+  }
+  <div class="flex flex-wrap items-end gap-3">
+    <div class="flex min-w-48 flex-1 flex-col gap-1.5">
+      <label for="assignee-user" class="text-sm font-medium">Persona</label>
+      <app-searchable-select
+        inputId="assignee-user"
+        label="Persona"
+        placeholder="Elige a una persona"
+        searchPlaceholder="Buscar por nombre…"
+        [options]="userOptions()"
+        [emptyText]="peopleEmptyText()"
+        [(value)]="userChoice"
+        [disabled]="busy()"
+      />
+    </div>
+    <div class="flex min-w-48 flex-col gap-1.5">
+      <label for="assignee-role" class="text-sm font-medium">Rol</label>
+      <app-select-menu inputId="assignee-role" label="Rol" [options]="roleOptions" [(value)]="roleChoice" [disabled]="busy()" />
+    </div>
+    <button appButton type="button" [disabled]="busy() || !userChoice()" (click)="assign()">Asignar</button>
+  </div>
+</app-panel>

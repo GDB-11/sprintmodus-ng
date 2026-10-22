@@ -1,0 +1,13 @@
+<app-dialog [heading]="heading()" [(open)]="open">
+  <div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-2 text-sm text-text">
+      <ng-content />
+    </div>
+    <div class="flex flex-wrap justify-end gap-3">
+      <button appButton variant="secondary" type="button" (click)="open.set(false)">{{ cancelLabel() }}</button>
+      <button appButton variant="destructive" type="button" [disabled]="busy()" (click)="confirm.emit()">
+        {{ confirmLabel() }}
+      </button>
+    </div>
+  </div>
+</app-dialog>

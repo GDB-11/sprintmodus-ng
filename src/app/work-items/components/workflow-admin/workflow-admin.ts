@@ -1,3 +1,4 @@
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
@@ -10,7 +11,11 @@ import { Chip } from '../../../shared/ui/chip/chip';
 import { Banner } from '../../../shared/ui/banner/banner';
 import { Checkbox } from '../../../shared/ui/checkbox/checkbox';
 import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
-import { DataTable, DataTableCell, DataTableColumn } from '../../../shared/ui/data-table/data-table';
+import {
+  DataTable,
+  DataTableCell,
+  DataTableColumn,
+} from '../../../shared/ui/data-table/data-table';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
 import { NotAllowed } from '../../../shared/ui/not-allowed/not-allowed';
@@ -41,6 +46,7 @@ interface TransitionRow {
 @Component({
   selector: 'app-workflow-admin',
   imports: [
+    Skeleton,
     PageHeader,
     Panel,
     Button,
@@ -64,7 +70,10 @@ export class WorkflowAdmin {
 
   protected readonly permissions = inject(Permissions);
   protected readonly typeLabels = ITEM_TYPE_LABELS;
-  protected readonly typeOptions: readonly SelectMenuOption[] = ITEM_TYPES.map((type) => ({ value: type, label: ITEM_TYPE_LABELS[type] }));
+  protected readonly typeOptions: readonly SelectMenuOption[] = ITEM_TYPES.map((type) => ({
+    value: type,
+    label: ITEM_TYPE_LABELS[type],
+  }));
 
   protected readonly itemType = signal<ItemType>('EPIC');
   protected readonly errorMessage = signal<string | null>(null);
@@ -107,10 +116,14 @@ export class WorkflowAdmin {
   protected readonly trackTransition = (row: TransitionRow) => this.transitions().indexOf(row);
   protected readonly trackPreviewStatus = (row: StatusRow) => row.code;
 
-  protected readonly statusOptions = computed<SelectMenuOption[]>(() => this.statuses().map((status) => ({ value: status.code, label: status.code })));
+  protected readonly statusOptions = computed<SelectMenuOption[]>(() =>
+    this.statuses().map((status) => ({ value: status.code, label: status.code })),
+  );
 
   /** The read-only preview a member sees: statuses in order, transitions named by display name. */
-  protected readonly orderedStatuses = computed(() => [...this.statuses()].sort((a, b) => a.order - b.order));
+  protected readonly orderedStatuses = computed(() =>
+    [...this.statuses()].sort((a, b) => a.order - b.order),
+  );
   protected readonly previewTransitions = computed(() =>
     this.transitions().map((transition) => ({
       from: this.statusName(transition.from),
@@ -165,12 +178,17 @@ export class WorkflowAdmin {
   }
 
   private updateStatus(index: number, patch: Partial<StatusRow>): void {
-    this.statuses.update((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+    this.statuses.update((rows) =>
+      rows.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
   }
 
   protected addTransition(): void {
     const first = this.statuses()[0]?.code ?? '';
-    this.transitions.update((rows) => [...rows, { from: first, to: first, allowedBackward: false }]);
+    this.transitions.update((rows) => [
+      ...rows,
+      { from: first, to: first, allowedBackward: false },
+    ]);
   }
 
   protected removeTransition(index: number): void {
@@ -190,7 +208,9 @@ export class WorkflowAdmin {
   }
 
   private updateTransition(index: number, patch: Partial<TransitionRow>): void {
-    this.transitions.update((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+    this.transitions.update((rows) =>
+      rows.map((row, i) => (i === index ? { ...row, ...patch } : row)),
+    );
   }
 
   /** Discards local edits, reloading the item type's workflow as the server has it. */

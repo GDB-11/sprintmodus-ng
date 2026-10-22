@@ -1,7 +1,9 @@
 <app-panel class="max-w-2xl">
   <details appDisclosure summary="Configuración de sprints">
     @if (config.status() === 'loading') {
-      <p role="status">Cargando la configuración…</p>
+      <div role="status" class="flex flex-col gap-2">
+        <span class="sr-only">Cargando la configuración…</span><app-skeleton height="2rem" />
+      </div>
     } @else if (config.error()) {
       <app-error-state message="No se pudo cargar la configuración." (retry)="config.reload()" />
     } @else if (loaded(); as current) {
@@ -51,7 +53,9 @@
             <dd>{{ current.velocityTrackingEnabled ? 'Activado' : 'Desactivado' }}</dd>
           </div>
         </dl>
-        <app-disabled-reason reason="Solo los propietarios y administradores cambian esta configuración." />
+        <app-disabled-reason
+          reason="Solo los propietarios y administradores cambian esta configuración."
+        />
       }
     }
   </details>

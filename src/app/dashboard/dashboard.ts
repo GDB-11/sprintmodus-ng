@@ -3,6 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { ORGANIZATION_ROLE_LABELS, SUBSCRIPTION_PLAN_LABELS } from '../auth/models/auth.models';
 import { AuthService } from '../auth/services/auth.service';
+import { Permissions } from '../auth/services/permissions.service';
 import { ProjectContextService } from '../projects/services/project-context.service';
 import { ProjectService } from '../projects/services/project.service';
 import { valueOf } from '../shared/resource-value';
@@ -34,6 +35,7 @@ export class Dashboard {
   private readonly users = inject(UserService);
   private readonly projectContext = inject(ProjectContextService);
   protected readonly tenant = inject(TenantContextService).tenant;
+  protected readonly canAddUsers = inject(Permissions).canAddUsers;
 
   protected readonly user = computed(() => this.auth.currentUser()?.user ?? null);
   protected readonly firstName = computed(() => this.user()?.fullName.split(/\s+/)[0] ?? '');

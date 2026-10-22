@@ -1,4 +1,5 @@
 import { OverlayModule } from '@angular/cdk/overlay';
+import { RouterLink } from '@angular/router';
 import { Component, computed, inject, signal } from '@angular/core';
 import { ORGANIZATION_ROLE_LABELS, SUBSCRIPTION_PLAN_LABELS } from '../../../auth/models/auth.models';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -10,7 +11,7 @@ import { Popover } from '../../ui/popover/popover';
 /** Who is signed in, their role, the organization and plan, and the way out. */
 @Component({
   selector: 'app-user-menu',
-  imports: [OverlayModule, Avatar, Icon, Popover],
+  imports: [OverlayModule, RouterLink, Avatar, Icon, Popover],
   templateUrl: './user-menu.html',
 })
 export class UserMenu {
@@ -27,6 +28,10 @@ export class UserMenu {
     const plan = this.tenant()?.plan;
     return plan ? SUBSCRIPTION_PLAN_LABELS[plan] : '';
   });
+
+  protected close(): void {
+    this.open.set(false);
+  }
 
   protected logout(): void {
     this.open.set(false);

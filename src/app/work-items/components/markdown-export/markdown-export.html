@@ -1,0 +1,42 @@
+<button
+  #origin="cdkOverlayOrigin"
+  cdkOverlayOrigin
+  type="button"
+  appButton
+  variant="secondary"
+  size="compact"
+  [attr.aria-expanded]="open()"
+  aria-haspopup="dialog"
+  (click)="open.set(!open())"
+>
+  <app-icon name="download" />
+  Exportar a Markdown
+</button>
+
+<app-popover [origin]="origin" [(open)]="open" label="Exportar a Markdown">
+  <div class="flex w-72 max-w-[85vw] flex-col gap-3">
+    <h2 class="text-sm font-semibold text-text">Exportar a Markdown</h2>
+    <p class="text-sm text-text-muted">El historial de cambios nunca se incluye.</p>
+    <fieldset class="flex flex-col gap-2">
+      <legend class="sr-only">Qué incluir</legend>
+      @if (!withoutChildren()) {
+        <app-checkbox [checked]="children()" (checkedChange)="toggle('children', $event)">Elementos hijos</app-checkbox>
+      }
+      <app-checkbox [checked]="links()" (checkedChange)="toggle('links', $event)">Enlaces</app-checkbox>
+      <app-checkbox [checked]="comments()" (checkedChange)="toggle('comments', $event)">Comentarios</app-checkbox>
+    </fieldset>
+    @if (cut()) {
+      <p class="text-sm text-text-muted">Se exportarán solo los primeros {{ maxRoots }} elementos de la vista.</p>
+    }
+    @if (status()) {
+      <app-banner [kind]="failed() ? 'error' : 'success'">{{ status() }}</app-banner>
+    }
+    <div class="flex gap-2">
+      <button type="button" appButton size="compact" [disabled]="busy()" (click)="copy()">Copiar</button>
+      <button type="button" appButton variant="secondary" size="compact" [disabled]="busy()" (click)="download()">
+        Descargar .md
+      </button>
+    </div>
+  </div>
+</app-popover>
+

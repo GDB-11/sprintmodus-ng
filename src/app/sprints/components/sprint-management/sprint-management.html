@@ -1,10 +1,16 @@
 @if (projects.status() === 'loading') {
-  <p role="status">Cargando proyectos…</p>
+  <div role="status" class="flex flex-col gap-2">
+    <span class="sr-only">Cargando proyectos…</span><app-skeleton height="2rem" />
+  </div>
 } @else if (projects.error()) {
   <app-error-state message="No se pudieron cargar tus proyectos." (retry)="projects.reload()" />
 } @else if (!selectedProject()) {
   <app-page-header heading="Sprints" />
-  <app-empty-state message="Aún no tienes proyectos. Crea un proyecto primero y luego planifica sus sprints." />
+  <app-empty-state
+    message="Aún no tienes proyectos. Crea un proyecto primero y luego planifica sus sprints."
+  >
+    <a appTextLink routerLink="/projects">Crear un proyecto</a>
+  </app-empty-state>
 } @else {
   <app-page-header heading="Sprints">
     <button
@@ -21,7 +27,9 @@
     </button>
   </app-page-header>
   @if (!canAdminister()) {
-    <p id="plan-hint" class="text-sm text-text-muted">Solo los propietarios y administradores inician y cierran sprints.</p>
+    <p id="plan-hint" class="text-sm text-text-muted">
+      Solo los propietarios y administradores inician y cierran sprints.
+    </p>
   }
 
   @if (creating()) {
@@ -29,7 +37,9 @@
   }
 
   @if (sprints.status() === 'loading') {
-    <p role="status">Cargando sprints…</p>
+    <div role="status" class="flex flex-col gap-2">
+      <span class="sr-only">Cargando sprints…</span><app-skeleton height="2rem" />
+    </div>
   } @else if (sprints.error()) {
     <app-error-state message="No se pudieron cargar los sprints." (retry)="sprints.reload()" />
   } @else if (loadedSprints().length === 0) {
@@ -42,7 +52,9 @@
         [rows]="loadedSprints()"
         [trackBy]="trackBySprint"
       >
-        <ng-template appDataTableCell let-sprint><span class="font-semibold">{{ sprint.name }}</span></ng-template>
+        <ng-template appDataTableCell let-sprint
+          ><span class="font-semibold">{{ sprint.name }}</span></ng-template
+        >
         <ng-template appDataTableCell let-sprint>
           <app-chip [tone]="tone(sprint)">{{ label(sprint) }}</app-chip>
         </ng-template>
@@ -62,7 +74,11 @@
                 type="button"
                 [disabled]="!canAdminister() || busy() || hasActiveSprint()"
                 [attr.aria-describedby]="canAdminister() ? null : 'plan-hint'"
-                [attr.title]="canAdminister() && hasActiveSprint() ? 'Cierra primero el sprint activo: un proyecto tiene uno a la vez.' : null"
+                [attr.title]="
+                  canAdminister() && hasActiveSprint()
+                    ? 'Cierra primero el sprint activo: un proyecto tiene uno a la vez.'
+                    : null
+                "
                 (click)="start(sprint)"
               >
                 Iniciar<span class="sr-only"> {{ sprint.name }}</span>
@@ -87,8 +103,14 @@
               size="compact"
               type="button"
               [disabled]="sprint.status === 'PLANNED'"
-              [attr.title]="sprint.status === 'PLANNED' ? 'El burndown empieza cuando se inicia el sprint.' : null"
-              [attr.aria-pressed]="sprint.status !== 'PLANNED' && burndownSprint()?.sprintCode === sprint.sprintCode"
+              [attr.title]="
+                sprint.status === 'PLANNED'
+                  ? 'El burndown empieza cuando se inicia el sprint.'
+                  : null
+              "
+              [attr.aria-pressed]="
+                sprint.status !== 'PLANNED' && burndownSprint()?.sprintCode === sprint.sprintCode
+              "
               (click)="showBurndown(sprint)"
             >
               Burndown<span class="sr-only"> {{ sprint.name }}</span>
@@ -98,7 +120,11 @@
       </app-data-table>
       @if (closing(); as sprint) {
         <app-confirm-inline
-          [question]="'¿Cerrar ' + sprint.name + '? Se fijan su velocidad y su burndown: no vuelven a cambiar.'"
+          [question]="
+            '¿Cerrar ' +
+            sprint.name +
+            '? Se fijan su velocidad y su burndown: no vuelven a cambiar.'
+          "
           confirmLabel="Sí, cerrar"
           [busy]="busy()"
           (confirm)="close(sprint)"
@@ -115,12 +141,14 @@
           @if (gap > 0) {
             <app-chip tone="warning">{{ gap }} h por encima del ritmo ideal</app-chip>
           } @else {
-            <app-chip tone="success">Al día o por delante del ritmo ideal</app-chip>
+            <app-chip tone="success">Al día</app-chip>
           }
         }
       </div>
       @if (burndown.status() === 'loading') {
-        <p role="status">Cargando el burndown…</p>
+        <div role="status" class="flex flex-col gap-2">
+          <span class="sr-only">Cargando el burndown…</span><app-skeleton height="2rem" />
+        </div>
       } @else if (burndown.error()) {
         <app-error-state message="No se pudo cargar el burndown." (retry)="burndown.reload()" />
       } @else if (loadedBurndown(); as data) {
@@ -131,7 +159,9 @@
 
   <app-panel heading="Velocidad">
     @if (history.status() === 'loading') {
-      <p role="status">Cargando la velocidad…</p>
+      <div role="status" class="flex flex-col gap-2">
+        <span class="sr-only">Cargando la velocidad…</span><app-skeleton height="2rem" />
+      </div>
     } @else if (history.error()) {
       <app-error-state message="No se pudo cargar la velocidad." (retry)="history.reload()" />
     } @else if (loadedHistory(); as velocity) {

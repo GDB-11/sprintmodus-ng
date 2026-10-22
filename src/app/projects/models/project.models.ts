@@ -8,6 +8,18 @@ export interface Project {
   description?: string;
 }
 
+export interface CreateProjectRequest {
+  name: string;
+  /** Left out: derived from the name by the backend (`WAR` for "Web App Rewrite"). */
+  key?: string;
+  description?: string;
+}
+
+export interface UpdateProjectRequest {
+  name: string;
+  description?: string;
+}
+
 export type SprintStatus = 'PLANNED' | 'ACTIVE' | 'CLOSED';
 
 export const SPRINT_STATUS_LABELS: Record<SprintStatus, string> = {

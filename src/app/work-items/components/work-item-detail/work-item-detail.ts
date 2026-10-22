@@ -22,7 +22,7 @@ import { apiErrorMessage } from '../../../shared/http-errors';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { valueOf } from '../../../shared/resource-value';
 import { Button } from '../../../shared/ui/button/button';
-import { ConfirmInline } from '../../../shared/ui/confirm-inline/confirm-inline';
+import { ConfirmDialog } from '../../../shared/ui/confirm-dialog/confirm-dialog';
 import { DisabledReason } from '../../../shared/ui/disabled-reason/disabled-reason';
 import { EmptyState } from '../../../shared/ui/empty-state/empty-state';
 import { ErrorState } from '../../../shared/ui/error-state/error-state';
@@ -41,7 +41,10 @@ import {
 import { WorkItemService } from '../../services/work-item.service';
 import { CriteriaList } from '../criteria-list/criteria-list';
 import { MetaList, MetaRow } from '../meta-list/meta-list';
+import { WorkItemAssignees } from '../work-item-assignees/work-item-assignees';
 import { WorkItemComments } from '../work-item-comments/work-item-comments';
+import { MarkdownExport } from '../markdown-export/markdown-export';
+import { MarkdownImport } from '../markdown-import/markdown-import';
 import { WorkItemEdit } from '../work-item-edit/work-item-edit';
 import { WorkItemHeader, WorkItemHeaderData } from '../work-item-header/work-item-header';
 import { WorkItemHistory } from '../work-item-history/work-item-history';
@@ -59,7 +62,7 @@ import { WorkItemRow } from '../work-item-row/work-item-row';
   imports: [
     RouterLink,
     Button,
-    ConfirmInline,
+    ConfirmDialog,
     SelectMenu,
     SearchableSelect,
     DisabledReason,
@@ -70,10 +73,13 @@ import { WorkItemRow } from '../work-item-row/work-item-row';
     TextLink,
     CriteriaList,
     MetaList,
+    MarkdownExport,
+    MarkdownImport,
     WorkItemHeader,
     WorkItemRow,
     WorkItemEdit,
     WorkItemLinks,
+    WorkItemAssignees,
     WorkItemComments,
     WorkItemHistory,
   ],
@@ -342,7 +348,12 @@ export class WorkItemDetail {
       return; // already showing it: this is the echo of a change made on this page
     }
     const by = 'fromStatus' in event ? event.movedBy : event.changedBy;
-    const who = by && by.userCode !== this.auth.getCurrentUser()?.id ? by.fullName : 'Alguien';
+    if (by && by.userCode === this.auth.getCurrentUser()?.id) {
+      // my own change (an echo that beat the HTTP answer, or another tab of mine): keep the page current, say nothing
+      this.refreshFromServer();
+      return;
+    }
+    const who = by ? by.fullName : 'Alguien';
     this.notifications.info(
       this.editing()
         ? `${who} cambió el estado de ${event.displayKey} a ${event.status.displayName}. Lo verás al terminar de editar.`

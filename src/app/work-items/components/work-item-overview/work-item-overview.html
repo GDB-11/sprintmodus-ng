@@ -1,9 +1,22 @@
 @if (projectContext.projects.isLoading()) {
-  <p role="status">Cargando proyectos…</p>
+  <div role="status" class="flex flex-col gap-2">
+    <span class="sr-only">Cargando proyectos…</span><app-skeleton height="2rem" />
+  </div>
 } @else if (!projectContext.current()) {
   <app-empty-state message="Aún no tienes proyectos." />
 } @else {
-  <app-page-header heading="Vista general" [backLink]="['/work-items']" backLabel="Elementos de trabajo" />
+  <app-page-header
+    heading="Vista general"
+    [backLink]="['/work-items']"
+    backLabel="Elementos de trabajo"
+  >
+    <div pageHeaderActions class="flex flex-wrap items-center gap-3">
+      @if (exportCodes().length > 0) {
+        <app-markdown-export [workItemCodes]="exportCodes()" [fileName]="projectContext.current()!.name" />
+      }
+      <app-markdown-import [projectCode]="projectContext.current()!.projectCode" (imported)="source.reload()" />
+    </div>
+  </app-page-header>
   <p class="text-sm text-text-muted">
     Jerarquía completa del backlog en una sola tabla: estado, tipo y título, indentados por nivel.
   </p>
@@ -18,9 +31,16 @@
     <app-empty-state message="Este proyecto aún no tiene elementos de trabajo." />
   } @else {
     @if (truncated()) {
-      <p role="status" class="text-sm text-text-muted">Mostrando los primeros {{ rows().length }} elementos de {{ total() }}.</p>
+      <p role="status" class="text-sm text-text-muted">
+        Mostrando los primeros {{ rows().length }} elementos de {{ total() }}.
+      </p>
     }
-    <app-data-table caption="Vista general del backlog" [columns]="columns" [rows]="rows()" [trackBy]="trackByCode">
+    <app-data-table
+      caption="Vista general del backlog"
+      [columns]="columns"
+      [rows]="rows()"
+      [trackBy]="trackByCode"
+    >
       <ng-template appDataTableCell let-row>
         <app-status-label [status]="row.item.status" />
       </ng-template>
@@ -31,7 +51,9 @@
         </div>
       </ng-template>
       <ng-template appDataTableCell let-row>
-        <a appTextLink [routerLink]="['/work-items', row.item.workItemCode]">{{ row.item.displayKey }}</a>
+        <a appTextLink [routerLink]="['/work-items', row.item.workItemCode]">{{
+          row.item.displayKey
+        }}</a>
       </ng-template>
     </app-data-table>
   }

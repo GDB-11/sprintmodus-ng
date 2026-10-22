@@ -4,9 +4,11 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
   Burndown,
+  CreateProjectRequest,
   CreateSprintRequest,
   Project,
   Sprint,
+  UpdateProjectRequest,
   SprintConfig,
   VelocityHistory,
 } from '../models/project.models';
@@ -18,6 +20,21 @@ export class ProjectService {
 
   list(): Observable<Project[]> {
     return this.http.get<Project[]>(`${environment.apiUrl}/api/projects`);
+  }
+
+  /** Any member may; the plan's `maxProjects` is enforced by the backend (`402`). */
+  create(request: CreateProjectRequest): Observable<Project> {
+    return this.http.post<Project>(`${environment.apiUrl}/api/projects`, request);
+  }
+
+  /** Name and description only: the key stays what it was. */
+  update(projectCode: string, request: UpdateProjectRequest): Observable<Project> {
+    return this.http.put<Project>(`${environment.apiUrl}/api/projects/${projectCode}`, request);
+  }
+
+  /** Owners and admins only. Deletes the project and its sprints; its key stays reserved. */
+  delete(projectCode: string): Observable<void> {
+    return this.http.delete<void>(`${environment.apiUrl}/api/projects/${projectCode}`);
   }
 
   sprints(projectCode: string): Observable<Sprint[]> {

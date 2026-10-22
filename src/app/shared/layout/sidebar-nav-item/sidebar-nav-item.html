@@ -1,11 +1,11 @@
 @if (disabledReason(); as reason) {
-  <div class="flex items-center gap-3 rounded-lg p-2 text-text-faint" [attr.title]="reason">
+  <div class="flex items-center rounded-lg p-2 text-text-faint" [attr.title]="reason">
     <span [class]="tileClasses()"><app-icon [name]="item().icon" /></span>
     <span class="text-sm font-medium" [class]="'flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ' + labelState()">{{ item().label }}</span>
     <app-icon name="lock" [class]="expanded() ? (responsive() ? 'ml-2 hidden lg:inline-flex' : 'ml-2 inline-flex') : 'hidden'" />
   </div>
   @if (expanded()) {
-    <div [class]="responsive() ? 'hidden lg:block' : ''"><app-disabled-reason [reason]="reason" /></div>
+    <div [class]="'px-2 pb-1 text-xs ' + (responsive() ? 'hidden lg:block' : '')"><app-disabled-reason [reason]="reason" /></div>
   }
 } @else {
   <a

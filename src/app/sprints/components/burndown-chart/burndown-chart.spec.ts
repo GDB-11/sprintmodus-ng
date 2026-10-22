@@ -72,7 +72,7 @@ describe('BurndownChart', () => {
       expect.stringContaining('Real: horas pendientes al final de cada día'),
       expect.stringContaining('Proyección: hacia dónde lleva el ritmo actual'),
     ]);
-    expect(root().querySelectorAll('ul[aria-label="Leyenda del gráfico"] svg[aria-hidden="true"]')).toHaveLength(3);
+    expect(root().querySelectorAll('ul[aria-label="Leyenda del gráfico"] app-chart-key[aria-hidden="true"]')).toHaveLength(3);
   });
 
   it('leaves the projection out of the legend and the chart when there is nothing to project', async () => {

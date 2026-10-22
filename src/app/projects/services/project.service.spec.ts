@@ -26,6 +26,19 @@ describe('ProjectService', () => {
     http.expectOne(`${API}/sprints?projectCode=p1`).flush([]);
   });
 
+  it('updates a project with PUT and deletes it with DELETE', () => {
+    service.update('p1', { name: 'Nuevo', description: 'x' }).subscribe();
+    const put = http.expectOne(`${API}/projects/p1`);
+    expect(put.request.method).toBe('PUT');
+    expect(put.request.body).toEqual({ name: 'Nuevo', description: 'x' });
+    put.flush({});
+
+    service.delete('p1').subscribe();
+    const del = http.expectOne(`${API}/projects/p1`);
+    expect(del.request.method).toBe('DELETE');
+    del.flush(null, { status: 204, statusText: 'No Content' });
+  });
+
   it('creates a sprint with POST', () => {
     service.createSprint({ projectCode: 'p1', name: 'Sprint 1', startDate: '2026-01-05' }).subscribe();
 

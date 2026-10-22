@@ -1,6 +1,8 @@
 <app-panel heading="Comentarios">
   @if (comments.isLoading()) {
-    <p role="status">Cargando comentarios…</p>
+    <div role="status" class="flex flex-col gap-2">
+      <span class="sr-only">Cargando comentarios…</span><app-skeleton height="2rem" />
+    </div>
   } @else if (comments.error()) {
     <app-error-state message="No se pudieron cargar los comentarios." (retry)="comments.reload()" />
   } @else if (loadedComments().length === 0) {
@@ -10,12 +12,19 @@
       @for (comment of loadedComments(); track comment.commentCode) {
         <li class="text-sm">
           <p>
-            <span class="font-semibold text-text">{{ comment.author?.fullName ?? 'Usuario desconocido' }}</span>
+            <span class="font-semibold text-text">{{
+              comment.author?.fullName ?? 'Usuario desconocido'
+            }}</span>
             <span class="text-text-muted">
-              · <time [attr.datetime]="comment.createdAt">{{ comment.createdAt | date: 'medium' }}</time>
+              ·
+              <time [attr.datetime]="comment.createdAt">{{
+                comment.createdAt | date: 'medium'
+              }}</time>
             </span>
           </p>
-          <p class="mt-1 text-text whitespace-pre-wrap"><app-mention-text [content]="comment.content" /></p>
+          <p class="mt-1 text-text whitespace-pre-wrap">
+            <app-mention-text [content]="comment.content" />
+          </p>
         </li>
       }
     </ul>

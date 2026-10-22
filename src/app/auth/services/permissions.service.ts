@@ -1,4 +1,5 @@
 import { Service, computed, inject } from '@angular/core';
+import { OrganizationRole } from '../models/auth.models';
 import { UserRef } from '../../work-items/models/work-item.models';
 import { AuthService } from './auth.service';
 
@@ -20,6 +21,33 @@ export class Permissions {
     const role = this.auth.currentUser()?.user.role;
     return role === 'OWNER' || role === 'ADMIN';
   });
+
+  /** The roles the signed-in user may give to a new member: an owner adds admins and members, an admin adds members. */
+  readonly grantableRoles = computed<readonly OrganizationRole[]>(() => {
+    switch (this.auth.currentUser()?.user.role) {
+      case 'OWNER':
+        return ['ADMIN', 'MEMBER'];
+      case 'ADMIN':
+        return ['MEMBER'];
+      default:
+        return [];
+    }
+  });
+
+  /** Setting a password for someone else follows the same hierarchy as granting a role; never for oneself. */
+  canResetPasswordOf(member: { userCode: string; role: OrganizationRole }): boolean {
+    return member.userCode !== this.userCode() && this.grantableRoles().includes(member.role);
+  }
+
+  /** Deactivating or reactivating someone follows the same hierarchy as granting a role; never oneself. */
+  canSetActiveOf(member: { userCode: string; role: OrganizationRole }): boolean {
+    return this.canResetPasswordOf(member);
+  }
+
+  /** Changing or cancelling the subscription is the owner's call. */
+  readonly canManageBilling = computed(() => this.auth.currentUser()?.user.role === 'OWNER');
+
+  readonly canAddUsers = computed(() => this.grantableRoles().length > 0);
 
   /** Deleting an item needs its creator or an owner/admin. */
   canDelete(item: { createdBy?: UserRef }): boolean {

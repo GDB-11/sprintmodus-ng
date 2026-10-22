@@ -1,4 +1,4 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, booleanAttribute, computed, input, output } from '@angular/core';
 import { Icon, IconName } from '../icon/icon';
 
 export type BannerKind = 'error' | 'success' | 'info' | 'warning';
@@ -30,8 +30,11 @@ const KIND_ROLE: Record<BannerKind, 'alert' | 'status'> = {
 })
 export class Banner {
   readonly kind = input<BannerKind>('info');
+  /** Adds a "Cerrar" button in the banner's own ink (the banner colours are the same in both themes). */
+  readonly dismissible = input(false, { transform: booleanAttribute });
+  readonly dismissed = output<void>();
 
-  protected readonly classes = computed(() => `flex items-start gap-2 rounded-md p-3 text-sm font-medium ${KIND_CLASSES[this.kind()]}`);
+  protected readonly classes = computed(() => `flex gap-2 rounded-md p-3 text-sm font-medium ${this.dismissible() ? 'items-center' : 'items-start'} ${KIND_CLASSES[this.kind()]}`);
   protected readonly icon = computed(() => KIND_ICON[this.kind()]);
   protected readonly role = computed(() => KIND_ROLE[this.kind()]);
 }

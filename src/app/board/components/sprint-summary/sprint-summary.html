@@ -9,15 +9,31 @@
         {{ sprint().startDate | date: 'd MMM' }} – {{ sprint().endDate | date: 'd MMM' }}
       </p>
     </div>
-    <div class="flex flex-wrap items-center gap-4">
-      @if (series(); as data) {
-        <app-line-sparkline [ideal]="data.ideal" [actual]="data.actual" [label]="sparklineLabel()" />
-      }
-      @if (pace() === 'behind') {
-        <app-chip tone="warning">Por detrás del ritmo ideal</app-chip>
-      } @else if (pace() === 'on-track') {
-        <app-chip tone="success">Al día</app-chip>
-      }
-    </div>
+    @if (sprint().status === 'PLANNED') {
+      <p class="text-sm text-text-muted">El burndown empieza cuando se inicia el sprint.</p>
+    } @else if (loading()) {
+      <app-skeleton width="16rem" height="2.5rem" />
+    } @else if (failed()) {
+      <app-error-state message="No se pudo cargar el burndown." (retry)="reload()" />
+    } @else {
+      <div class="flex flex-wrap items-center gap-4">
+        @if (hours(); as h) {
+          <p class="text-sm text-text">
+            <span class="font-semibold">{{ h.remaining }} h</span> restantes de {{ h.planned }} h planificadas
+          </p>
+        } @else if (noDaysYet()) {
+          <p class="text-sm text-text-muted">Aún no hay horas registradas (día 0).</p>
+        }
+        @if (series(); as data) {
+          <app-line-sparkline [ideal]="data.ideal" [actual]="data.actual" [label]="sparklineLabel()" />
+        }
+        @if (pace() === 'behind') {
+          <app-chip tone="warning">Por detrás del ritmo ideal</app-chip>
+        } @else if (pace() === 'on-track') {
+          <app-chip tone="success">Al día</app-chip>
+        }
+        <a appTextLink class="text-sm" [routerLink]="['/sprints', sprint().sprintCode, 'burndown']">Ver burndown</a>
+      </div>
+    }
   </div>
 </app-panel>

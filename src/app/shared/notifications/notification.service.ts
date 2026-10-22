@@ -11,9 +11,18 @@ export interface Notification {
 /** Most messages kept on screen at once; the oldest is dropped first. */
 const MAX_NOTIFICATIONS = 5;
 
+/** How long a message stays before it goes away on its own; errors and warnings stay longer to be read. */
+const DISPLAY_MS: Record<NotificationKind, number> = {
+  success: 5000,
+  info: 5000,
+  warning: 10000,
+  error: 10000,
+};
+
 /**
  * Messages for the user that outlive the component that raised them, such as the warning the backend attaches to a
- * change it accepted anyway. They stay until dismissed: nothing times out under a screen reader or a slow reader.
+ * change it accepted anyway. Each one dismisses itself after `DISPLAY_MS` (or sooner by hand); the history of what
+ * happened lives in the inbox and the work item's timeline, not here.
  */
 @Service()
 export class NotificationService {
@@ -25,6 +34,7 @@ export class NotificationService {
   notify(kind: NotificationKind, message: string): void {
     const notification = { id: this.nextId++, kind, message };
     this.items.update((items) => [...items, notification].slice(-MAX_NOTIFICATIONS));
+    setTimeout(() => this.dismiss(notification.id), DISPLAY_MS[kind]);
   }
 
   success(message: string): void {

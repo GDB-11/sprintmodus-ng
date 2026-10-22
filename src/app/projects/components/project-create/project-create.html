@@ -1,0 +1,30 @@
+<app-panel heading="Nuevo proyecto" class="max-w-2xl">
+  <form [formRoot]="projectForm" class="flex flex-col gap-4">
+    @if (errorMessage(); as message) {
+      <app-banner kind="error">{{ message }}</app-banner>
+    }
+    <div class="grid gap-4 sm:grid-cols-3">
+      <app-text-field
+        class="sm:col-span-2"
+        [field]="projectForm.name"
+        inputId="project-name"
+        label="Nombre"
+      />
+      <app-text-field
+        [field]="projectForm.key"
+        inputId="project-key"
+        label="Clave"
+        hint="Opcional. Si la dejas vacía se genera a partir del nombre."
+      />
+    </div>
+    <app-textarea-field
+      [field]="projectForm.description"
+      inputId="project-description"
+      label="Descripción"
+      hint="Opcional."
+    />
+    <div>
+      <button appButton type="submit">Crear proyecto</button>
+    </div>
+  </form>
+</app-panel>

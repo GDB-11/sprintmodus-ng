@@ -1,9 +1,11 @@
 import { Component, inject } from '@angular/core';
+import { Banner } from '../../ui/banner/banner';
 import { NotificationService } from '../notification.service';
 
 /** Shows the pending notifications in a live region, so assistive technology announces them as they arrive. */
 @Component({
   selector: 'app-notification-outlet',
+  imports: [Banner],
   host: { class: 'pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-4' },
   templateUrl: './notification-outlet.html',
 })

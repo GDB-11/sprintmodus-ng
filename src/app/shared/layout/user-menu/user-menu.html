@@ -22,6 +22,14 @@
       @if (tenant(); as org) {
         <p class="text-xs text-text-muted">{{ org.organizationName }} · {{ planLabel() }}</p>
       }
+      <a
+        routerLink="/account/password"
+        (click)="close()"
+        class="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm font-medium text-text hover:bg-control-track focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
+      >
+        <app-icon name="lock" />
+        Cambiar contraseña
+      </a>
       <button
         type="button"
         (click)="logout()"

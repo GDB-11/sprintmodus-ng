@@ -1,0 +1,43 @@
+<app-page-header heading="Miembros" />
+@if (!canManage()) {
+  <app-not-allowed message="Solo los propietarios y administradores de la organización pueden ver y agregar miembros." />
+} @else if (!data() && page.error()) {
+  <app-error-state message="No se pudieron cargar los miembros." (retry)="page.reload()" />
+} @else if (!data()) {
+  <div role="status" class="flex flex-col gap-2">
+    <span class="sr-only">Cargando miembros…</span><app-skeleton height="2rem" /><app-skeleton height="2rem" />
+  </div>
+} @else {
+  <div class="flex flex-col gap-4">
+    <app-panel heading="Usuarios del plan">
+      <app-meter label="Usuarios" [value]="used()" [max]="max()" />
+      <p class="text-sm text-text-muted">{{ used() }} de {{ max() }} usuarios activos en el plan {{ planLabel() }}.</p>
+    </app-panel>
+    <app-panel heading="Personas">
+      @if (data()?.items?.length) {
+        <app-member-list [members]="data()!.items" (resetRequested)="askReset($event)" (activeToggleRequested)="askToggleActive($event)" />
+      } @else {
+        <app-empty-state message="Aún no hay personas en la organización." />
+      }
+    </app-panel>
+    <app-member-create
+      [used]="used()"
+      [max]="max()"
+      [planLabel]="planLabel()"
+      (created)="refresh()"
+      (limitReached)="refresh()"
+    />
+  </div>
+  <app-member-password-reset [member]="resetTarget()" [(open)]="resetOpen" />
+  <app-confirm-dialog
+    [heading]="'¿Desactivar a ' + (deactivateTarget()?.fullName ?? 'esta persona') + '?'"
+    confirmLabel="Sí, desactivar"
+    cancelLabel="Conservar"
+    [busy]="changingActive()"
+    [(open)]="deactivateOpen"
+    (confirm)="confirmDeactivate()"
+  >
+    <p>No podrá iniciar sesión mientras esté desactivada y dejará de contar en los usuarios de tu plan.</p>
+    <p>Sus comentarios, asignaciones e historial se conservan. Podrás reactivarla cuando quieras.</p>
+  </app-confirm-dialog>
+}

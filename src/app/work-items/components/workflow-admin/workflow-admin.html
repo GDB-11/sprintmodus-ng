@@ -13,13 +13,21 @@
 
 @if (!permissions.canAdminister()) {
   <app-not-allowed
-    [message]="'La configuración de flujo de trabajo requiere rol propietario o administrador. Tu rol actual es ' + (permissions.role() ?? 'desconocido') + '.'"
+    [message]="
+      'La configuración de flujo de trabajo requiere rol propietario o administrador. Tu rol actual es ' +
+      (permissions.role() ?? 'desconocido') +
+      '.'
+    "
   />
-  <h2 class="text-sm font-semibold tracking-wide text-text-muted uppercase">Vista previa para OWNER / ADMIN</h2>
+  <h2 class="text-sm font-semibold tracking-wide text-text-muted uppercase">
+    Vista previa para OWNER / ADMIN
+  </h2>
 }
 
 @if (workflow.isLoading() && !workflow.hasValue()) {
-  <p role="status">Cargando flujo de trabajo…</p>
+  <div role="status" class="flex flex-col gap-2">
+    <span class="sr-only">Cargando flujo de trabajo…</span><app-skeleton height="2rem" />
+  </div>
 } @else if (workflow.error() && !workflow.hasValue()) {
   <app-error-state message="No se pudo cargar el flujo de trabajo." (retry)="workflow.reload()" />
 } @else if (!permissions.canAdminister()) {
@@ -77,7 +85,7 @@
         <ng-template appDataTableCell let-status>
           <input
             appControl
-            class="w-32"
+            class="w-full max-w-32"
             [value]="status.code"
             (input)="onStatusCode(indexOfStatus(status), $event)"
             [attr.aria-label]="'Código, fila ' + (indexOfStatus(status) + 1)"
@@ -86,7 +94,7 @@
         <ng-template appDataTableCell let-status>
           <input
             appControl
-            class="w-48"
+            class="w-full max-w-48"
             [value]="status.displayName"
             (input)="onStatusName(indexOfStatus(status), $event)"
             [attr.aria-label]="'Nombre para mostrar, fila ' + (indexOfStatus(status) + 1)"
@@ -97,17 +105,27 @@
             appControl
             type="number"
             min="1"
-            class="w-20"
+            class="w-full max-w-20"
             [value]="status.order"
             (input)="onStatusOrder(indexOfStatus(status), $event)"
             [attr.aria-label]="'Orden, fila ' + (indexOfStatus(status) + 1)"
           />
         </ng-template>
         <ng-template appDataTableCell let-status>
-          <app-checkbox [checked]="status.isTerminal" (checkedChange)="onStatusTerminal(indexOfStatus(status), $event)" [ariaLabel]="'Final, fila ' + (indexOfStatus(status) + 1)" />
+          <app-checkbox
+            [checked]="status.isTerminal"
+            (checkedChange)="onStatusTerminal(indexOfStatus(status), $event)"
+            [ariaLabel]="'Final, fila ' + (indexOfStatus(status) + 1)"
+          />
         </ng-template>
         <ng-template appDataTableCell let-status>
-          <button appButton variant="secondary" size="compact" type="button" (click)="removeStatus(indexOfStatus(status))">
+          <button
+            appButton
+            variant="secondary"
+            size="compact"
+            type="button"
+            (click)="removeStatus(indexOfStatus(status))"
+          >
             Quitar<span class="sr-only"> estado, fila {{ indexOfStatus(status) + 1 }}</span>
           </button>
         </ng-template>
@@ -116,7 +134,13 @@
   </app-panel>
 
   <app-panel heading="Transiciones">
-    <button panelActions appTextLink type="button" [disabled]="statuses().length === 0" (click)="addTransition()">
+    <button
+      panelActions
+      appTextLink
+      type="button"
+      [disabled]="statuses().length === 0"
+      (click)="addTransition()"
+    >
       Agregar transición
     </button>
     @if (transitions().length === 0) {
@@ -145,11 +169,23 @@
           />
         </ng-template>
         <ng-template appDataTableCell let-transition>
-          <app-checkbox [checked]="transition.allowedBackward" (checkedChange)="onTransitionBackward(indexOfTransition(transition), $event)" [ariaLabel]="'Permite retroceder, fila ' + (indexOfTransition(transition) + 1)" />
+          <app-checkbox
+            [checked]="transition.allowedBackward"
+            (checkedChange)="onTransitionBackward(indexOfTransition(transition), $event)"
+            [ariaLabel]="'Permite retroceder, fila ' + (indexOfTransition(transition) + 1)"
+          />
         </ng-template>
         <ng-template appDataTableCell let-transition>
-          <button appButton variant="secondary" size="compact" type="button" (click)="removeTransition(indexOfTransition(transition))">
-            Quitar<span class="sr-only"> transición, fila {{ indexOfTransition(transition) + 1 }}</span>
+          <button
+            appButton
+            variant="secondary"
+            size="compact"
+            type="button"
+            (click)="removeTransition(indexOfTransition(transition))"
+          >
+            Quitar<span class="sr-only">
+              transición, fila {{ indexOfTransition(transition) + 1 }}</span
+            >
           </button>
         </ng-template>
       </app-data-table>
@@ -160,6 +196,8 @@
     <button appButton type="button" [disabled]="saving()" (click)="save()">
       {{ saving() ? 'Guardando…' : 'Guardar flujo de trabajo' }}
     </button>
-    <button appButton variant="secondary" type="button" [disabled]="saving()" (click)="discard()">Descartar cambios</button>
+    <button appButton variant="secondary" type="button" [disabled]="saving()" (click)="discard()">
+      Descartar cambios
+    </button>
   </div>
 }

@@ -8,7 +8,8 @@ function crumbsOf(snapshot: ActivatedRouteSnapshot): string[] {
   const crumbs: string[] = [];
   let node: ActivatedRouteSnapshot | null = snapshot;
   while (node) {
-    const crumb = node.data['breadcrumb'];
+    // The route's own config, not `node.data`: an empty-path child inherits its parent's data and would repeat the crumb
+    const crumb = node.routeConfig?.data?.['breadcrumb'];
     if (typeof crumb === 'string') {
       crumbs.push(crumb);
     }

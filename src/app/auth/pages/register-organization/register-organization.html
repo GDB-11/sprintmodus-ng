@@ -4,9 +4,7 @@
 >
   <form [formRoot]="registerForm" class="flex flex-col gap-4">
     @if (errorMessage(); as message) {
-      <p role="alert" class="rounded-md bg-error-100 p-3 text-sm font-medium text-error-900">
-        {{ message }}
-      </p>
+      <app-banner kind="error">{{ message }}</app-banner>
     }
     <app-text-field
       [field]="registerForm.organizationName"
@@ -41,20 +39,12 @@
       autocomplete="new-password"
       hint="Al menos 8 caracteres."
     />
-    <button
-      type="submit"
-      [disabled]="registerForm().submitting()"
-      class="rounded-md bg-primary-500 px-4 py-2.5 font-semibold text-neutral-900 hover:bg-primary-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 disabled:opacity-60 dark:focus-visible:outline-secondary-400"
-    >
+    <button appButton type="submit" [disabled]="registerForm().submitting()">
       {{ registerForm().submitting() ? 'Creando organización…' : 'Crear organización' }}
     </button>
   </form>
-  <p class="mt-6 text-sm">
+  <p class="text-center text-sm text-text-muted">
     ¿Ya tienes cuenta?
-    <a
-      routerLink="/login"
-      class="font-medium text-secondary-900 underline focus-visible:outline-2 focus-visible:outline-offset-2 dark:text-secondary-400"
-      >Iniciar sesión</a
-    >
+    <a appTextLink routerLink="/login">Iniciar sesión</a>
   </p>
 </app-auth-card>

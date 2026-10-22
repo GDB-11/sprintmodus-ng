@@ -1,9 +1,10 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Service, inject } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, forkJoin, map, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { NotificationService } from '../../shared/notifications/notification.service';
 import {
+  Assignee,
   AssignmentRole,
   CreateWorkItemRequest,
   ItemType,
@@ -14,6 +15,10 @@ import {
   WorkItemPage,
   WorkItemQuery,
 } from '../models/work-item.models';
+import { ImportPreview } from '../models/markdown-interchange';
+
+/** What an export adds to the item itself. */
+export type ExportInclude = 'children' | 'links' | 'comments';
 
 export interface Workflow {
   itemType: ItemType;
@@ -95,6 +100,15 @@ export class WorkItemService {
     return request.pipe(tap((item) => this.surfaceWarnings(item)));
   }
 
+  /** Assigns a person to the item in a role. The same person may hold several roles; the same role twice is refused. */
+  assign(workItemCode: string, userCode: string, role: AssignmentRole): Observable<Assignee> {
+    return this.http.post<Assignee>(`${this.baseUrl}/${workItemCode}/assignments`, { userCode, role });
+  }
+
+  unassign(workItemCode: string, assignmentCode: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${workItemCode}/assignments/${assignmentCode}`);
+  }
+
   /** Links the item to another one (possibly in another project). The target's warnings, if any, are not part of this. */
   createLink(workItemCode: string, targetCode: string, type: LinkType): Observable<Link> {
     return this.http.post<Link>(`${this.baseUrl}/${workItemCode}/links`, { targetCode, type });
@@ -112,6 +126,52 @@ export class WorkItemService {
   /** Replaces the whole workflow of `workflow.itemType`. Owners and admins only; the backend rejects anyone else. */
   upsertWorkflow(workflow: Workflow): Observable<Workflow> {
     return this.http.post<Workflow>(`${environment.apiUrl}/api/admin/status-workflows`, workflow);
+  }
+
+  /**
+   * The item and, by default, its subtree as Markdown (Spanish; never the history). Several codes are written one after
+   * the other, each starting at the top heading level.
+   */
+  exportMarkdown(workItemCodes: readonly string[], include: readonly ExportInclude[]): Observable<string> {
+    const params = new HttpParams().set('format', 'markdown').set('include', include.join(',') || 'none');
+    return forkJoin(
+      workItemCodes.map((code) =>
+        this.http.get(`${this.baseUrl}/${code}/export`, { params, responseType: 'text', headers: { Accept: 'text/markdown' } }),
+      ),
+    ).pipe(map((documents) => documents.map((document) => document.trimEnd()).join('\n\n') + '\n'));
+  }
+
+  /** The Markdown template (Spanish) for a file whose top-level items are `root` and that goes `levels` deep. */
+  importTemplate(root: ItemType, levels: number): Observable<string> {
+    return this.http.get(`${this.baseUrl}/import/template`, {
+      params: { root, levels },
+      responseType: 'text',
+      headers: { Accept: 'text/markdown' },
+    });
+  }
+
+  /** The prompt to paste into an LLM together with a brief, for the same context as {@link importTemplate}. */
+  importAiInstructions(root: ItemType, levels: number): Observable<string> {
+    return this.http.get(`${this.baseUrl}/import/template`, {
+      params: { root, levels, format: 'ai-instructions' },
+      responseType: 'text',
+      headers: { Accept: 'text/markdown' },
+    });
+  }
+
+  /**
+   * Creates the items of a Markdown file under the project (Epics) or under `parentCode`, all or nothing; `dryRun` only
+   * previews. A file with errors answers 400 with the same body as a preview, so callers read `error.error`.
+   */
+  importMarkdown(projectCode: string, parentCode: string | null, markdown: string, dryRun: boolean): Observable<ImportPreview> {
+    let params = new HttpParams().set('projectCode', projectCode).set('dryRun', dryRun);
+    if (parentCode) {
+      params = params.set('parentCode', parentCode);
+    }
+    return this.http.post<ImportPreview>(`${this.baseUrl}/import`, markdown, {
+      params,
+      headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
+    });
   }
 
   private surfaceWarnings(item: WorkItem): void {

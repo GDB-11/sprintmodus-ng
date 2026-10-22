@@ -1,9 +1,15 @@
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormField, form, FormRoot, required } from '@angular/forms/signals';
 import { firstValueFrom } from 'rxjs';
 import { Permissions } from '../../../auth/services/permissions.service';
-import { SprintConfig, WEEK_DAYS, WEEK_DAY_LABELS, WeekDay } from '../../../projects/models/project.models';
+import {
+  SprintConfig,
+  WEEK_DAYS,
+  WEEK_DAY_LABELS,
+  WeekDay,
+} from '../../../projects/models/project.models';
 import { ProjectService } from '../../../projects/services/project.service';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { NotificationService } from '../../../shared/notifications/notification.service';
@@ -20,7 +26,10 @@ import { TextField } from '../../../shared/ui/text-field/text-field';
 import { optionalNumber } from '../../../work-items/models/number-fields';
 
 const DAYS_RULE = { min: 1, max: 90, decimals: 0, message: 'Ingresa un número entero de 1 a 90.' };
-const DAY_OPTIONS: SelectOption[] = WEEK_DAYS.map((day) => ({ value: day, label: WEEK_DAY_LABELS[day] }));
+const DAY_OPTIONS: SelectOption[] = WEEK_DAYS.map((day) => ({
+  value: day,
+  label: WEEK_DAY_LABELS[day],
+}));
 
 interface SettingsModel {
   defaultSprintDays: string;
@@ -34,7 +43,20 @@ interface SettingsModel {
  */
 @Component({
   selector: 'app-sprint-settings',
-  imports: [FormRoot, FormField, TextField, SelectField, Panel, Checkbox, Disclosure, Banner, Button, DisabledReason, ErrorState],
+  imports: [
+    Skeleton,
+    FormRoot,
+    FormField,
+    TextField,
+    SelectField,
+    Panel,
+    Checkbox,
+    Disclosure,
+    Banner,
+    Button,
+    DisabledReason,
+    ErrorState,
+  ],
   templateUrl: './sprint-settings.html',
 })
 export class SprintSettings {
@@ -49,7 +71,11 @@ export class SprintSettings {
   protected readonly config = rxResource({ stream: () => this.projects.sprintConfig() });
   protected readonly loaded = computed(() => valueOf(this.config));
 
-  private readonly model = signal<SettingsModel>({ defaultSprintDays: '', sprintStartDay: 'MONDAY', velocityTrackingEnabled: true });
+  private readonly model = signal<SettingsModel>({
+    defaultSprintDays: '',
+    sprintStartDay: 'MONDAY',
+    velocityTrackingEnabled: true,
+  });
 
   protected readonly settingsForm = form(
     this.model,

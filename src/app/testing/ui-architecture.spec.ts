@@ -8,8 +8,8 @@ import { basename, dirname, join, relative } from 'node:path';
  * Angular template AST, so it can miss a violation expressed unusually -- but it never gets a real one wrong twice,
  * because every violation it finds either gets fixed or added to `ALLOW_LIST` on purpose.
  *
- * `ALLOW_LIST` holds every file that predates this spec (Phase 15) and has not been migrated yet. Phases 16-19
- * shrink it as they migrate each screen; Phase 19 empties it and this comment (and the list) can go.
+ * `ALLOW_LIST` is empty since Phase 19 (every screen is migrated). It stays as the ratchet: a file may only be added
+ * to it on purpose, with a comment saying why.
  */
 const SRC = join(process.cwd(), 'src/app');
 
@@ -30,13 +30,6 @@ const EXEMPT_PREFIXES = [
 
 // prettier-ignore
 const ALLOW_LIST = new Set<string>([
-  'app.html',
-  'auth/pages/register-organization/register-organization.html',
-  'notifications/components/notification-list/notification-list.html',
-  'notifications/components/notifications-bell/notifications-bell.html',
-  'shared/notifications/notification-outlet/notification-outlet.html',
-  'sprints/components/burndown-chart/burndown-chart.html',
-  // Phase 19's job (Configuración de flujo): the workflow editor itself, not touched by Phase 17.
 ]);
 
 function walk(dir: string, suffix: string): string[] {
@@ -88,7 +81,7 @@ function rawTagViolations(html: string): string[] {
   for (const match of html.matchAll(/<(button|table|details|svg)\b[^>]*>/gi)) {
     const tag = match[1].toLowerCase();
     const whole = match[0];
-    if (tag === 'button' && /\bapp(Button|FilterChip|TextLink)\b/.test(whole)) continue;
+    if (tag === 'button' && /\bapp(Button|FilterChip|TextLink|ListButton)\b/.test(whole)) continue;
     if (tag === 'details' && /\bappDisclosure\b/.test(whole)) continue;
     violations.push(`<${tag}>`);
   }

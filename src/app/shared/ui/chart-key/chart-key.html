@@ -1,0 +1,18 @@
+@switch (kind()) {
+  @case ('ideal') {
+    <svg viewBox="0 0 24 4" class="h-1 w-6">
+      <line x1="0" y1="2" x2="24" y2="2" stroke="currentColor" stroke-width="2" stroke-dasharray="6 4" />
+    </svg>
+  }
+  @case ('actual') {
+    <svg viewBox="0 0 24 8" class="h-2 w-6">
+      <line x1="0" y1="4" x2="24" y2="4" stroke="currentColor" stroke-width="2" />
+      <circle cx="12" cy="4" r="3" fill="currentColor" />
+    </svg>
+  }
+  @case ('projection') {
+    <svg viewBox="0 0 24 4" class="h-1 w-6">
+      <line x1="0" y1="2" x2="24" y2="2" stroke="currentColor" stroke-width="2" stroke-dasharray="2 4" />
+    </svg>
+  }
+}

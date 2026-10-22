@@ -23,7 +23,11 @@ describe('WorkItemCreate', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [WorkItemCreate],
-      providers: [provideRouter([{ path: 'work-items/new', component: WorkItemCreate }]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([{ path: 'work-items/new', component: WorkItemCreate }]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
     navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
@@ -32,7 +36,8 @@ describe('WorkItemCreate', () => {
   afterEach(() => http.verify());
 
   const root = () => fixture.nativeElement as HTMLElement;
-  const alerts = () => [...root().querySelectorAll('[role="alert"]')].map((el) => el.textContent?.trim());
+  const alerts = () =>
+    [...root().querySelectorAll('[role="alert"]')].map((el) => el.textContent?.trim());
 
   /** Opens the page, answers the project list and the parent candidates of the chosen project. */
   async function open(url = '/work-items/new?project=p2'): Promise<void> {
@@ -45,7 +50,14 @@ describe('WorkItemCreate', () => {
       http.expectOne((req) => req.url === `${API}/api/work-items`),
     );
     candidates.flush({
-      items: [summary({ workItemCode: 'epic-1', displayKey: 'MOB-1000', title: 'Checkout', type: 'EPIC' })],
+      items: [
+        summary({
+          workItemCode: 'epic-1',
+          displayKey: 'MOB-1000',
+          title: 'Checkout',
+          type: 'EPIC',
+        }),
+      ],
       total: 1,
       page: 0,
       size: 200,
@@ -72,10 +84,19 @@ describe('WorkItemCreate', () => {
 
     expect(selectedText(control('projectCode'))).toContain('Mobile');
     const detect = () => fixture.detectChanges();
-    expect(openSelect(control('type'), detect)).toEqual(['Épica', 'Característica', 'Elemento del backlog', 'Error', 'Tarea']);
-    document.querySelector<HTMLElement>('[role="option"]')!.click();
+    expect(openSelect(control('type'), detect)).toEqual([
+      'Épica',
+      'Característica',
+      'Elemento del backlog',
+      'Error',
+      'Tarea',
+    ]);
+    document.querySelectorAll<HTMLElement>('[role="option"]')[2].click();
     detect();
-    expect(openSelect(control('parentCode'), detect)).toEqual(['Sin elemento superior', 'MOB-1000 · Checkout (Épica)']);
+    expect(openSelect(control('parentCode'), detect)).toEqual([
+      'Sin elemento superior',
+      'MOB-1000 · Checkout (Épica)',
+    ]);
     document.querySelector<HTMLElement>('[role="option"]')!.click();
     detect();
   });
@@ -102,7 +123,9 @@ describe('WorkItemCreate', () => {
     request.flush(
       workItem({
         workItemCode: 'new-1',
-        warnings: [{ code: 'NON_STANDARD_HIERARCHY', message: 'EPIC is not a recommended parent for TASK.' }],
+        warnings: [
+          { code: 'NON_STANDARD_HIERARCHY', message: 'EPIC is not a recommended parent for TASK.' },
+        ],
       }),
     );
     await fixture.whenStable();
@@ -113,6 +136,24 @@ describe('WorkItemCreate', () => {
         .notifications()
         .map((n) => n.message),
     ).toEqual(['EPIC is not a recommended parent for TASK.']);
+  });
+
+  it('disables the parent for an Epic, says why, and sends none', async () => {
+    await open('/work-items/new?project=p2&parent=epic-1');
+    chooseOption(control('type'), 'Épica', () => fixture.detectChanges());
+    await fill('title', 'Big goal');
+
+    expect(root().textContent).toContain('Una épica no puede tener elemento superior.');
+    expect(
+      control<HTMLElement>('parentCode')
+        .closest('app-select-field')!
+        .querySelector('[disabled], [aria-disabled="true"]'),
+    ).not.toBeNull();
+    submit();
+
+    const request = await vi.waitFor(() => http.expectOne(`${API}/api/work-items`));
+    expect(request.request.body.parentCode).toBeUndefined();
+    request.flush(workItem({ workItemCode: 'new-2' }));
   });
 
   it('asks for a title and does not call the backend without one', async () => {
@@ -153,7 +194,6 @@ describe('WorkItemCreate', () => {
     expect(alerts()).toContain('The parent belongs to another project.');
     expect(navigate).not.toHaveBeenCalled();
   });
-
 
   it('has no accessibility violations, including with validation errors showing', async () => {
     await open();

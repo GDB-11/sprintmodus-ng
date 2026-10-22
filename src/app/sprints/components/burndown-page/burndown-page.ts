@@ -1,3 +1,4 @@
+import { Skeleton } from '../../../shared/ui/skeleton/skeleton';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
@@ -16,7 +17,7 @@ import { BurndownChart } from '../burndown-chart/burndown-chart';
 /** The burndown of one sprint: its facts and the chart. Anyone in the organization may read it. */
 @Component({
   selector: 'app-burndown-page',
-  imports: [PageHeader, Panel, Button, ErrorState, BurndownChart, DatePipe, DecimalPipe],
+  imports: [Skeleton, PageHeader, Panel, Button, ErrorState, BurndownChart, DatePipe, DecimalPipe],
   templateUrl: './burndown-page.html',
   host: { class: 'flex flex-col gap-4' },
 })
@@ -26,7 +27,9 @@ export class BurndownPage {
 
   protected readonly statusLabels = SPRINT_STATUS_LABELS;
 
-  private readonly code = toSignal(this.route.paramMap.pipe(map((params) => params.get('code'))), { requireSync: true });
+  private readonly code = toSignal(this.route.paramMap.pipe(map((params) => params.get('code'))), {
+    requireSync: true,
+  });
 
   protected readonly burndown = rxResource({
     params: () => this.code() ?? undefined,
@@ -39,9 +42,13 @@ export class BurndownPage {
     return loaded ? `Burndown de ${loaded.sprintName}` : 'Burndown';
   });
   protected readonly latest = computed(() =>
-    [...(this.loaded()?.points ?? [])].reverse().find((point) => point.day >= 1 && point.remainingHours != null),
+    [...(this.loaded()?.points ?? [])]
+      .reverse()
+      .find((point) => point.day >= 1 && point.remainingHours != null),
   );
   protected readonly errorMessage = computed(() =>
-    this.burndown.error() ? apiErrorMessage(this.burndown.error(), 'No se pudo cargar el burndown.') : null,
+    this.burndown.error()
+      ? apiErrorMessage(this.burndown.error(), 'No se pudo cargar el burndown.')
+      : null,
   );
 }

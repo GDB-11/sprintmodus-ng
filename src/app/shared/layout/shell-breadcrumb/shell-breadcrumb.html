@@ -1,4 +1,4 @@
-<nav aria-label="Ruta" class="hidden min-w-0 lg:block">
+<nav aria-label="Ruta" class="hidden min-w-0 xl:block">
   <ol class="flex items-center gap-1.5 truncate text-sm font-medium text-text-muted">
     @for (crumb of crumbs(); track $index; let last = $last) {
       <li [class]="last ? 'truncate text-text' : 'truncate'">{{ crumb }}</li>

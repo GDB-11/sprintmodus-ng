@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 import { NotificationService } from './notification.service';
 
 describe('NotificationService', () => {
@@ -34,5 +35,21 @@ describe('NotificationService', () => {
       'Message 6',
       'Message 7',
     ]);
+  });
+
+  it('dismisses a message by itself after its time, errors later than successes', () => {
+    vi.useFakeTimers();
+    try {
+      service.success('Saved');
+      service.error('Failed');
+
+      vi.advanceTimersByTime(5000);
+      expect(service.notifications().map((n) => n.message)).toEqual(['Failed']);
+
+      vi.advanceTimersByTime(5000);
+      expect(service.notifications()).toEqual([]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

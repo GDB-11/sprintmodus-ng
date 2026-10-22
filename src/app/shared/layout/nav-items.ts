@@ -24,7 +24,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { label: 'Elementos de trabajo', tone: 'secondary', icon: 'list-tree', route: '/work-items' },
   { label: 'Tablero', tone: 'info', icon: 'kanban', route: '/board' },
   { label: 'Sprints', tone: 'success', icon: 'timer', route: '/sprints' },
+  { label: 'Proyectos', tone: 'info', icon: 'flag', route: '/projects' },
   { label: 'Notificaciones', tone: 'warning', icon: 'bell', route: '/notifications', badge: 'notifications' },
+  { label: 'Miembros', tone: 'primary', icon: 'users', route: '/members', adminOnly: true },
+  { label: 'Suscripción', tone: 'success', icon: 'star', route: '/billing', adminOnly: true },
   { label: 'Configuración de flujo', tone: 'neutral', icon: 'settings', route: '/work-items/admin/workflows', adminOnly: true },
 ];
 

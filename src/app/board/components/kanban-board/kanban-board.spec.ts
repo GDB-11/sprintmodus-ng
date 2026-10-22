@@ -255,12 +255,6 @@ describe('KanbanBoard', () => {
       expect(root().textContent).toContain('Sin elementos');
     });
 
-    it('opens the live board of its project', async () => {
-      await open();
-
-      expect(board.connect).toHaveBeenCalledWith('p1');
-    });
-
     it('says when there are more items than the board loads', async () => {
       await open({ total: BOARD_PAGE_SIZE + 12 });
 

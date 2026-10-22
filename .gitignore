@@ -46,5 +46,6 @@ Thumbs.db
 # Custom
 /docs
 /planning
+/demo
 CLAUDE.md
 .mcp.json

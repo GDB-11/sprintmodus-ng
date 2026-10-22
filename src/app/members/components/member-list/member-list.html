@@ -1,0 +1,44 @@
+<app-data-table
+  caption="Personas de la organización, con su rol, estado y último acceso"
+  [columns]="columns"
+  [rows]="members()"
+  [trackBy]="trackBy"
+>
+  <ng-template appDataTableCell let-member><span class="font-semibold">{{ member.fullName }}</span></ng-template>
+  <ng-template appDataTableCell let-member>{{ member.email }}</ng-template>
+  <ng-template appDataTableCell let-member>
+    <app-chip [tone]="roleTone(member)">{{ roleLabel(member) }}</app-chip>
+  </ng-template>
+  <ng-template appDataTableCell let-member>
+    <app-chip [tone]="member.isActive ? 'success' : 'neutral'">{{ member.isActive ? 'Activo' : 'Desactivado' }}</app-chip>
+  </ng-template>
+  <ng-template appDataTableCell let-member>{{ lastAccess(member) }}</ng-template>
+  <ng-template appDataTableCell let-member>
+    <button
+      appButton
+      variant="secondary"
+      size="compact"
+      type="button"
+      [disabled]="!canReset(member)"
+      [attr.title]="canReset(member) ? null : resetBlockedReason(member)"
+      [attr.aria-label]="'Restablecer contraseña de ' + member.fullName"
+      (click)="resetRequested.emit(member)"
+    >
+      Restablecer
+    </button>
+  </ng-template>
+  <ng-template appDataTableCell let-member>
+    <button
+      appButton
+      variant="secondary"
+      size="compact"
+      type="button"
+      [disabled]="!canSetActive(member)"
+      [attr.title]="canSetActive(member) ? null : setActiveBlockedReason(member)"
+      [attr.aria-label]="(member.isActive ? 'Desactivar a ' : 'Reactivar a ') + member.fullName"
+      (click)="activeToggleRequested.emit(member)"
+    >
+      {{ member.isActive ? 'Desactivar' : 'Reactivar' }}
+    </button>
+  </ng-template>
+</app-data-table>
