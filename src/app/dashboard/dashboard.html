@@ -5,7 +5,7 @@
     }
   </app-page-header>
 
-  <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+  <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
     <app-panel [heading]="activeSprint() ? 'Sprint activo · ' + activeSprint()!.name : 'Sprint activo'" eyebrow>
       @if (!activeSprint()) {
         @if (projectsUsed() === 0) {
