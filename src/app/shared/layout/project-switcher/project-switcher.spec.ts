@@ -6,6 +6,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { environment } from '../../../../environments/environment';
 import { provideFakeAuth } from '../../../auth/auth.testing';
+import { stubLocalStorage } from '../../../auth/utils/testing';
 import { expectNoAxeViolations } from '../../../testing/axe';
 import { ProjectSwitcher } from './project-switcher';
 
@@ -18,6 +19,8 @@ describe('ProjectSwitcher', () => {
   let overlayContainerElement: HTMLElement;
 
   beforeEach(async () => {
+    // The chosen project is remembered per user; a previous test's choice must not decide where the keyboard starts.
+    stubLocalStorage();
     await TestBed.configureTestingModule({
       imports: [ProjectSwitcher],
       providers: [
