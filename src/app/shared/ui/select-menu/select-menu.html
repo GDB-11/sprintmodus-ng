@@ -20,7 +20,7 @@
   @if (selected(); as option) {
     <span class="min-w-0 truncate font-semibold">{{ option.label }}</span>
     @if (option.hint) {
-      <span class="shrink-0 rounded-md bg-control-track px-1.5 py-0.5 text-xs font-semibold tracking-wide text-text-muted">{{ option.hint }}</span>
+      <span class="shrink-0 rounded-md bg-control-track px-1.5 py-0.5 text-xs font-semibold tracking-wide text-text-muted">{{ ' ' + option.hint }}</span>
     }
   } @else {
     <span class="min-w-0 truncate text-text-muted">{{ placeholder() }}</span>

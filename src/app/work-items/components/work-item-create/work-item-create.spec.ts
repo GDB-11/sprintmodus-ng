@@ -7,6 +7,7 @@ import { NotificationService } from '../../../shared/notifications/notification.
 import { summary, workItem } from '../../work-items.testing';
 import { WorkItemCreate } from './work-item-create';
 import { chooseOption, openSelect, selectedText } from '../../../testing/select-menu';
+import { ProjectContextService } from '../../../projects/services/project-context.service';
 import { expectNoAxeViolations } from '../../../testing/axe';
 
 const API = environment.apiUrl;
@@ -99,6 +100,19 @@ describe('WorkItemCreate', () => {
     ]);
     document.querySelector<HTMLElement>('[role="option"]')!.click();
     detect();
+  });
+
+  it('preselects the current project when the URL names none', async () => {
+    TestBed.inject(ProjectContextService).select('p2');
+    await open('/work-items/new');
+
+    expect(selectedText(control('projectCode'))).toContain('Mobile');
+  });
+
+  it('preselects the recommended type when arriving from a parent', async () => {
+    await open('/work-items/new?project=p2&parent=epic-1&type=TASK');
+
+    expect(selectedText(control('type'))).toContain('Tarea');
   });
 
   it('creates the item and opens it', async () => {

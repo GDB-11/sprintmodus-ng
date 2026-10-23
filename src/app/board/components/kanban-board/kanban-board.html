@@ -3,8 +3,10 @@
     <span class="sr-only">Cargando proyectos…</span><app-skeleton height="2rem" />
   </div>
 } @else if (projects.error()) {
+  <app-page-header heading="Tablero" />
   <app-error-state message="No se pudieron cargar tus proyectos." (retry)="projects.reload()" />
 } @else if (!selectedProject()) {
+  <app-page-header heading="Tablero" />
   <app-empty-state
     message="Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo."
   >

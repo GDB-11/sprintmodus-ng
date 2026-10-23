@@ -4,8 +4,10 @@ import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-int
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { merge, auditTime } from 'rxjs';
 import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
+import { UserService } from '../../../users/services/user.service';
 import { ProjectContextService } from '../../../projects/services/project-context.service';
 import { valueOf } from '../../../shared/resource-value';
+import { DisabledReason } from '../../../shared/ui/disabled-reason/disabled-reason';
 import { Chip } from '../../../shared/ui/chip/chip';
 import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
 import { Button } from '../../../shared/ui/button/button';
@@ -28,6 +30,8 @@ import {
   ITEM_TYPE_LABELS,
   ITEM_TYPES,
   ItemType,
+  PRIORITIES,
+  Priority,
   PRIORITY_LABELS,
   WorkItemSummary,
 } from '../../models/work-item.models';
@@ -40,6 +44,8 @@ import { WorkItemTreeNode } from '../work-item-tree-node/work-item-tree-node';
 import { WorkItemTypeIcon } from '../work-item-type-icon/work-item-type-icon';
 
 const PAGE_SIZE = 25;
+/** How many people the assignee filter lists. */
+const PEOPLE_SIZE = 50;
 const RELOAD_DEBOUNCE_MS = 500;
 /** How many project items ground the Árbol view's roots (every Epic) and its "Sin épica" group; same cap as every
  * other "the whole project" fetch in this app (the parent picker, the links search candidates...). */
@@ -72,6 +78,7 @@ const LISTA_COLUMNS: DataTableColumn<WorkItemSummary>[] = [
 @Component({
   selector: 'app-work-item-list',
   imports: [
+    DisabledReason,
     RouterLink,
     Chip,
     SelectMenu,
@@ -100,6 +107,7 @@ export class WorkItemList {
   private readonly router = inject(Router);
   private readonly workItems = inject(WorkItemService);
   private readonly board = inject(BoardWebSocketService);
+  private readonly users = inject(UserService);
   protected readonly projectContext = inject(ProjectContextService);
 
   protected readonly itemTypes = ITEM_TYPES;
@@ -108,6 +116,10 @@ export class WorkItemList {
   protected readonly typeOptions: SelectMenuOption[] = [
     { value: '', label: 'Todos los tipos' },
     ...ITEM_TYPES.map((value) => ({ value, label: ITEM_TYPE_LABELS[value] })),
+  ];
+  protected readonly priorityOptions: SelectMenuOption[] = [
+    { value: '', label: 'Todas las prioridades' },
+    ...PRIORITIES.map((value) => ({ value, label: PRIORITY_LABELS[value] })),
   ];
   protected readonly viewOptions = VIEW_OPTIONS;
   protected readonly listaColumns = LISTA_COLUMNS;
@@ -121,6 +133,25 @@ export class WorkItemList {
     const type = this.queryParams().get('type');
     return ITEM_TYPES.find((known) => known === type) ?? null;
   });
+
+  protected readonly priority = computed<Priority | null>(() => {
+    const priority = this.queryParams().get('priority');
+    return PRIORITIES.find((known) => known === priority) ?? null;
+  });
+  protected readonly assignee = computed(() => this.queryParams().get('assignee') || null);
+  protected readonly hasFilters = computed(
+    () => !!(this.type() || this.priority() || this.assignee() || this.query()),
+  );
+
+  /** The people the assignee filter offers; fetched only while Lista, the one view that applies it, is shown. */
+  private readonly people = rxResource({
+    params: () => (this.selectedProject() && this.view() === 'list' ? true : undefined),
+    stream: () => this.users.search('', PEOPLE_SIZE),
+  });
+  protected readonly assigneeOptions = computed<SelectMenuOption[]>(() => [
+    { value: '', label: 'Todas las personas' },
+    ...(valueOf(this.people) ?? []).map((user) => ({ value: user.userCode, label: user.fullName })),
+  ]);
 
   protected readonly query = computed(() => this.queryParams().get('q') ?? '');
   /** The search box's own value: starts in sync with the URL, but the user may edit it before submitting. */
@@ -148,6 +179,8 @@ export class WorkItemList {
         ? {
             projectCode: project.projectCode,
             type: this.type() ?? undefined,
+            priority: this.priority() ?? undefined,
+            assignee: this.assignee() ?? undefined,
             q: this.query() || undefined,
             page: this.page(),
           }
@@ -223,6 +256,19 @@ export class WorkItemList {
 
   protected selectType(type: string | null): void {
     this.navigate({ type: type || null, page: null });
+  }
+
+  protected selectPriority(priority: string | null): void {
+    this.navigate({ priority: priority || null, page: null });
+  }
+
+  protected selectAssignee(userCode: string | null): void {
+    this.navigate({ assignee: userCode || null, page: null });
+  }
+
+  protected clearFilters(): void {
+    this.queryDraft.set('');
+    this.navigate({ type: null, priority: null, assignee: null, q: null, page: null });
   }
 
   protected onQueryDraft(value: string): void {

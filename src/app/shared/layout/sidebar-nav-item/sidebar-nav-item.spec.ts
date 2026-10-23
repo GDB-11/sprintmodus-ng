@@ -43,7 +43,14 @@ describe('SidebarNavItem', () => {
     fixture.detectChanges();
 
     expect(root().querySelector('app-badge')).not.toBeNull();
-    expect(root().querySelector('a')?.getAttribute('aria-label')).toBe('Notificaciones, 3 sin leer');
+    expect(root().querySelector('a')?.textContent?.replace(/\s+/g, ' ')).toContain('Notificaciones, 3 sin leer');
+  });
+
+  it('passes axe with a badge (the name keeps the visible text)', async () => {
+    fixture.componentRef.setInput('badgeCount', 3);
+    fixture.detectChanges();
+
+    await expectNoAxeViolations(root());
   });
 
   it('passes axe, expanded and railed', async () => {

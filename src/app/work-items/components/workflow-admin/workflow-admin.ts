@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { valueOf } from '../../../shared/resource-value';
+import { ORGANIZATION_ROLE_LABELS } from '../../../auth/models/auth.models';
 import { Permissions } from '../../../auth/services/permissions.service';
 import { Button } from '../../../shared/ui/button/button';
 import { Chip } from '../../../shared/ui/chip/chip';
@@ -70,6 +71,7 @@ export class WorkflowAdmin {
 
   protected readonly permissions = inject(Permissions);
   protected readonly typeLabels = ITEM_TYPE_LABELS;
+  protected readonly roleLabels = ORGANIZATION_ROLE_LABELS;
   protected readonly typeOptions: readonly SelectMenuOption[] = ITEM_TYPES.map((type) => ({
     value: type,
     label: ITEM_TYPE_LABELS[type],

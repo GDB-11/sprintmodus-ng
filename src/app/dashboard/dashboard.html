@@ -8,8 +8,13 @@
   <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
     <app-panel [heading]="activeSprint() ? 'Sprint activo · ' + activeSprint()!.name : 'Sprint activo'" eyebrow>
       @if (!activeSprint()) {
-        <p class="text-text-muted">No hay un sprint activo en este proyecto.</p>
-        <a appTextLink routerLink="/sprints" class="w-fit">Ir a los sprints</a>
+        @if (projectsUsed() === 0) {
+          <p class="text-text-muted">Aún no tienes proyectos. Crea el primero para empezar a planificar.</p>
+          <a appTextLink routerLink="/projects" class="w-fit">Crear mi primer proyecto</a>
+        } @else {
+          <p class="text-text-muted">No hay un sprint activo en este proyecto.</p>
+          <a appTextLink routerLink="/sprints" class="w-fit">Ir a los sprints</a>
+        }
       } @else if (sprintChart(); as chart) {
         <p class="flex flex-wrap items-baseline gap-2">
           <span class="text-2xl font-extrabold tabular-nums">{{ chart.pace.remainingHours }}h</span>

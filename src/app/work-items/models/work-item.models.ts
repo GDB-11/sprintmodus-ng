@@ -3,6 +3,15 @@ import type { IconName } from '../../shared/ui/icon/icon-shapes';
 export const ITEM_TYPES = ['EPIC', 'FEATURE', 'PBI', 'BUG', 'TASK'] as const;
 export type ItemType = (typeof ITEM_TYPES)[number];
 
+/** The recommended type of a new child, per parent type. */
+export const RECOMMENDED_CHILD_TYPE: Record<ItemType, ItemType> = {
+  EPIC: 'FEATURE',
+  FEATURE: 'PBI',
+  PBI: 'TASK',
+  BUG: 'TASK',
+  TASK: 'TASK',
+};
+
 export const ITEM_TYPE_LABELS: Record<ItemType, string> = {
   EPIC: 'Épica',
   FEATURE: 'Característica',

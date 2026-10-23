@@ -3,11 +3,13 @@
     <span class="sr-only">Cargando proyectos…</span><app-skeleton height="2rem" />
   </div>
 } @else if (projectContext.projects.error()) {
+  <app-page-header heading="Elementos de trabajo" />
   <app-error-state
     message="No se pudieron cargar tus proyectos."
     (retry)="projectContext.projects.reload()"
   />
 } @else if (!selectedProject()) {
+  <app-page-header heading="Elementos de trabajo" />
   <app-empty-state
     message="Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo."
   >
@@ -51,8 +53,34 @@
       placeholder="Todos los tipos"
       [options]="typeOptions"
       [value]="type() ?? ''"
+      [disabled]="view() === 'tree'"
+      describedBy="list-filters-reason"
       (valueChange)="selectType($event)"
     />
+    <app-select-menu
+      label="Prioridad"
+      placeholder="Todas las prioridades"
+      [options]="priorityOptions"
+      [value]="priority() ?? ''"
+      [disabled]="view() === 'tree'"
+      describedBy="list-filters-reason"
+      (valueChange)="selectPriority($event)"
+    />
+    <app-select-menu
+      label="Asignado a"
+      placeholder="Todas las personas"
+      [options]="assigneeOptions()"
+      [value]="assignee() ?? ''"
+      [disabled]="view() === 'tree'"
+      describedBy="list-filters-reason"
+      (valueChange)="selectAssignee($event)"
+    />
+    @if (view() === 'tree') {
+      <app-disabled-reason
+        id="list-filters-reason"
+        reason="Los filtros por tipo, prioridad y persona se aplican en la vista Lista."
+      />
+    }
     <app-segmented-control
       groupLabel="Vista de elementos de trabajo"
       [options]="viewOptions"
@@ -128,11 +156,17 @@
           [message]="
             query()
               ? 'Sin resultados para «' + query() + '».'
-              : type()
-                ? 'Sin elementos de tipo ' + typeLabels[type()!] + ' en este proyecto.'
+              : hasFilters()
+                ? 'Ningún elemento coincide con los filtros.'
                 : 'Este proyecto aún no tiene elementos de trabajo.'
           "
-        />
+        >
+          @if (hasFilters()) {
+            <button type="button" appButton variant="secondary" size="compact" (click)="clearFilters()">
+              Limpiar filtros
+            </button>
+          }
+        </app-empty-state>
       } @else {
         <app-data-table
           [caption]="'Elementos de trabajo de ' + selectedProject()!.name"

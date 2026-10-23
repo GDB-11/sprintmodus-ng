@@ -182,6 +182,20 @@ describe('KanbanBoard', () => {
   });
 
   describe('what it shows', () => {
+    it('keeps its single heading when the organization has no projects', async () => {
+      await router.navigateByUrl('/board');
+      fixture = TestBed.createComponent(KanbanBoard);
+      fixture.detectChanges();
+      http.expectOne(`${API}/api/projects`).flush([]);
+      http.expectOne(`${API}/api/status-workflows/PBI`).flush(WORKFLOW);
+
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(root().textContent).toContain('Aún no tienes proyectos');
+      });
+      expect([...root().querySelectorAll('h1')].map((h) => h.textContent!.trim())).toEqual(['Tablero']);
+    });
+
     it('has a column per status of the type, in workflow order, with how many cards and points each holds', async () => {
       await open();
 

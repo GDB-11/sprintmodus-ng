@@ -27,8 +27,11 @@ describe('UserMenu', () => {
   const menu = () => overlayContainerElement.querySelector('[role="dialog"]');
 
   it('is a labelled trigger with the initials of the signed-in user', () => {
-    expect(trigger().getAttribute('aria-label')).toBe('Cuenta de Yo Mismo');
-    expect(trigger().textContent?.trim()).toBe('YM');
+    // no aria-label: the visible initials must be part of the accessible name (WCAG 2.5.3 label in name)
+    expect(trigger().hasAttribute('aria-label')).toBe(false);
+    expect(trigger().querySelector('.sr-only')?.textContent).toBe('Cuenta de');
+    expect(trigger().querySelector('[role="img"]')?.getAttribute('aria-label')).toBe('Yo Mismo');
+    expect(trigger().textContent).toContain('YM');
   });
 
   it('opens with the name, role, organization, plan and a way to sign out', () => {

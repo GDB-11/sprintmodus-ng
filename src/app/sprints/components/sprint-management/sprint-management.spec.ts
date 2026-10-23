@@ -213,7 +213,7 @@ describe('SprintManagement', () => {
     await open();
 
     expect(text(root())).toContain(
-      'Velocidad promedio de los últimos 1 sprint cerrado: 24 puntos.',
+      'Velocidad del único sprint cerrado: 24 puntos.',
     );
     expect(root().querySelector('#sprint-days')).not.toBeNull();
   });
@@ -241,6 +241,9 @@ describe('SprintManagement', () => {
       const start = button('Iniciar Sprint 3');
       expect(start.disabled).toBe(true);
       expect(start.title).toBe('Cierra primero el sprint activo: un proyecto tiene uno a la vez.');
+      // the reason is also on the page, not only in a tooltip
+      expect(start.getAttribute('aria-describedby')).toBe('active-hint');
+      expect(root().querySelector('#active-hint')?.textContent).toContain('Cierra primero el sprint activo');
     });
 
     it('starts the planned sprint, says so, and reloads', async () => {
@@ -276,13 +279,16 @@ describe('SprintManagement', () => {
   });
 
   describe('closing a sprint', () => {
-    it('asks first, next to the sprint, because it fixes its velocity and burndown', async () => {
+    const closeDialog = () => root().querySelector('dialog')!;
+
+    it('asks first, in a modal, because it fixes its velocity and burndown', async () => {
       await open();
 
       button('Cerrar Sprint 2').click();
       fixture.detectChanges();
 
-      const dialog = root().querySelector('[role="alertdialog"]')!;
+      const dialog = closeDialog();
+      expect(dialog.open).toBe(true);
       expect(dialog.textContent).toContain('¿Cerrar Sprint 2?');
       expect(dialog.textContent).toContain('no vuelven a cambiar');
       http.expectNone(`${API}/sprints/s2/close`);
@@ -302,7 +308,7 @@ describe('SprintManagement', () => {
       expect(notifications.notifications().map((n) => n.message)).toEqual([
         'Sprint 2 se cerró. Su velocidad y su burndown quedaron fijos.',
       ]);
-      expect(root().querySelector('[role="alertdialog"]')).toBeNull();
+      expect(closeDialog().open).toBe(false);
     });
 
     it('changes nothing when the question is cancelled', async () => {
@@ -313,7 +319,7 @@ describe('SprintManagement', () => {
       button('Cancelar').click();
       fixture.detectChanges();
 
-      expect(root().querySelector('[role="alertdialog"]')).toBeNull();
+      expect(closeDialog().open).toBe(false);
       http.expectNone(`${API}/sprints/s2/close`);
     });
   });
@@ -337,7 +343,7 @@ describe('SprintManagement', () => {
 
       expect(button('Burndown Sprint 1').disabled).toBe(false);
       expect(root().querySelector('app-burndown-chart')).not.toBeNull();
-      expect(root().textContent).toContain('Velocidad promedio');
+      expect(root().textContent).toContain('Velocidad');
       expect(root().textContent).toContain(
         'Solo los propietarios y administradores cambian esta configuración.',
       );

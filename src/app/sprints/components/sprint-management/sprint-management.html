@@ -26,6 +26,18 @@
       Nuevo sprint
     </button>
   </app-page-header>
+  @if (canAdminister() && hasActiveSprint() && hasPlannedSprint()) {
+    <app-disabled-reason
+      id="active-hint"
+      reason="Cierra primero el sprint activo para iniciar otro: un proyecto tiene uno a la vez."
+    />
+  }
+  @if (hasPlannedSprint()) {
+    <app-disabled-reason
+      id="burndown-hint"
+      reason="El burndown de un sprint planificado aparece cuando se inicia."
+    />
+  }
   @if (!canAdminister()) {
     <p id="plan-hint" class="text-sm text-text-muted">
       Solo los propietarios y administradores inician y cierran sprints.
@@ -73,7 +85,9 @@
                 size="compact"
                 type="button"
                 [disabled]="!canAdminister() || busy() || hasActiveSprint()"
-                [attr.aria-describedby]="canAdminister() ? null : 'plan-hint'"
+                [attr.aria-describedby]="
+                  canAdminister() ? (hasActiveSprint() ? 'active-hint' : null) : 'plan-hint'
+                "
                 [attr.title]="
                   canAdminister() && hasActiveSprint()
                     ? 'Cierra primero el sprint activo: un proyecto tiene uno a la vez.'
@@ -103,6 +117,7 @@
               size="compact"
               type="button"
               [disabled]="sprint.status === 'PLANNED'"
+              [attr.aria-describedby]="sprint.status === 'PLANNED' ? 'burndown-hint' : null"
               [attr.title]="
                 sprint.status === 'PLANNED'
                   ? 'El burndown empieza cuando se inicia el sprint.'
@@ -118,19 +133,17 @@
           </div>
         </ng-template>
       </app-data-table>
-      @if (closing(); as sprint) {
-        <app-confirm-inline
-          [question]="
-            '¿Cerrar ' +
-            sprint.name +
-            '? Se fijan su velocidad y su burndown: no vuelven a cambiar.'
-          "
-          confirmLabel="Sí, cerrar"
-          [busy]="busy()"
-          (confirm)="close(sprint)"
-          (cancel)="confirmingClose.set(null)"
-        />
-      }
+      <app-confirm-dialog
+        [heading]="'¿Cerrar ' + (closing()?.name ?? 'el sprint') + '?'"
+        confirmLabel="Sí, cerrar"
+        cancelLabel="Cancelar"
+        [busy]="busy()"
+        [open]="closing() !== null"
+        (openChange)="$event || confirmingClose.set(null)"
+        (confirm)="closeConfirmed()"
+      >
+        <p>Se fijan su velocidad y su burndown: no vuelven a cambiar.</p>
+      </app-confirm-dialog>
     </app-panel>
   }
 

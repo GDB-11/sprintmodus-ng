@@ -5,16 +5,16 @@
   <!-- Specular sheen: a soft highlight band that sweeps across the glass as the width changes, either way. -->
   <div
     aria-hidden="true"
-    class="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,transparent_35%,rgba(255,255,255,0.28)_50%,transparent_65%)] bg-[length:300%_100%] transition-[background-position] duration-700 dark:bg-[linear-gradient(105deg,transparent_35%,rgba(255,255,255,0.12)_50%,transparent_65%)] ease-[cubic-bezier(0.22,1,0.36,1)]"
-    [class]="expanded() ? 'bg-[position:100%_0]' : 'bg-[position:0_0]'"
+    class="pointer-events-none absolute inset-0 bg-[linear-gradient(105deg,transparent_35%,rgba(255,255,255,0.28)_50%,transparent_65%)] bg-size-[300%_100%] transition-[background-position] duration-700 dark:bg-[linear-gradient(105deg,transparent_35%,rgba(255,255,255,0.12)_50%,transparent_65%)] ease-[cubic-bezier(0.22,1,0.36,1)]"
+    [class]="expanded() ? 'bg-position-[100%_0]' : 'bg-position-[0_0]'"
   ></div>
   <div class="relative flex flex-col gap-3 overflow-y-auto p-2">
     <a
       routerLink="/dashboard"
-      aria-label="Ir al panel"
       class="flex items-center rounded-lg p-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
     >
       <app-logo [markOnly]="true" />
+      <span class="sr-only">Ir al panel</span>
       @if (tenant(); as org) {
         <span
           [class]="'hidden min-w-0 flex-col overflow-hidden whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:flex ' + (expanded() ? 'ml-3 max-w-40 opacity-100' : 'ml-0 max-w-0 opacity-0')"

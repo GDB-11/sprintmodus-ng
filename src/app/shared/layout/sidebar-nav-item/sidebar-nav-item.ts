@@ -41,9 +41,11 @@ export class SidebarNavItem {
     return this.responsive() ? 'max-w-0 opacity-0 lg:ml-3 lg:max-w-44 lg:opacity-100' : 'ml-3 max-w-44 opacity-100';
   });
 
-  /** The badge is decorative (`app-badge` is `aria-hidden`); the count is said here instead, so it's never colour/shape alone. */
-  protected readonly ariaLabel = computed(() => {
+  /** The badge is decorative (`app-badge` is `aria-hidden`); the count is said in words for screen readers, so it's never
+   * colour/shape alone. It is text inside the link rather than an `aria-label`: the name then follows the visible text
+   * (WCAG 2.5.3). */
+  protected readonly unreadWords = computed(() => {
     const count = this.badgeCount();
-    return count && count > 0 ? `${this.item().label}, ${count} sin leer` : null;
+    return count && count > 0 ? `${count > 99 ? '99+' : count} sin leer` : null;
   });
 }

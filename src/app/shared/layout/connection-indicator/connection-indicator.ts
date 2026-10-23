@@ -34,7 +34,7 @@ export class ConnectionIndicator {
   private readonly board = inject(BoardWebSocketService);
 
   readonly projectCode = input.required<string>();
-  /** In the top bar: the word shows only from `lg` up (a dot alone below it) and who else is online is left out. */
+  /** In the top bar: the word shows only from `lg` up (a dot alone below it) and who else is online shows as a count (the names are in a tooltip and for screen readers). */
   readonly compact = input(false);
 
   protected readonly status = this.board.connectionStatus;
@@ -46,6 +46,8 @@ export class ConnectionIndicator {
       .map((user) => user.email)
       .join(', '),
   );
+
+  protected readonly onlineCount = computed(() => this.board.usersOnline().length);
 
   constructor() {
     effect(() => {

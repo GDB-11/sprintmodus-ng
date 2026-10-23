@@ -3,7 +3,7 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { disabled, form, FormRoot, maxLength, required } from '@angular/forms/signals';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { ProjectService } from '../../../projects/services/project.service';
+import { ProjectContextService } from '../../../projects/services/project-context.service';
 import { apiErrorMessage } from '../../../shared/http-errors';
 import { notBlank } from '../../../shared/not-blank';
 import { valueOf } from '../../../shared/resource-value';
@@ -71,7 +71,7 @@ export class WorkItemCreate {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly workItems = inject(WorkItemService);
-  private readonly projectService = inject(ProjectService);
+  private readonly projectContext = inject(ProjectContextService);
 
   protected readonly typeOptions = TYPE_OPTIONS;
   protected readonly priorityOptions = PRIORITY_OPTIONS;
@@ -79,7 +79,7 @@ export class WorkItemCreate {
 
   private readonly queryParams = toSignal(this.route.queryParamMap, { requireSync: true });
 
-  private readonly projects = rxResource({ stream: () => this.projectService.list() });
+  private readonly projects = this.projectContext.projects;
 
   private readonly model = signal<CreateModel>({
     projectCode: '',
@@ -157,18 +157,20 @@ export class WorkItemCreate {
       }
     });
 
-    // Preselect the project from the URL, or the first one, and the parent when arriving from an item.
+    // Preselect the project from the URL, else the current one, else the first one, and the parent when arriving from an item.
     effect(() => {
       const projects = valueOf(this.projects);
       if (!projects || projects.length === 0 || this.model().projectCode) {
         return;
       }
-      const wanted = this.queryParams().get('project');
+      const wanted = this.queryParams().get('project') ?? this.projectContext.current()?.projectCode;
       const project = projects.find((p) => p.projectCode === wanted) ?? projects[0];
+      const wantedType = this.queryParams().get('type');
       this.model.update((model) => ({
         ...model,
         projectCode: project.projectCode,
         parentCode: this.queryParams().get('parent') ?? '',
+        type: ITEM_TYPES.find((type) => type === wantedType) ?? model.type,
       }));
     });
   }

@@ -135,8 +135,8 @@ describe('WorkflowAdmin', () => {
       await open();
 
       expect(root().textContent).toContain('Acceso restringido');
-      expect(root().textContent).toContain('Tu rol actual es MEMBER.');
-      expect(root().textContent).toContain('Vista previa para OWNER / ADMIN');
+      expect(root().textContent).toContain('Tu rol actual es Miembro.');
+      expect(root().textContent).toContain('Vista previa para propietarios y administradores');
       expect(root().textContent).toContain('Backlog');
       expect(root().textContent).toContain('Retroceso');
       expect(root().querySelector('input')).toBeNull();

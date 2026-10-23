@@ -41,7 +41,11 @@ export class SearchableSelect implements FormValueControl<string> {
   private readonly searchBox = viewChild<ElementRef<HTMLInputElement>>('search');
 
   protected readonly selected = computed(() => this.options().find((option) => option.value === this.value()) ?? null);
-  protected readonly accessibleName = computed(() => `${this.label()}: ${this.selected()?.label ?? this.placeholder()}`);
+  protected readonly accessibleName = computed(() => {
+    const option = this.selected();
+    // The visible hint (e.g. an issue key) is part of the name: WCAG 2.5.3, label in name.
+    return `${this.label()}: ${option ? [option.label, option.hint].filter(Boolean).join(' ') : this.placeholder()}`;
+  });
   /** At least the trigger's width (measured each time the list opens), and wide enough for a search box. */
   protected readonly minWidth = signal(240);
 

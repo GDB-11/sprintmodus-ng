@@ -47,7 +47,9 @@ describe('SelectMenu', () => {
   it('shows the chosen option on its trigger, named by its label and value', () => {
     const trigger = selectTrigger(root(), 'Letra');
     expect(selectedText(trigger)).toBe('Beta B');
-    expect(trigger.getAttribute('aria-label')).toBe('Letra: Beta');
+    expect(trigger.getAttribute('aria-label')).toBe('Letra: Beta B');
+    // Spans are concatenated without a space by textContent, which is what accessibility checkers compare the name with.
+    expect(trigger.textContent?.trim()).toBe('Beta B');
   });
 
   it('opens a themed list (not the browser one) with every option, marking the chosen one', () => {

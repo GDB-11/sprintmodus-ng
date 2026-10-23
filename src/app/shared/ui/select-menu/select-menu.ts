@@ -47,7 +47,11 @@ export class SelectMenu implements FormValueControl<string> {
   protected readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
 
   protected readonly selected = computed(() => this.options().find((option) => option.value === this.value()) ?? null);
-  protected readonly accessibleName = computed(() => `${this.label()}: ${this.selected()?.label ?? this.placeholder()}`);
+  protected readonly accessibleName = computed(() => {
+    const option = this.selected();
+    // The visible hint (e.g. an issue key) is part of the name: WCAG 2.5.3, label in name.
+    return `${this.label()}: ${option ? [option.label, option.hint].filter(Boolean).join(' ') : this.placeholder()}`;
+  });
   protected readonly activeId = computed(() => (this.open() && this.options().length ? this.optionId(this.activeIndex()) : null));
   /** The trigger's width, measured each time the list opens (a computed would keep the first, possibly stale, measure). */
   protected readonly minWidth = signal(0);

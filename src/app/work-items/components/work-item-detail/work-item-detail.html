@@ -114,7 +114,11 @@
               panelActions
               appTextLink
               routerLink="/work-items/new"
-              [queryParams]="{ project: current.projectCode, parent: current.workItemCode }"
+              [queryParams]="{
+                project: current.projectCode,
+                parent: current.workItemCode,
+                type: recommendedChildType[current.type],
+              }"
             >
               Agregar un secundario
             </a>

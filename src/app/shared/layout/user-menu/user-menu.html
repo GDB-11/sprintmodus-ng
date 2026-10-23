@@ -4,9 +4,9 @@
     cdkOverlayOrigin
     type="button"
     (click)="open.set(!open())"
-    [attr.aria-label]="'Cuenta de ' + current.fullName"
     class="rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400"
   >
+    <span class="sr-only">Cuenta de</span>
     <app-avatar [name]="current.fullName" />
   </button>
 

@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { environment } from '../../../../environments/environment';
 import { FakeAuth, provideFakeAuth } from '../../../auth/auth.testing';
 import { AuthService } from '../../../auth/services/auth.service';
+import { NotificationService } from '../../../shared/notifications/notification.service';
 import { expectNoAxeViolations } from '../../../testing/axe';
 import { openSelect, selectTrigger } from '../../../testing/select-menu';
 import { Member, MemberPage } from '../../models/member.models';
@@ -90,7 +91,9 @@ describe('MembersPage', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(text()).toContain('Se agregó a Bea Ruiz');
+    expect(TestBed.inject(NotificationService).notifications().map((n) => n.message)).toEqual([
+      'Se agregó a Bea Ruiz. Entrégale la contraseña inicial por un canal seguro: no se volverá a mostrar.',
+    ]);
     expect(text()).not.toContain('long-enough-pw');
     expect(input('member-name').value).toBe('');
     expect(text()).toContain('2 de 5 usuarios activos');

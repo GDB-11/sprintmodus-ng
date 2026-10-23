@@ -33,11 +33,14 @@ import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/sel
 import { TextLink } from '../../../shared/ui/text-link/text-link';
 import {
   ASSIGNMENT_ROLE_LABELS,
+  ItemType,
   ITEM_TYPE_LABELS,
   PRIORITY_LABELS,
+  RECOMMENDED_CHILD_TYPE,
   WorkItem,
   WorkItemSummary,
 } from '../../models/work-item.models';
+import { ProjectContextService } from '../../../projects/services/project-context.service';
 import { WorkItemService } from '../../services/work-item.service';
 import { CriteriaList } from '../criteria-list/criteria-list';
 import { MetaList, MetaRow } from '../meta-list/meta-list';
@@ -94,10 +97,12 @@ export class WorkItemDetail {
   private readonly board = inject(BoardWebSocketService);
   private readonly auth = inject(AuthService);
   private readonly permissions = inject(Permissions);
+  private readonly projectContext = inject(ProjectContextService);
   private readonly dates = new DatePipe(inject(LOCALE_ID));
 
   protected readonly typeLabels = ITEM_TYPE_LABELS;
   protected readonly priorityLabels = PRIORITY_LABELS;
+  protected readonly recommendedChildType = RECOMMENDED_CHILD_TYPE;
   protected readonly roleLabels = ASSIGNMENT_ROLE_LABELS;
 
   protected readonly editing = signal(false);
@@ -243,12 +248,41 @@ export class WorkItemDetail {
   protected readonly sprintChoice = linkedSignal(() => this.loadedItem()?.sprintCode ?? '');
   protected readonly parentChoice = linkedSignal(() => this.loadedItem()?.parentCode ?? '');
 
-  protected readonly statusOptions = computed<SelectMenuOption[]>(() =>
-    (this.loadedItem()?.allowedStatuses ?? []).map((status) => ({
-      value: status.code,
-      label: status.displayName,
-    })),
-  );
+  /** The item's type, kept while the item is reloading so the workflow is not fetched again after every change. */
+  private readonly itemType = linkedSignal<ItemType | undefined, ItemType | undefined>({
+    source: () => this.loadedItem()?.type,
+    computation: (type, previous) => type ?? previous?.value,
+  });
+
+  /** The item type's workflow, which says which transition asks for a role; `allowedStatuses` alone does not. */
+  private readonly workflow = rxResource({
+    params: () => this.itemType(),
+    stream: ({ params }) => this.workItems.workflow(params),
+  });
+
+  /** A transition that asks for a role is offered disabled with the reason unless the user is an owner/admin or is
+   * assigned to the item in that role (the server enforces it too). */
+  protected readonly statusOptions = computed<SelectMenuOption[]>(() => {
+    const item = this.loadedItem();
+    const transitions = valueOf(this.workflow)?.transitions ?? [];
+    return (item?.allowedStatuses ?? []).map((status) => {
+      const role = transitions.find(
+        (transition) => transition.from === item?.status.code && transition.to === status.code,
+      )?.requiredRole;
+      const mayUse =
+        !role ||
+        this.permissions.canAdminister() ||
+        !!item?.assignees.some(
+          (assignee) => assignee.role === role && assignee.userCode === this.permissions.userCode(),
+        );
+      return {
+        value: status.code,
+        label: status.displayName,
+        disabled: !mayUse,
+        hint: mayUse || !role ? undefined : `requiere rol: ${ASSIGNMENT_ROLE_LABELS[role]}`,
+      };
+    });
+  });
   protected readonly sprintOptions = computed<SelectMenuOption[]>(() => [
     { value: '', label: 'Backlog (sin sprint)' },
     ...this.sprintChoices().map((sprint) => ({ value: sprint.sprintCode, label: sprint.name })),
@@ -269,7 +303,10 @@ export class WorkItemDetail {
     effect(() => {
       const projectCode = this.projectCode();
       if (projectCode) {
-        untracked(() => this.board.connect(projectCode));
+        untracked(() => {
+          this.board.connect(projectCode);
+          this.projectContext.follow(projectCode);
+        });
       }
     });
     inject(DestroyRef).onDestroy(() => this.board.release());

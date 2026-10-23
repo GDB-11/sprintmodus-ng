@@ -88,6 +88,21 @@ describe('ConnectionIndicator', () => {
     expect(text()).toContain('En línea: ana@acme.io, luis@acme.io');
   });
 
+  it('in the top bar says how many are online, with the names for screen readers and a tooltip', () => {
+    fixture.componentRef.setInput('compact', true);
+    usersOnline.set([
+      { userCode: 'u-1', email: 'ana@acme.io' },
+      { userCode: 'u-2', email: 'luis@acme.io' },
+    ]);
+    fixture.detectChanges();
+
+    expect(text()).toContain('2 en línea');
+    expect(text()).toContain('En línea: ana@acme.io, luis@acme.io');
+    expect((fixture.nativeElement as HTMLElement).querySelector('[title]')?.getAttribute('title')).toBe(
+      'ana@acme.io, luis@acme.io',
+    );
+  });
+
   it('has no accessibility violations in any state', async () => {
     usersOnline.set([{ userCode: 'u-1', email: 'ana@acme.io' }]);
     for (const state of ['connecting', 'connected', 'reconnecting', 'offline'] as const) {

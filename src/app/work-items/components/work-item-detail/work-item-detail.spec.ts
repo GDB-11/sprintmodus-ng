@@ -8,15 +8,18 @@ import { FakeAuth, provideFakeAuth } from '../../../auth/auth.testing';
 import { AuthService } from '../../../auth/services/auth.service';
 import { FakeBoard, provideFakeBoard } from '../../../board/board.testing';
 import { BoardWebSocketService } from '../../../board/services/board-websocket.service';
+import { ProjectContextService } from '../../../projects/services/project-context.service';
 import { UserService } from '../../../users/services/user.service';
 import { NotificationService } from '../../../shared/notifications/notification.service';
 import { APPROVED_STATUS, NEW_STATUS, summary, workItem } from '../../work-items.testing';
 import { WorkItem } from '../../models/work-item.models';
+import { Workflow } from '../../services/work-item.service';
 import { WorkItemDetail } from './work-item-detail';
 import { chooseOption, closeSelect, openOptions, openSelect, selectedText } from '../../../testing/select-menu';
 import { expectNoAxeViolations } from '../../../testing/axe';
 
 const API = environment.apiUrl;
+const projectContext = { follow: vi.fn() };
 const ITEM_URL = `${API}/api/work-items/item-1`;
 
 const SPRINTS = [
@@ -45,6 +48,8 @@ describe('WorkItemDetail', () => {
         provideFakeAuth(),
         // the assignees panel's people list is covered by its own spec
         { provide: UserService, useValue: { search: () => of([]) } },
+        // the shell's project context is covered by its own spec
+        { provide: ProjectContextService, useValue: projectContext },
       ],
     }).compileComponents();
     http = TestBed.inject(HttpTestingController);
@@ -65,8 +70,8 @@ describe('WorkItemDetail', () => {
     fixture.detectChanges();
   }
 
-  /** Opens the item and answers the three requests the page makes for it. */
-  async function open(item: WorkItem = workItem()): Promise<void> {
+  /** Opens the item and answers the requests the page makes for it; `transitions` is what its type's workflow allows. */
+  async function open(item: WorkItem = workItem(), transitions: Workflow['transitions'] = []): Promise<void> {
     fixture = TestBed.createComponent(WorkItemDetail);
     fixture.detectChanges();
     http.expectOne(ITEM_URL).flush(item);
@@ -81,6 +86,11 @@ describe('WorkItemDetail', () => {
       page: 0,
       size: 200,
     });
+    (await vi.waitFor(() => http.expectOne(`${API}/api/status-workflows/${item.type}`))).flush({
+      itemType: item.type,
+      statuses: [],
+      transitions,
+    });
     // comments of the child component
     http.expectOne(`${ITEM_URL}/comments`).flush([]);
     await settle();
@@ -89,6 +99,12 @@ describe('WorkItemDetail', () => {
   async function choose(id: string, value: string): Promise<void> {
     chooseOption(control(id), value, () => fixture.detectChanges());
   }
+
+  it("makes the shell show the open item's project", async () => {
+    await open();
+
+    expect(projectContext.follow).toHaveBeenCalledWith('project-1');
+  });
 
   it('shows the item with its status and only the statuses it can move to', async () => {
     await open(workItem({ description: 'Line one\nLine two', assignees: [{ assignmentCode: 'a1', userCode: 'u1', fullName: 'Mia Member', role: 'DEV' }] }));
@@ -110,6 +126,36 @@ describe('WorkItemDetail', () => {
 
     await open(workItem({ effortPoints: 5, childrenEffortPoints: 8 }));
     expect(root().textContent).toContain('tareas secundarias: 8');
+  });
+
+  describe('a transition that asks for a role', () => {
+    const asksForQa = [{ from: 'NEW', to: 'APPROVED', allowedBackward: false, requiredRole: 'QA' as const }];
+    const approved = () =>
+      [...document.querySelectorAll<HTMLElement>('[role="option"]')].find((o) => o.textContent?.includes('Approved'))!;
+
+    it('is offered disabled, with the reason, to someone not assigned in that role', async () => {
+      auth.becomes('MEMBER', 'user-1');
+      await open(workItem(), asksForQa);
+
+      openSelect(control('change-status'), () => fixture.detectChanges());
+
+      expect(approved().getAttribute('aria-disabled')).toBe('true');
+      expect(approved().textContent).toContain('requiere rol: Calidad (QA)');
+      closeSelect(control('change-status'), () => fixture.detectChanges());
+    });
+
+    it('is open to someone assigned in that role', async () => {
+      auth.becomes('MEMBER', 'user-1');
+      await open(
+        workItem({ assignees: [{ assignmentCode: 'a1', userCode: 'user-1', fullName: 'Quinn', role: 'QA' }] }),
+        asksForQa,
+      );
+
+      openSelect(control('change-status'), () => fixture.detectChanges());
+
+      expect(approved().getAttribute('aria-disabled')).not.toBe('true');
+      closeSelect(control('change-status'), () => fixture.detectChanges());
+    });
   });
 
   it('offers no status when the workflow has no move from here', async () => {
@@ -224,6 +270,7 @@ describe('WorkItemDetail', () => {
     expect(request.request.body).toEqual({ parentCode: 'epic-1' });
     request.flush(
       workItem({
+        type: 'TASK',
         parentCode: 'epic-1',
         warnings: [{ code: 'NON_STANDARD_HIERARCHY', message: 'EPIC is not a recommended parent for TASK.' }],
       }),

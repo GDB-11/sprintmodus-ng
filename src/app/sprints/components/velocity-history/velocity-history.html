@@ -3,11 +3,14 @@
 } @else {
   <app-bar-chart [groups]="groups()" />
   <p class="text-sm text-text">
-    Velocidad promedio de los últimos {{ history().sprints.length }}
-    {{ history().sprints.length === 1 ? 'sprint cerrado' : 'sprints cerrados' }}:
+    @if (history().sprints.length === 1) {
+      Velocidad del único sprint cerrado:
+    } @else {
+      Velocidad promedio de los últimos {{ history().sprints.length }} sprints cerrados:
+    }
     <strong>{{ history().averageVelocity | number: '1.0-1' }} puntos</strong>.
   </p>
-  <p class="text-sm text-text-muted">En las barras, la tenue son los puntos planificados y la de color los completados.</p>
+  <p class="text-sm text-text-muted">En las barras, el tono tenue muestra los puntos planificados y el de color los completados.</p>
   <details appDisclosure summary="Ver datos en tabla">
     <app-data-table
       caption="Puntos planificados y completados en los últimos sprints cerrados"

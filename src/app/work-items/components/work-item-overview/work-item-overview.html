@@ -3,7 +3,10 @@
     <span class="sr-only">Cargando proyectos…</span><app-skeleton height="2rem" />
   </div>
 } @else if (!projectContext.current()) {
-  <app-empty-state message="Aún no tienes proyectos." />
+  <app-page-header heading="Vista general" />
+  <app-empty-state message="Aún no tienes proyectos. Crea un proyecto primero y luego agrégale elementos de trabajo.">
+    <a appTextLink routerLink="/projects">Crear un proyecto</a>
+  </app-empty-state>
 } @else {
   <app-page-header
     heading="Vista general"

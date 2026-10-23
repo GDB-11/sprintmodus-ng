@@ -18,7 +18,8 @@ import { NotificationService } from '../../../shared/notifications/notification.
 import { valueOf } from '../../../shared/resource-value';
 import { Button } from '../../../shared/ui/button/button';
 import { Chip, ChipTone } from '../../../shared/ui/chip/chip';
-import { ConfirmInline } from '../../../shared/ui/confirm-inline/confirm-inline';
+import { DisabledReason } from '../../../shared/ui/disabled-reason/disabled-reason';
+import { ConfirmDialog } from '../../../shared/ui/confirm-dialog/confirm-dialog';
 import {
   DataTable,
   DataTableCell,
@@ -63,6 +64,7 @@ function dateRange(start: string, end: string): string {
 @Component({
   selector: 'app-sprint-management',
   imports: [
+    DisabledReason,
     RouterLink,
     TextLink,
     Skeleton,
@@ -73,7 +75,7 @@ function dateRange(start: string, end: string): string {
     Icon,
     DataTable,
     DataTableCell,
-    ConfirmInline,
+    ConfirmDialog,
     EmptyState,
     ErrorState,
     BurndownChart,
@@ -128,6 +130,9 @@ export class SprintManagement {
   /** A project has one active sprint at a time, so starting another is refused until it is closed. */
   protected readonly hasActiveSprint = computed(() =>
     this.loadedSprints().some((sprint) => sprint.status === 'ACTIVE'),
+  );
+  protected readonly hasPlannedSprint = computed(() =>
+    this.loadedSprints().some((sprint) => sprint.status === 'PLANNED'),
   );
   protected readonly closing = computed(
     () =>
@@ -187,6 +192,13 @@ export class SprintManagement {
       `${sprint.name} está en marcha.`,
       'No se pudo iniciar el sprint.',
     );
+  }
+
+  protected closeConfirmed(): void {
+    const sprint = this.closing();
+    if (sprint) {
+      this.close(sprint);
+    }
   }
 
   protected close(sprint: Sprint): void {

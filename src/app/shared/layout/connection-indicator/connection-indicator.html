@@ -3,7 +3,14 @@
     <span aria-hidden="true" class="size-2.5 shrink-0 rounded-full" [class]="dotClasses()"></span>
     <span [class]="compact() ? 'sr-only lg:not-sr-only' : ''">{{ label() }}</span>
   </p>
-  @if (usersOnline() && !compact()) {
-    <p>En línea: {{ usersOnline() }}</p>
+  @if (usersOnline()) {
+    @if (compact()) {
+      <p>
+        <span class="sr-only">En línea: {{ usersOnline() }}</span>
+        <span aria-hidden="true" class="hidden xl:inline" [attr.title]="usersOnline()">{{ onlineCount() }} en línea</span>
+      </p>
+    } @else {
+      <p>En línea: {{ usersOnline() }}</p>
+    }
   }
 </div>

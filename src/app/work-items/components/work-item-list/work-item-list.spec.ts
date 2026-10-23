@@ -35,7 +35,10 @@ describe('WorkItemList', () => {
     board = TestBed.inject(BoardWebSocketService) as unknown as FakeBoard;
   });
 
-  afterEach(() => http.verify());
+  afterEach(() => {
+    answerPeople();
+    http.verify();
+  });
 
   const root = () => fixture.nativeElement as HTMLElement;
 
@@ -48,10 +51,18 @@ describe('WorkItemList', () => {
     fixture.detectChanges();
   }
 
+  /** The assignee filter's people list is incidental to most tests: answer it (empty) so the page can settle. */
+  const answerPeople = () =>
+    http.match(`${environment.apiUrl}/api/users?q=&limit=50`).forEach((req) => req.flush([]));
+
   const nextItemsRequest = () =>
-    vi.waitFor(() => http.expectOne((req) => req.url === `${environment.apiUrl}/api/work-items`));
+    vi.waitFor(() => {
+      answerPeople();
+      return http.expectOne((req) => req.url === `${environment.apiUrl}/api/work-items`);
+    });
 
   async function settle(): Promise<void> {
+    answerPeople();
     await fixture.whenStable();
     fixture.detectChanges();
   }
@@ -83,6 +94,21 @@ describe('WorkItemList', () => {
       expect(root().textContent).toContain('Checkout');
       expect(root().textContent).toContain('Sin épica');
       expect(root().textContent).toContain('WAR-2');
+    });
+
+    it('disables the type filter and says why: it only applies to Lista', async () => {
+      await open();
+      (await nextItemsRequest()).flush({ items: [], total: 0, page: 0, size: 200 });
+      await settle();
+
+      const trigger = root().querySelector<HTMLButtonElement>('button[aria-label^="Tipo"]')!;
+      expect(trigger.disabled).toBe(true);
+      expect(root().querySelector('#list-filters-reason')?.textContent).toContain('vista Lista');
+      for (const label of ['Prioridad', 'Asignado a']) {
+        expect(root().querySelector<HTMLButtonElement>(`button[aria-label^="${label}"]`)!.disabled).toBe(
+          true,
+        );
+      }
     });
 
     it('says so when the project has no Epics yet', async () => {
@@ -133,7 +159,7 @@ describe('WorkItemList', () => {
       request.flush({ items: [], total: 0, page: 0, size: 25 });
       await settle();
 
-      expect(root().textContent).toContain('Sin elementos de tipo Error en este proyecto.');
+      expect(root().textContent).toContain('Ningún elemento coincide con los filtros.');
     });
 
     it('filters by type through the filter chips', async () => {
@@ -152,6 +178,29 @@ describe('WorkItemList', () => {
       expect(request.request.params.get('type')).toBe('BUG');
       expect(router.parseUrl(router.url).queryParams['type']).toBe('BUG');
       request.flush({ items: [], total: 0, page: 0, size: 25 });
+    });
+
+    it('filters by priority and assignee, clears them from the empty result', async () => {
+      await open('/work-items?view=list&priority=HIGH&assignee=u1&page=2');
+      const people = await vi.waitFor(() =>
+        http.expectOne(`${environment.apiUrl}/api/users?q=&limit=50`),
+      );
+      people.flush([{ userCode: 'u1', fullName: 'Ana Member' }]);
+      const request = await nextItemsRequest();
+      expect(request.request.params.get('priority')).toBe('HIGH');
+      expect(request.request.params.get('assignee')).toBe('u1');
+      request.flush({ items: [], total: 0, page: 2, size: 25 });
+      await settle();
+
+      expect(root().textContent).toContain('Ningún elemento coincide con los filtros.');
+      [...root().querySelectorAll<HTMLButtonElement>('button')]
+        .find((b) => b.textContent?.trim() === 'Limpiar filtros')!
+        .click();
+      const cleared = await nextItemsRequest();
+      expect(cleared.request.params.has('priority')).toBe(false);
+      expect(cleared.request.params.has('assignee')).toBe(false);
+      expect(router.parseUrl(router.url).queryParams['priority']).toBeUndefined();
+      cleared.flush({ items: [], total: 0, page: 0, size: 25 });
     });
 
     it('asks for the next page and disables Previous on the first', async () => {
@@ -217,6 +266,7 @@ describe('WorkItemList', () => {
     await settle();
 
     expect(root().textContent).toContain('Aún no tienes proyectos');
+    expect(root().querySelectorAll('h1').length).toBe(1);
   });
 
   it('has no accessibility violations', async () => {

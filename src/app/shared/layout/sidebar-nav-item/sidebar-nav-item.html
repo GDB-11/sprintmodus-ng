@@ -4,7 +4,6 @@
   #rla="routerLinkActive"
   [attr.aria-current]="rla.isActive ? 'page' : null"
   [attr.title]="item().label"
-  [attr.aria-label]="ariaLabel()"
   [class]="
     'group relative flex items-center rounded-lg p-2 text-sm font-medium transition-colors duration-150 ' +
     'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-secondary-900 dark:focus-visible:outline-secondary-400 ' +
@@ -13,6 +12,9 @@
 >
   <span [class]="tileClasses()"><app-icon [name]="item().icon" /></span>
   <span [class]="'flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap transition-[max-width,opacity,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ' + labelState()">{{ item().label }}</span>
+  @if (unreadWords(); as words) {
+    <span class="sr-only">, {{ words }}</span>
+  }
   @if (badgeCount(); as count) {
     @if (count > 0) {
       <app-badge [count]="count" [class]="expanded() ? 'absolute -top-1 -right-1 lg:static' : 'absolute -top-1 -right-1'" />

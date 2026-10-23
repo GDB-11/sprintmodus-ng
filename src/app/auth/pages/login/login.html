@@ -21,6 +21,7 @@
       [field]="loginForm.organizationCode"
       inputId="organizationCode"
       label="Código de organización"
+      autocomplete="organization"
     />
     <button appButton type="submit" [disabled]="loginForm().submitting()">
       {{ loginForm().submitting() ? 'Entrando…' : 'Entrar' }}

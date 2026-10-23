@@ -66,7 +66,6 @@ export class MemberCreate {
   );
 
   protected readonly errorMessage = signal<string | null>(null);
-  protected readonly addedName = signal<string | null>(null);
   protected readonly showPassword = signal(false);
 
   private readonly model = signal<MemberModel>({ fullName: '', email: '', role: 'MEMBER', password: '' });
@@ -92,7 +91,6 @@ export class MemberCreate {
       submission: {
         action: async () => {
           this.errorMessage.set(null);
-          this.addedName.set(null);
           if (this.atLimit()) {
             this.errorMessage.set(this.limitReason());
             return undefined;
@@ -107,8 +105,9 @@ export class MemberCreate {
                 password: model.password,
               }),
             );
-            this.notifications.success(`Se agregó a ${member.fullName}.`);
-            this.addedName.set(member.fullName);
+            this.notifications.success(
+              `Se agregó a ${member.fullName}. Entrégale la contraseña inicial por un canal seguro: no se volverá a mostrar.`,
+            );
             this.model.set({ fullName: '', email: '', role: 'MEMBER', password: '' });
             this.showPassword.set(false);
             this.memberForm().reset();

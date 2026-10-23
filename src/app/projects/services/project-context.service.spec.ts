@@ -90,4 +90,17 @@ describe('ProjectContextService', () => {
     expect(localStorage.getItem('sprintmodus.lastProject.u-me')).toBe('p-ord');
     expect(router.url).toContain('project=p-ord');
   });
+
+  it('follow() shows the project of the screen without touching the URL or the remembered choice', async () => {
+    const { service, http, router } = setup();
+    await router.navigateByUrl('/work-items/abc');
+    await flushProjects(http, [WAR, ORD]);
+
+    service.follow('p-ord');
+    TestBed.tick();
+
+    expect(service.current()?.projectCode).toBe('p-ord');
+    expect(router.url).toBe('/work-items/abc');
+    expect(localStorage.getItem('sprintmodus.lastProject.u-me')).toBeNull();
+  });
 });

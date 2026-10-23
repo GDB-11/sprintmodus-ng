@@ -15,12 +15,12 @@
   <app-not-allowed
     [message]="
       'La configuración de flujo de trabajo requiere rol propietario o administrador. Tu rol actual es ' +
-      (permissions.role() ?? 'desconocido') +
+      (permissions.role() ? roleLabels[permissions.role()!] : 'desconocido') +
       '.'
     "
   />
   <h2 class="text-sm font-semibold tracking-wide text-text-muted uppercase">
-    Vista previa para OWNER / ADMIN
+    Vista previa para propietarios y administradores
   </h2>
 }
 

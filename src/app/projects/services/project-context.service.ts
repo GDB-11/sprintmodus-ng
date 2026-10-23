@@ -57,6 +57,14 @@ export class ProjectContextService {
     void this.router.navigateByUrl(urlTree);
   }
 
+  /** A screen about one particular project's thing (an open work item) says so: the shell shows that project, without
+   * rewriting the URL or the remembered choice, which stay what the user picked. */
+  follow(projectCode: string): void {
+    if (this.current()?.projectCode !== projectCode) {
+      this.manualSelection.set(projectCode);
+    }
+  }
+
   private projectCodeInUrl(): string | null {
     return this.router.parseUrl(this.router.url).queryParams['project'] ?? null;
   }
