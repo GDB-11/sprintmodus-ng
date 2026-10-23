@@ -31,6 +31,7 @@ import { Icon } from '../../../shared/ui/icon/icon';
 import { PageHeader } from '../../../shared/ui/page-header/page-header';
 import { Panel } from '../../../shared/ui/panel/panel';
 import { BurndownChart } from '../burndown-chart/burndown-chart';
+import { SprintEdit } from '../sprint-edit/sprint-edit';
 import { SprintCreate } from '../sprint-create/sprint-create';
 import { SprintSettings } from '../sprint-settings/sprint-settings';
 import { VelocityHistory } from '../velocity-history/velocity-history';
@@ -80,6 +81,7 @@ function dateRange(start: string, end: string): string {
     ErrorState,
     BurndownChart,
     SprintCreate,
+    SprintEdit,
     SprintSettings,
     VelocityHistory,
   ],
@@ -106,6 +108,7 @@ export class SprintManagement {
   /** The sprint whose closing is being confirmed, whether the new-sprint form is open, and whether a change is in flight (one at a time). */
   protected readonly confirmingClose = signal<string | null>(null);
   protected readonly creating = signal(false);
+  protected readonly editingCode = signal<string | null>(null);
   protected readonly busy = signal(false);
   private readonly pickedBurndown = signal<string | null>(null);
 
@@ -133,6 +136,9 @@ export class SprintManagement {
   );
   protected readonly hasPlannedSprint = computed(() =>
     this.loadedSprints().some((sprint) => sprint.status === 'PLANNED'),
+  );
+  protected readonly editing = computed(
+    () => this.loadedSprints().find((sprint) => sprint.sprintCode === this.editingCode()) ?? null,
   );
   protected readonly closing = computed(
     () =>
@@ -184,6 +190,12 @@ export class SprintManagement {
   protected onCreated(): void {
     this.creating.set(false);
     this.sprints.reload();
+  }
+
+  protected onEdited(): void {
+    this.editingCode.set(null);
+    this.sprints.reload();
+    this.history.reload();
   }
 
   protected start(sprint: Sprint): void {

@@ -52,6 +52,14 @@ export interface Sprint {
   velocity: number;
 }
 
+/** What changes about a sprint that is not closed. A date left out keeps its value; the start date only moves while planned. */
+export interface UpdateSprintRequest {
+  name: string;
+  startDate?: string;
+  endDate?: string;
+  plannedVelocity?: number;
+}
+
 export interface CreateSprintRequest {
   projectCode: string;
   name: string;

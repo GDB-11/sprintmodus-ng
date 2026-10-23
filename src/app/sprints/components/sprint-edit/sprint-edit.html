@@ -1,0 +1,33 @@
+<app-panel [heading]="'Editar ' + sprint().name" class="max-w-2xl">
+  <form [formRoot]="sprintForm" class="flex flex-col gap-4">
+    @if (errorMessage(); as message) {
+      <app-banner kind="error">{{ message }}</app-banner>
+    }
+    <app-text-field [field]="sprintForm.name" inputId="sprint-edit-name" label="Nombre" />
+    <div class="grid gap-4 sm:grid-cols-2">
+      <app-text-field
+        [field]="sprintForm.startDate"
+        inputId="sprint-edit-start"
+        label="Fecha de inicio"
+        type="date"
+        [hint]="startHint()"
+      />
+      <app-text-field
+        [field]="sprintForm.endDate"
+        inputId="sprint-edit-end"
+        label="Fecha de fin"
+        type="date"
+        [hint]="endHint()"
+      />
+    </div>
+    <app-text-field
+      [field]="sprintForm.plannedVelocity"
+      inputId="sprint-edit-planned"
+      label="Puntos planificados"
+    />
+    <div class="flex flex-wrap gap-3">
+      <button appButton type="submit">Guardar cambios</button>
+      <button appButton variant="secondary" type="button" (click)="cancelled.emit()">Cancelar</button>
+    </div>
+  </form>
+</app-panel>

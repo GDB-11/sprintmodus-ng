@@ -8,6 +8,7 @@ import {
   CreateSprintRequest,
   Project,
   Sprint,
+  UpdateSprintRequest,
   UpdateProjectRequest,
   SprintConfig,
   VelocityHistory,
@@ -45,6 +46,11 @@ export class ProjectService {
   /** Owners and admins only (the backend answers `403` to anyone else). */
   createSprint(request: CreateSprintRequest): Observable<Sprint> {
     return this.http.post<Sprint>(`${environment.apiUrl}/api/sprints`, request);
+  }
+
+  /** Owners and admins only. Not for a closed sprint; the start date only while planned; dates must not overlap another sprint. */
+  updateSprint(sprintCode: string, request: UpdateSprintRequest): Observable<Sprint> {
+    return this.http.put<Sprint>(`${environment.apiUrl}/api/sprints/${sprintCode}`, request);
   }
 
   /** PLANNED → ACTIVE, owners and admins only. A project has at most one active sprint. Also begins the sprint's burndown. */

@@ -48,6 +48,16 @@
     <app-sprint-create [projectCode]="selectedProject()!.projectCode" (created)="onCreated()" />
   }
 
+  @if (editing(); as sprint) {
+    @if (canAdminister()) {
+      <app-sprint-edit
+        [sprint]="sprint"
+        (saved)="onEdited()"
+        (cancelled)="editingCode.set(null)"
+      />
+    }
+  }
+
   @if (sprints.status() === 'loading') {
     <div role="status" class="flex flex-col gap-2">
       <span class="sr-only">Cargando sprints…</span><app-skeleton height="2rem" />
@@ -109,6 +119,20 @@
                 (click)="confirmingClose.set(sprint.sprintCode)"
               >
                 Cerrar<span class="sr-only"> {{ sprint.name }}</span>
+              </button>
+            }
+            @if (sprint.status !== 'CLOSED') {
+              <button
+                appButton
+                variant="secondary"
+                size="compact"
+                type="button"
+                [disabled]="!canAdminister() || busy()"
+                [attr.aria-describedby]="canAdminister() ? null : 'plan-hint'"
+                [attr.aria-expanded]="editingCode() === sprint.sprintCode"
+                (click)="editingCode.set(sprint.sprintCode)"
+              >
+                Editar<span class="sr-only"> {{ sprint.name }}</span>
               </button>
             }
             <button
