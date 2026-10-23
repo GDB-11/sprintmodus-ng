@@ -25,6 +25,8 @@ export const routes: Routes = [
         (m) => m.RegisterOrganization,
       ),
   },
+  // Must precede the shell: its empty path would otherwise match '/' with no child and render a blank page.
+  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   {
     // Every authenticated screen renders inside the shell (top bar + sidebar), Phase 16. Same URLs as before: nesting
     // under an empty path segment doesn't change them.
@@ -84,6 +86,5 @@ export const routes: Routes = [
       },
     ],
   },
-  { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
   { path: '**', redirectTo: 'dashboard' },
 ];
