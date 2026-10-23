@@ -15,6 +15,7 @@ import {
   ConnectionStatus,
   ItemMovedEvent,
   ItemsReorderedEvent,
+  ItemUpdatedEvent,
   OnlineUser,
   PresenceEvent,
   StatusChangedEvent,
@@ -71,6 +72,7 @@ export class BoardWebSocketService {
   private readonly statusChangedSubject = new Subject<StatusChangedEvent>();
   private readonly itemMovedSubject = new Subject<ItemMovedEvent>();
   private readonly itemsReorderedSubject = new Subject<ItemsReorderedEvent>();
+  private readonly itemUpdatedSubject = new Subject<ItemUpdatedEvent>();
   private readonly commentAddedSubject = new Subject<CommentAddedEvent>();
   private readonly userTypingSubject = new Subject<UserTypingEvent>();
   private readonly userConnectedSubject = new Subject<PresenceEvent>();
@@ -82,6 +84,7 @@ export class BoardWebSocketService {
   readonly itemMoved$ = this.itemMovedSubject.asObservable();
   /** An owner or admin reordered cards of a column: reload it. */
   readonly itemsReordered$ = this.itemsReorderedSubject.asObservable();
+  readonly itemUpdated$ = this.itemUpdatedSubject.asObservable();
   readonly commentAdded$ = this.commentAddedSubject.asObservable();
   readonly userTyping$ = this.userTypingSubject.asObservable();
   readonly userConnected$ = this.userConnectedSubject.asObservable();
@@ -308,6 +311,9 @@ export class BoardWebSocketService {
         break;
       case 'ITEMS_REORDERED':
         this.itemsReorderedSubject.next(parsed.data);
+        break;
+      case 'ITEM_UPDATED':
+        this.itemUpdatedSubject.next(parsed.data);
         break;
       case 'COMMENT_ADDED':
         this.commentAddedSubject.next(parsed.data);

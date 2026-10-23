@@ -44,6 +44,12 @@ export interface ItemsReorderedEvent {
   status: WorkItemStatus;
 }
 
+/** Something about the work item changed (fields, sprint, parent, assignees, links) or it was deleted: reload it. */
+export interface ItemUpdatedEvent {
+  workItemCode: string;
+  deleted: boolean;
+}
+
 export interface CommentAddedEvent {
   workItemCode: string;
   comment: WorkItemComment;
@@ -71,6 +77,7 @@ export type BoardMessage =
   | { type: 'ITEM_STATUS_CHANGED'; data: StatusChangedEvent }
   | { type: 'ITEM_MOVED'; data: ItemMovedEvent }
   | { type: 'ITEMS_REORDERED'; data: ItemsReorderedEvent }
+  | { type: 'ITEM_UPDATED'; data: ItemUpdatedEvent }
   | { type: 'COMMENT_ADDED'; data: CommentAddedEvent }
   | { type: 'USER_TYPING'; data: UserTypingEvent }
   | { type: 'USER_CONNECTED'; data: PresenceEvent }

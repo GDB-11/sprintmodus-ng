@@ -457,6 +457,17 @@ describe('WorkItemDetail', () => {
       http.expectNone(ITEM_URL);
     });
 
+    it('reloads the item when another change (sprint, assignees, fields…) is announced, and ignores other items', async () => {
+      await open();
+
+      board.itemUpdated$.next({ workItemCode: 'item-2', deleted: false });
+      http.expectNone(ITEM_URL);
+
+      board.itemUpdated$.next({ workItemCode: 'item-1', deleted: false });
+
+      (await vi.waitFor(() => http.expectOne(ITEM_URL))).flush(workItem());
+    });
+
     it('holds the reload until the edit is over, so nobody loses what they were typing', async () => {
       await open();
       button('Editar').click();

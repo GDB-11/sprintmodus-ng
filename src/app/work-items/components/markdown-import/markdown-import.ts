@@ -8,6 +8,7 @@ import { Button } from '../../../shared/ui/button/button';
 import { Control } from '../../../shared/ui/control/control';
 import { Dialog } from '../../../shared/ui/dialog/dialog';
 import { DisabledReason } from '../../../shared/ui/disabled-reason/disabled-reason';
+import { FileDrop } from '../../../shared/ui/file-drop/file-drop';
 import { Icon } from '../../../shared/ui/icon/icon';
 import { SelectMenu, SelectMenuOption } from '../../../shared/ui/select-menu/select-menu';
 import { TextLink } from '../../../shared/ui/text-link/text-link';
@@ -32,7 +33,7 @@ import { WorkItemTypeIcon } from '../work-item-type-icon/work-item-type-icon';
  */
 @Component({
   selector: 'app-markdown-import',
-  imports: [NgTemplateOutlet, RouterLink, Banner, Button, Control, Dialog, DisabledReason, Icon, SelectMenu, TextLink, WorkItemTypeIcon],
+  imports: [NgTemplateOutlet, RouterLink, Banner, Button, Control, Dialog, DisabledReason, FileDrop, Icon, SelectMenu, TextLink, WorkItemTypeIcon],
   templateUrl: './markdown-import.html',
 })
 export class MarkdownImport {
@@ -57,6 +58,7 @@ export class MarkdownImport {
 
   protected readonly open = signal(false);
   protected readonly text = signal('');
+  protected readonly fileName = signal<string | undefined>(undefined);
   protected readonly busy = signal(false);
   protected readonly preview = signal<ImportPreview | null>(null);
   protected readonly done = signal<ImportPreview | null>(null);
@@ -83,19 +85,15 @@ export class MarkdownImport {
 
   protected onText(event: Event): void {
     this.text.set((event.target as HTMLTextAreaElement).value);
+    this.fileName.set(undefined);
     this.preview.set(null);
   }
 
-  protected async onFile(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.item(0);
-    if (!file) {
-      return;
-    }
+  protected async onFile(file: File): Promise<void> {
     this.text.set(await file.text());
+    this.fileName.set(file.name);
     this.preview.set(null);
     this.failure.set('');
-    input.value = '';
   }
 
   protected downloadTemplate(): void {
@@ -195,6 +193,7 @@ export class MarkdownImport {
 
   private reset(): void {
     this.text.set('');
+    this.fileName.set(undefined);
     this.preview.set(null);
     this.done.set(null);
     this.failure.set('');

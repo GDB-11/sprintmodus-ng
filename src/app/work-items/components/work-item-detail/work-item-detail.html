@@ -170,8 +170,10 @@
                   (valueChange)="moveToSprint($event, current)"
                 />
               } @else {
-                <span class="text-sm font-medium">Sprint</span>
-                <span class="text-sm text-text">{{ sprintName() }}</span>
+                <div class="flex justify-between gap-3 text-sm">
+                  <span class="text-text-muted">Sprint</span>
+                  <span class="text-right text-text">{{ sprintName() }}</span>
+                </div>
                 <app-disabled-reason
                   reason="Solo los propietarios y administradores planifican los sprints."
                 />

@@ -96,16 +96,13 @@
         <app-banner [kind]="status.failed ? 'error' : 'success'">{{ status.message }}</app-banner>
       }
 
-      <div class="flex flex-col gap-1.5">
-        <label for="import-file" class="text-sm font-medium">Sube un archivo .md</label>
-        <input
-          id="import-file"
-          type="file"
-          appControl
-          accept=".md,.markdown,text/markdown,text/plain"
-          (change)="onFile($event)"
-        />
-      </div>
+      <app-file-drop
+        label="Elige un archivo .md o arrástralo aquí"
+        accept=".md,.markdown,text/markdown,text/plain"
+        hint="El contenido se carga en el cuadro de abajo para que lo revises."
+        [fileName]="fileName()"
+        (fileSelected)="onFile($event)"
+      />
       <div class="flex flex-col gap-1.5">
         <label for="import-text" class="text-sm font-medium">…o pega el texto aquí</label>
         <textarea id="import-text" appControl rows="10" [value]="text()" (input)="onText($event)"></textarea>

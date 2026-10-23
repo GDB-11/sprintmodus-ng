@@ -22,6 +22,7 @@ export type IconName =
   | 'chevron-left'
   | 'chevron-up'
   | 'download'
+  | 'upload'
   | 'check'
   | 'check-circle'
   | 'triangle-alert'
@@ -109,6 +110,11 @@ export const ICON_SHAPES: Record<IconName, readonly IconShape[]> = {
     { tag: 'path', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' },
     { tag: 'polyline', points: '7 10 12 15 17 10' },
     { tag: 'line', x1: 12, y1: 15, x2: 12, y2: 3 },
+  ],
+  upload: [
+    { tag: 'path', d: 'M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4' },
+    { tag: 'polyline', points: '17 8 12 3 7 8' },
+    { tag: 'line', x1: 12, y1: 3, x2: 12, y2: 15 },
   ],
   check: [{ tag: 'polyline', points: '20 6 9 17 4 12' }],
   'check-circle': [

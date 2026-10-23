@@ -316,6 +316,17 @@ export class WorkItemDetail {
         takeUntilDestroyed(),
       )
       .subscribe((event) => this.onRemoteStatusChange(event));
+    this.board.itemUpdated$
+      .pipe(
+        filter((event) => event.workItemCode === this.code()),
+        takeUntilDestroyed(),
+      )
+      .subscribe((event) => {
+        if (event.deleted) {
+          this.notifications.info('Alguien eliminó este elemento de trabajo.');
+        }
+        this.refreshFromServer();
+      });
     this.board.refresh$.pipe(takeUntilDestroyed()).subscribe(() => this.refreshFromServer());
     effect(() => {
       if (!this.editing() && this.changedWhileEditing) {

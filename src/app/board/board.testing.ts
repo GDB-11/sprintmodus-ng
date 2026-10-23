@@ -7,6 +7,7 @@ import {
   ConnectionStatus,
   ItemMovedEvent,
   ItemsReorderedEvent,
+  ItemUpdatedEvent,
   OnlineUser,
   UserTypingEvent,
 } from './models/board.models';
@@ -17,6 +18,7 @@ export class FakeBoard {
   readonly statusChanged$ = new Subject<StatusChangedEvent>();
   readonly itemMoved$ = new Subject<ItemMovedEvent>();
   readonly itemsReordered$ = new Subject<ItemsReorderedEvent>();
+  readonly itemUpdated$ = new Subject<ItemUpdatedEvent>();
   readonly commentAdded$ = new Subject<CommentAddedEvent>();
   readonly userTyping$ = new Subject<UserTypingEvent>();
   readonly errors$ = new Subject<BoardError>();

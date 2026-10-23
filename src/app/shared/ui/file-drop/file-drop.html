@@ -1,0 +1,16 @@
+<label
+  class="flex cursor-pointer flex-col items-center gap-1 rounded-[10px] border-2 border-dashed px-4 py-5 text-center transition-colors duration-150 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-secondary-900 dark:has-[:focus-visible]:outline-secondary-400"
+  [class]="dragging() ? 'border-secondary-900 bg-control-track dark:border-secondary-400' : 'border-control-border bg-control-track hover:border-secondary-900 dark:hover:border-secondary-400'"
+  (dragover)="onDragOver($event)"
+  (dragleave)="dragging.set(false)"
+  (drop)="onDrop($event)"
+>
+  <input type="file" class="sr-only" [accept]="accept()" (change)="onPick($event)" />
+  <app-icon name="upload" />
+  <span class="text-sm font-semibold text-text">{{ label() }}</span>
+  @if (fileName()) {
+    <span class="text-sm text-text-muted">Archivo cargado: {{ fileName() }}</span>
+  } @else if (hint()) {
+    <span class="text-sm text-text-muted">{{ hint() }}</span>
+  }
+</label>
